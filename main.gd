@@ -1300,7 +1300,6 @@ func _refresh_board() -> void:
                 "vision": symbol = "V"
             _draw_text(p, symbol, Color("#fff0dc"), 0.50, 64)
     _update_hud()
-    _update_letter_slots()
 
 func _update_hud() -> void:
     var seconds: int = maxi(0, int(ceil(path_time)))
