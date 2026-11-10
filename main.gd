@@ -1193,6 +1193,46 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
     add_child(label)
     visual_nodes.append(label)
 
+func _draw_branch_arrows() -> void:
+    if preview_parent < 0 or preview_parent >= words.size() or preview_anchor < 0:
+        return
+    var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
+    if preview_anchor >= parent_cells.size():
+        return
+    var anchor: Vector2i = parent_cells[preview_anchor]
+    var horizontal: bool = Vector2i(words[preview_parent]["dir"]).x != 0
+    var sides: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if horizontal else [Vector2i(-1, 0), Vector2i(1, 0)]
+    for side in sides:
+        var active: bool = side == preview_dir
+        var arrow := Label3D.new()
+        arrow.text = ("^" if side.y < 0 else "v") if horizontal else ("<" if side.x < 0 else ">")
+        arrow.font_size = 72 if active else 65
+        arrow.pixel_size = 0.005
+        arrow.modulate = Color("#fff0b8") if active else Color("#7e6577")
+        arrow.outline_modulate = Color("#392b3a")
+        arrow.outline_size = 8
+        arrow.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+        arrow.no_depth_test = true
+        arrow.position = Vector3((float(anchor.x) + float(side.x) * 0.43) * GAP, 0.93, (float(anchor.y) + float(side.y) * 0.43) * GAP)
+        add_child(arrow)
+        visual_nodes.append(arrow)
+
+func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
+    if preview_parent < 0 or preview_parent >= words.size() or preview_anchor < 0:
+        return false
+    var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
+    if preview_anchor >= parent_cells.size():
+        return false
+    var anchor: Vector2i = parent_cells[preview_anchor]
+    var horizontal: bool = Vector2i(words[preview_parent]["dir"]).x != 0
+    var sides: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if horizontal else [Vector2i(-1, 0), Vector2i(1, 0)]
+    for side in sides:
+        var world_pos := Vector3((float(anchor.x) + float(side.x) * 0.43) * GAP, 0.93, (float(anchor.y) + float(side.y) * 0.43) * GAP)
+        if camera.unproject_position(world_pos).distance_to(screen_pos) < 24.0:
+            _apply_direction(side)
+            return true
+    return false
+
 func _refresh_board() -> void:
     for node in visual_nodes:
         if is_instance_valid(node):
@@ -1309,6 +1349,7 @@ func _refresh_board() -> void:
                 "crown": symbol = "C"
                 "vision": symbol = "V"
             _draw_text(p, symbol, Color("#fff0dc"), 0.50, 64)
+    _draw_branch_arrows()
     _update_hud()
 
 func _update_hud() -> void:
@@ -1531,7 +1572,8 @@ func _start_pointer(screen_pos: Vector2) -> void:
 
 func _stop_pointer() -> void:
     if pointer_down and not pointer_dragged:
-        _click_tile(pointer_cell)
+        if not _try_tap_branch_arrow(pointer_start):
+            _click_tile(pointer_cell)
     pointer_down = false
 
 func _move_pointer(screen_pos: Vector2) -> void:
