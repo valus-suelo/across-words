@@ -1,0 +1,2483 @@
+{
+  "version": 1,
+  "words": [
+    {
+      "answer": "CASA",
+      "clue": "Lugar onde moramos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "SOL",
+      "clue": "Estrela que ilumina a Terra",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "LUA",
+      "clue": "Satélite natural da Terra",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MAR",
+      "clue": "Grande extensão de água salgada",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "RIO",
+      "clue": "Curso natural de água",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FLOR",
+      "clue": "Parte colorida de muitas plantas",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "GATO",
+      "clue": "Felino doméstico",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PATO",
+      "clue": "Ave de bico largo",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ROSA",
+      "clue": "Flor frequentemente associada ao amor",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "VENTO",
+      "clue": "Ar em movimento",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "TERRA",
+      "clue": "Planeta em que vivemos",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "PEDRA",
+      "clue": "Fragmento sólido de rocha",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "PORTA",
+      "clue": "Entrada que pode ser aberta",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LIVRO",
+      "clue": "Obra formada por páginas",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PONTE",
+      "clue": "Construção para atravessar um obstáculo",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TEMPO",
+      "clue": "Pode ser medido em segundos",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "NUVEM",
+      "clue": "Conjunto de gotículas suspensas no céu",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "AREIA",
+      "clue": "Grãos finos encontrados na praia",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "NOITE",
+      "clue": "Período sem luz solar direta",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FOLHA",
+      "clue": "Parte verde de muitas plantas",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "RATO",
+      "clue": "Pequeno roedor",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "BOLO",
+      "clue": "Doce comum em aniversários",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "MESA",
+      "clue": "Móvel com tampo e pernas",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "JANELA",
+      "clue": "Abertura que deixa entrar luz",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CAMPO",
+      "clue": "Área aberta de terreno",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ESTRELA",
+      "clue": "Astro que emite luz própria",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "LAGO",
+      "clue": "Corpo de água cercado por terra",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MATO",
+      "clue": "Vegetação espontânea",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "SAPO",
+      "clue": "Anfíbio que costuma saltar",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "FARO",
+      "clue": "Sentido associado ao olfato",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "PENA",
+      "clue": "Revestimento do corpo das aves",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PRAIA",
+      "clue": "Faixa de areia junto ao mar",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FONTE",
+      "clue": "Local de onde brota água",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CARTA",
+      "clue": "Mensagem escrita em papel",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "TRIGO",
+      "clue": "Cereal utilizado para fazer farinha",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "NORTE",
+      "clue": "Um dos pontos cardeais",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "SUL",
+      "clue": "Ponto cardeal oposto ao norte",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "OESTE",
+      "clue": "Direção em que o Sol se põe",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "LESTE",
+      "clue": "Direção em que o Sol nasce",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "COROA",
+      "clue": "Adorno usado sobre a cabeça",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "OURO",
+      "clue": "Metal precioso amarelo",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "REDE",
+      "clue": "Conjunto de fios entrelaçados",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "MUNDO",
+      "clue": "O planeta e tudo que nele existe",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MURAL",
+      "clue": "Pintura feita em uma parede",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "DOCE",
+      "clue": "Alimento de sabor açucarado",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "BARCO",
+      "clue": "Embarcação pequena",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "NAVIO",
+      "clue": "Embarcação de grande porte",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "MOTOR",
+      "clue": "Máquina que produz movimento",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "TREVO",
+      "clue": "Planta associada à sorte",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "LIMAO",
+      "clue": "Fruta cítrica azeda",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MELAO",
+      "clue": "Fruta grande e doce",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CINTO",
+      "clue": "Acessório usado na cintura",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "PULSO",
+      "clue": "Região entre a mão e o antebraço",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CANTO",
+      "clue": "Ato de cantar",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "BANCO",
+      "clue": "Assento comprido ou instituição financeira",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "BOLSA",
+      "clue": "Objeto para carregar pertences",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LAPIS",
+      "clue": "Objeto usado para escrever e desenhar",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PAPEL",
+      "clue": "Material usado para escrever",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LINHA",
+      "clue": "Traço comprido e estreito",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PONTO",
+      "clue": "Pequena marca ou sinal",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TINTA",
+      "clue": "Substância usada para pintar",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "FESTA",
+      "clue": "Comemoração com convidados",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "DANCA",
+      "clue": "Movimentos do corpo ao ritmo da música",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "MUSICA",
+      "clue": "Arte de organizar sons",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "PRATO",
+      "clue": "Utensílio usado para servir comida",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GARFO",
+      "clue": "Talher com pontas",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "COLHER",
+      "clue": "Talher usado para líquidos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "FACA",
+      "clue": "Utensílio com lâmina cortante",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "AMOR",
+      "clue": "Sentimento profundo",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "AMIGO",
+      "clue": "Pessoa de quem se gosta",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "AGUA",
+      "clue": "Líquido essencial à vida",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ASA",
+      "clue": "Parte usada pelas aves para voar",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "AR",
+      "clue": "Mistura de gases que respiramos",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ANEL",
+      "clue": "Joia usada no dedo",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ABELHA",
+      "clue": "Inseto que produz mel",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ARTE",
+      "clue": "Expressão criativa",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ANJO",
+      "clue": "Ser alado de tradição religiosa",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ACERTO",
+      "clue": "Resposta correta",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "BOLA",
+      "clue": "Objeto redondo usado em jogos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "BICO",
+      "clue": "Parte da boca de uma ave",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "BEBE",
+      "clue": "Criança muito pequena",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "BRISA",
+      "clue": "Vento leve",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CAMA",
+      "clue": "Móvel usado para dormir",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "COPO",
+      "clue": "Recipiente para beber",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CEU",
+      "clue": "Espaço acima da Terra",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CUBO",
+      "clue": "Sólido de seis faces quadradas",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "DADO",
+      "clue": "Cubo usado em jogos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "DEDO",
+      "clue": "Parte da mão",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "DENTE",
+      "clue": "Estrutura usada para mastigar",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "DIA",
+      "clue": "Período de luz solar",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ECO",
+      "clue": "Reflexão de um som",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ERVA",
+      "clue": "Planta de caule macio",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ESCOLA",
+      "clue": "Lugar de aprender",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ESTADO",
+      "clue": "Divisão de um país",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "FADA",
+      "clue": "Ser mágico dos contos",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "FOGO",
+      "clue": "Chama que aquece",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FRIO",
+      "clue": "Temperatura baixa",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FITA",
+      "clue": "Faixa de tecido ou papel",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GEMA",
+      "clue": "Parte amarela do ovo",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "GELO",
+      "clue": "Água congelada",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "GALO",
+      "clue": "Ave que canta de manhã",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GOTA",
+      "clue": "Pequena porção de líquido",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "HORA",
+      "clue": "Unidade de tempo",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "HINO",
+      "clue": "Canção oficial",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ILHA",
+      "clue": "Terra cercada de água",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "IMA",
+      "clue": "Objeto que atrai ferro",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "IDEIA",
+      "clue": "Pensamento ou plano",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "IOIO",
+      "clue": "Brinquedo que sobe e desce",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "JOGO",
+      "clue": "Atividade com regras",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "JARRA",
+      "clue": "Recipiente com alça",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "JOIA",
+      "clue": "Objeto precioso de adorno",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "JUIZ",
+      "clue": "Pessoa que julga",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "KIWI",
+      "clue": "Fruta de casca marrom e polpa verde",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "KART",
+      "clue": "Veículo pequeno de corrida",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LADO",
+      "clue": "Uma das faces ou direções",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "LEAO",
+      "clue": "Grande felino de juba",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LUZ",
+      "clue": "Permite enxergar",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "LOBO",
+      "clue": "Canídeo selvagem",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "MAO",
+      "clue": "Extremidade do braço",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "MALA",
+      "clue": "Bagagem de viagem",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "MEL",
+      "clue": "Alimento doce produzido por abelhas",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "MOEDA",
+      "clue": "Peça de dinheiro",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "NOME",
+      "clue": "Palavra que identifica",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "NARIZ",
+      "clue": "Órgão usado para cheirar",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "OVO",
+      "clue": "Produzido por muitas aves",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "OLHO",
+      "clue": "Órgão da visão",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ONDA",
+      "clue": "Movimento do mar",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "OSSO",
+      "clue": "Parte do esqueleto",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "PIPA",
+      "clue": "Brinquedo que voa com vento",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PEIXE",
+      "clue": "Animal aquático",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PE",
+      "clue": "Extremidade inferior da perna",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "PAZ",
+      "clue": "Ausência de guerra",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "QUEIJO",
+      "clue": "Alimento feito de leite",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "QUADRO",
+      "clue": "Objeto pendurado na parede",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "QUEDA",
+      "clue": "Ato de cair",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "QUENTE",
+      "clue": "De temperatura elevada",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "RUA",
+      "clue": "Via pública",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "REI",
+      "clue": "Soberano de um reino",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "RODA",
+      "clue": "Peça circular de veículos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "RAIZ",
+      "clue": "Parte subterrânea da planta",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "SALA",
+      "clue": "Cômodo de estar",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "SELO",
+      "clue": "Pequena etiqueta postal",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "SINO",
+      "clue": "Objeto que toca ao ser balançado",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "SUCO",
+      "clue": "Bebida de frutas",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "TETO",
+      "clue": "Parte superior de um cômodo",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TREM",
+      "clue": "Veículo que anda em trilhos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TATU",
+      "clue": "Mamífero de carapaça",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TOCA",
+      "clue": "Abrigo de animais",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "UVA",
+      "clue": "Fruta em cachos",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "URSO",
+      "clue": "Mamífero grande e peludo",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "UNHA",
+      "clue": "Estrutura na ponta do dedo",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "UNIAO",
+      "clue": "Ato de juntar",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "VIDA",
+      "clue": "Existência de um ser",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "VACA",
+      "clue": "Fêmea do boi",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "VALE",
+      "clue": "Região baixa entre elevações",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "VELA",
+      "clue": "Objeto de cera com pavio",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "WEB",
+      "clue": "A rede mundial de páginas",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "WIFI",
+      "clue": "Conexão sem fio",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "XADREZ",
+      "clue": "Jogo de tabuleiro com peças",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "XALE",
+      "clue": "Peça de tecido sobre os ombros",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "XICARA",
+      "clue": "Recipiente para café",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "XAROPE",
+      "clue": "Líquido espesso e doce",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "YOGA",
+      "clue": "Prática corporal e meditativa",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "YAKISOBA",
+      "clue": "Prato de macarrão com vegetais",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "ZEBRA",
+      "clue": "Animal listrado",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ZERO",
+      "clue": "Número que representa ausência",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ZONA",
+      "clue": "Região ou área",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ZINCO",
+      "clue": "Elemento químico metálico",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CACHORRO",
+      "clue": "Animal doméstico conhecido por latir",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "CAVALO",
+      "clue": "Animal usado em montaria",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ELEFANTE",
+      "clue": "Mamífero com tromba",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "GIRAFA",
+      "clue": "Mamífero de pescoço comprido",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TIGRE",
+      "clue": "Felino listrado",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "MACACO",
+      "clue": "Primata que sobe em árvores",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GOLFINHO",
+      "clue": "Mamífero marinho inteligente",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "BALEIA",
+      "clue": "Grande mamífero marinho",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TUBARAO",
+      "clue": "Peixe marinho com dentes afiados",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "POLVO",
+      "clue": "Molusco de oito braços",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LULA",
+      "clue": "Molusco de corpo alongado",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CARANGUEJO",
+      "clue": "Crustáceo que anda de lado",
+      "category": "ANIMAIS",
+      "difficulty": 3
+    },
+    {
+      "answer": "CAMARAO",
+      "clue": "Crustáceo usado na culinária",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "FORMIGA",
+      "clue": "Inseto que vive em colônias",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "BORBOLETA",
+      "clue": "Inseto de asas coloridas",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "LAGARTA",
+      "clue": "Fase jovem de uma borboleta",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "MOSQUITO",
+      "clue": "Inseto que pode picar",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "MOSCA",
+      "clue": "Inseto de duas asas",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GRILO",
+      "clue": "Inseto conhecido pelo canto noturno",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CIGARRA",
+      "clue": "Inseto de canto forte no verão",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ARANHA",
+      "clue": "Artrópode de oito patas",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ESCORPIAO",
+      "clue": "Aracnídeo com ferrão na cauda",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "COBRA",
+      "clue": "Réptil sem patas",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LAGARTO",
+      "clue": "Réptil de corpo alongado",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "JACARE",
+      "clue": "Réptil que vive perto da água",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TARTARUGA",
+      "clue": "Réptil protegido por casco",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "PAPAGAIO",
+      "clue": "Ave que imita sons",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "CORUJA",
+      "clue": "Ave de hábitos noturnos",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "AGUIA",
+      "clue": "Ave de rapina de visão aguçada",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PINGUIM",
+      "clue": "Ave marinha que não voa",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "GALINHA",
+      "clue": "Ave doméstica que põe ovos",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "COELHO",
+      "clue": "Mamífero de orelhas compridas",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "MORCEGO",
+      "clue": "Mamífero capaz de voar",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "RAPOSA",
+      "clue": "Canídeo de cauda espessa",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CAPIVARA",
+      "clue": "Grande roedor sul-americano",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "TAMANDUA",
+      "clue": "Mamífero que se alimenta de formigas",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "PREGUICA",
+      "clue": "Mamífero de movimentos lentos",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "HIPOPOTAMO",
+      "clue": "Mamífero africano semiaquático",
+      "category": "ANIMAIS",
+      "difficulty": 3
+    },
+    {
+      "answer": "MONTANHA",
+      "clue": "Grande elevação natural",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "COLINA",
+      "clue": "Pequena elevação do terreno",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "PLANICIE",
+      "clue": "Extensão de terreno plano",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "DESERTO",
+      "clue": "Região com chuvas escassas",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "FLORESTA",
+      "clue": "Área extensa coberta por árvores",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "BOSQUE",
+      "clue": "Pequena área com árvores",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "JARDIM",
+      "clue": "Espaço cultivado com plantas",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "SEMENTE",
+      "clue": "Estrutura que origina uma planta",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "TRONCO",
+      "clue": "Parte principal do caule de uma árvore",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "GALHO",
+      "clue": "Ramificação de uma árvore",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CASCA",
+      "clue": "Camada externa do tronco",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FRUTO",
+      "clue": "Estrutura vegetal que protege sementes",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "BANANA",
+      "clue": "Fruta amarela alongada",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MANGA",
+      "clue": "Fruta tropical de polpa amarela",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MORANGO",
+      "clue": "Fruta vermelha pequena",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MELANCIA",
+      "clue": "Fruta grande de polpa vermelha",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ABACAXI",
+      "clue": "Fruta tropical de casca espinhosa",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "LARANJA",
+      "clue": "Fruta cítrica",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MACA",
+      "clue": "Fruta que pode ser verde ou vermelha",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "PERA",
+      "clue": "Fruta mais larga na base",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "COCO",
+      "clue": "Fruto de casca dura",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CEREJA",
+      "clue": "Fruta pequena e vermelha",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CAJU",
+      "clue": "Fruto associado a uma castanha",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MILHO",
+      "clue": "Cereal com grãos em espiga",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FEIJAO",
+      "clue": "Leguminosa consumida com arroz",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ARROZ",
+      "clue": "Cereal muito consumido no Brasil",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "BAMBU",
+      "clue": "Planta de caule oco",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CACTO",
+      "clue": "Planta adaptada à seca",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ORQUIDEA",
+      "clue": "Planta de flores ornamentais",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "GIRASSOL",
+      "clue": "Flor que lembra um sol",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "VIOLETA",
+      "clue": "Planta ornamental",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "TULIPA",
+      "clue": "Flor em formato de taça",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MARGARIDA",
+      "clue": "Flor de pétalas brancas",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CACHOEIRA",
+      "clue": "Queda de água de um rio",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "OCEANO",
+      "clue": "Grande massa de água salgada",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CORRENTEZA",
+      "clue": "Movimento rápido de água",
+      "category": "NATUREZA",
+      "difficulty": 3
+    },
+    {
+      "answer": "NEBLINA",
+      "clue": "Gotículas que reduzem a visibilidade",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "NEVE",
+      "clue": "Precipitação de cristais de gelo",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CHUVA",
+      "clue": "Água que cai das nuvens",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "GRANIZO",
+      "clue": "Pedras de gelo que caem do céu",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "TROVAO",
+      "clue": "Som de uma tempestade",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "RELAMPAGO",
+      "clue": "Clarão de descarga atmosférica",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ARCOIRIS",
+      "clue": "Faixas coloridas após a chuva",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "HORIZONTE",
+      "clue": "Linha onde céu e terra parecem se encontrar",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ECLIPSE",
+      "clue": "Ocultação de um astro por outro",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "COMETA",
+      "clue": "Corpo celeste que pode ter cauda",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "METEORO",
+      "clue": "Rastro luminoso na atmosfera",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "PLANETA",
+      "clue": "Corpo que orbita uma estrela",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "SATELITE",
+      "clue": "Corpo que orbita um planeta",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "GALAXIA",
+      "clue": "Conjunto de estrelas e poeira",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "UNIVERSO",
+      "clue": "Conjunto de tudo que existe",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CADEIRA",
+      "clue": "Assento com encosto",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "SOFA",
+      "clue": "Móvel estofado",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ARMARIO",
+      "clue": "Móvel para guardar objetos",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "GAVETA",
+      "clue": "Compartimento deslizante",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ESTANTE",
+      "clue": "Móvel com prateleiras",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ESPELHO",
+      "clue": "Superfície que reflete imagens",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "TAPETE",
+      "clue": "Peça colocada sobre o chão",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CORTINA",
+      "clue": "Tecido que cobre uma janela",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "TRAVESSEIRO",
+      "clue": "Apoio para a cabeça ao dormir",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "COBERTOR",
+      "clue": "Peça usada para aquecer na cama",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ALMOFADA",
+      "clue": "Apoio macio",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ESCADA",
+      "clue": "Estrutura com degraus",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ELEVADOR",
+      "clue": "Equipamento entre andares",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "FECHADURA",
+      "clue": "Mecanismo de trancar portas",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "CHAVE",
+      "clue": "Objeto que abre uma fechadura",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CADEADO",
+      "clue": "Trava portátil",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "RELOGIO",
+      "clue": "Instrumento que indica as horas",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "CALENDARIO",
+      "clue": "Tabela de dias e meses",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "CADERNO",
+      "clue": "Conjunto de folhas para anotações",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "BORRACHA",
+      "clue": "Objeto para apagar lápis",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "CANETA",
+      "clue": "Instrumento de escrita",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "MOCHILA",
+      "clue": "Bolsa carregada nas costas",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "TESOURA",
+      "clue": "Instrumento com duas lâminas",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "REGUA",
+      "clue": "Instrumento para medir comprimentos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "COMPASSO",
+      "clue": "Instrumento para traçar círculos",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "MARTELO",
+      "clue": "Ferramenta para bater pregos",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ALICATE",
+      "clue": "Ferramenta para segurar fios",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "PARAFUSO",
+      "clue": "Peça de fixação com rosca",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "PREGO",
+      "clue": "Peça de fixação metálica",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "FURADEIRA",
+      "clue": "Ferramenta para fazer furos",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "LANTERNA",
+      "clue": "Fonte portátil de luz",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "BATERIA",
+      "clue": "Dispositivo que armazena energia",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "CARREGADOR",
+      "clue": "Aparelho que recarrega baterias",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "CELULAR",
+      "clue": "Telefone portátil",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "COMPUTADOR",
+      "clue": "Máquina eletrônica de processamento",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "TECLADO",
+      "clue": "Conjunto de teclas para digitar",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "MONITOR",
+      "clue": "Tela de computador",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "MOUSE",
+      "clue": "Dispositivo apontador",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CAMERA",
+      "clue": "Equipamento que registra imagens",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "FONE",
+      "clue": "Acessório para ouvir áudio",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "RADIO",
+      "clue": "Aparelho de transmissão sonora",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TELEVISAO",
+      "clue": "Aparelho de programas audiovisuais",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "GELADEIRA",
+      "clue": "Eletrodoméstico que conserva alimentos",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "FOGAO",
+      "clue": "Equipamento para cozinhar",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PANELA",
+      "clue": "Recipiente para preparar alimentos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "FRIGIDEIRA",
+      "clue": "Panela rasa",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "LIQUIDIFICADOR",
+      "clue": "Aparelho para misturar alimentos",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "VASSOURA",
+      "clue": "Utensílio para varrer",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "BALDE",
+      "clue": "Recipiente para líquidos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "SABONETE",
+      "clue": "Produto para lavar a pele",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "TOALHA",
+      "clue": "Tecido para secar o corpo",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ESCOVA",
+      "clue": "Utensílio com cerdas",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PENTE",
+      "clue": "Utensílio para desembaraçar cabelos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ATOMO",
+      "clue": "Unidade básica de elemento químico",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MOLECULA",
+      "clue": "Conjunto de átomos ligados",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ELETRON",
+      "clue": "Partícula de carga negativa",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "PROTON",
+      "clue": "Partícula de carga positiva",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "NEUTRON",
+      "clue": "Partícula sem carga elétrica",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "NUCLEO",
+      "clue": "Centro de um átomo",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CELULA",
+      "clue": "Unidade básica dos seres vivos",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "TECIDO",
+      "clue": "Conjunto organizado de células",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ORGAO",
+      "clue": "Estrutura corporal com função",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "SANGUE",
+      "clue": "Fluido do sistema cardiovascular",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CORACAO",
+      "clue": "Órgão que bombeia sangue",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "PULMAO",
+      "clue": "Órgão das trocas gasosas",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CEREBRO",
+      "clue": "Órgão central do sistema nervoso",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "NEURONIO",
+      "clue": "Célula do sistema nervoso",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "GENE",
+      "clue": "Segmento de material hereditário",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "DNA",
+      "clue": "Molécula que guarda informação genética",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "BACTERIA",
+      "clue": "Microrganismo sem núcleo definido",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "VIRUS",
+      "clue": "Agente infeccioso que depende de células",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "OXIGENIO",
+      "clue": "Gás essencial à respiração",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "HIDROGENIO",
+      "clue": "Elemento químico número um",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "CARBONO",
+      "clue": "Elemento presente em compostos orgânicos",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "FERRO",
+      "clue": "Metal de símbolo Fe",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "COBRE",
+      "clue": "Metal de símbolo Cu",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "PRATA",
+      "clue": "Metal de símbolo Ag",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ALUMINIO",
+      "clue": "Metal leve de símbolo Al",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "GRAVIDADE",
+      "clue": "Atração entre corpos com massa",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "VELOCIDADE",
+      "clue": "Deslocamento por unidade de tempo",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "ACELERACAO",
+      "clue": "Variação da velocidade",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "ENERGIA",
+      "clue": "Capacidade de realizar trabalho",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "POTENCIA",
+      "clue": "Taxa de transformação de energia",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CORRENTE",
+      "clue": "Fluxo de carga elétrica",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "TENSAO",
+      "clue": "Diferença de potencial elétrico",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "RESISTENCIA",
+      "clue": "Oposição à corrente elétrica",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "CIRCUITO",
+      "clue": "Caminho fechado para corrente",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CONDUTOR",
+      "clue": "Material que permite passagem de corrente",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ISOLANTE",
+      "clue": "Material que dificulta corrente",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MAGNETISMO",
+      "clue": "Fenômeno associado a campos magnéticos",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "TERMOMETRO",
+      "clue": "Instrumento para medir temperatura",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "MICROSCOPIO",
+      "clue": "Instrumento para ampliar objetos",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "TELESCOPIO",
+      "clue": "Instrumento para observar astros",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "LABORATORIO",
+      "clue": "Local de experimentos",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "HIPOTESE",
+      "clue": "Explicação que pode ser testada",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "EXPERIMENTO",
+      "clue": "Procedimento para testar hipóteses",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "EQUACAO",
+      "clue": "Igualdade entre expressões matemáticas",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ANGULO",
+      "clue": "Abertura entre duas semirretas",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "TRIANGULO",
+      "clue": "Polígono de três lados",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "QUADRADO",
+      "clue": "Polígono de quatro lados iguais",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CIRCULO",
+      "clue": "Região limitada por circunferência",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ESFERA",
+      "clue": "Sólido geométrico arredondado",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CILINDRO",
+      "clue": "Sólido com duas bases circulares",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "BRASIL",
+      "clue": "Maior país da América do Sul",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ARGENTINA",
+      "clue": "País cuja capital é Buenos Aires",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "URUGUAI",
+      "clue": "País cuja capital é Montevidéu",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "PARAGUAI",
+      "clue": "País cuja capital é Assunção",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CHILE",
+      "clue": "País longo e estreito no Pacífico",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "PERU",
+      "clue": "País onde fica Machu Picchu",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "BOLIVIA",
+      "clue": "País andino sem litoral",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "COLOMBIA",
+      "clue": "País banhado pelo Caribe e Pacífico",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "EQUADOR",
+      "clue": "País que dá nome à linha imaginária",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "VENEZUELA",
+      "clue": "País cuja capital é Caracas",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MEXICO",
+      "clue": "País cuja capital tem o mesmo nome",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CANADA",
+      "clue": "País cuja capital é Ottawa",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FRANCA",
+      "clue": "País cuja capital é Paris",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ALEMANHA",
+      "clue": "País cuja capital é Berlim",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ITALIA",
+      "clue": "País em formato de bota",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ESPANHA",
+      "clue": "País cuja capital é Madri",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "PORTUGAL",
+      "clue": "País cuja capital é Lisboa",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "NORUEGA",
+      "clue": "País conhecido por fiordes",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "SUECIA",
+      "clue": "País cuja capital é Estocolmo",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FINLANDIA",
+      "clue": "País cuja capital é Helsinque",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "GRECIA",
+      "clue": "País cuja capital é Atenas",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "EGITO",
+      "clue": "País famoso pelas pirâmides de Gizé",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MARROCOS",
+      "clue": "País cuja capital é Rabat",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "NIGERIA",
+      "clue": "País cuja capital é Abuja",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "QUENIA",
+      "clue": "País cuja capital é Nairóbi",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CHINA",
+      "clue": "País cuja capital é Pequim",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "JAPAO",
+      "clue": "País cuja capital é Tóquio",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "INDIA",
+      "clue": "País cuja capital é Nova Délhi",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "NEPAL",
+      "clue": "País do monte Everest",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "TAILANDIA",
+      "clue": "País cuja capital é Bangkok",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "AUSTRALIA",
+      "clue": "País cuja capital é Camberra",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "OCEANIA",
+      "clue": "Região que inclui Austrália e ilhas do Pacífico",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "AFRICA",
+      "clue": "Continente ao sul da Europa",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "EUROPA",
+      "clue": "Continente da França e Alemanha",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ASIA",
+      "clue": "Maior continente em área",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "AMERICA",
+      "clue": "Continente que inclui Brasil e Canadá",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ANTARTIDA",
+      "clue": "Continente gelado do polo sul",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CAPITAL",
+      "clue": "Cidade que abriga governo central",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "FRONTEIRA",
+      "clue": "Limite entre territórios",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ESTREITO",
+      "clue": "Passagem estreita de água",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "PENINSULA",
+      "clue": "Terra cercada por água em três lados",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ARQUIPELAGO",
+      "clue": "Conjunto de ilhas",
+      "category": "GEOGRAFIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "CONTINENTE",
+      "clue": "Grande extensão de terra",
+      "category": "GEOGRAFIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "HEMISFERIO",
+      "clue": "Metade do globo terrestre",
+      "category": "GEOGRAFIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "MERIDIANO",
+      "clue": "Linha imaginária que liga os polos",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "PARALELO",
+      "clue": "Círculo paralelo ao equador",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "LATITUDE",
+      "clue": "Distância angular do equador",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "LONGITUDE",
+      "clue": "Distância angular de Greenwich",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MAPA",
+      "clue": "Representação de uma região",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ATLAS",
+      "clue": "Livro de mapas",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "BUSSOLA",
+      "clue": "Instrumento que indica o norte",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CLIMA",
+      "clue": "Padrão de condições atmosféricas",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "RELEVO",
+      "clue": "Formas da superfície terrestre",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    }
+  ]
+}
