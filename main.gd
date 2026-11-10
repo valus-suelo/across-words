@@ -461,6 +461,10 @@ func _make_ui() -> void:
     direction_right.custom_minimum_size.y = 44
     direction_right.pressed.connect(func(): _set_preview_direction(1))
     direction_row.add_child(direction_right)
+    if preview_parent >= 0 and preview_parent < words.size():
+        var source: Dictionary = words[preview_parent]
+        var source_name: String = String(source["answer"])
+        selected_info.text = "ORIGEM: %s  ·  LETRA %d/%d" % [source_name, preview_anchor + 1, source_name.length()]
     direction_left.visible = false
     direction_right.visible = false
     next_clue_button = Button.new()
@@ -1112,8 +1116,16 @@ func _choose(index: int) -> void:
 func _click_tile(p: Vector2i) -> void:
     if game_over:
         return
-    # Casas resolvidas são clicáveis inclusive quando uma prévia as cruza.
+    # Prioriza a palavra de origem atual em casas compartilhadas.
+    # Nunca seleciona uma palavra antiga bloqueada se uma nova pode ramificar.
+    var eligible: Array[int] = []
+    if preview_parent >= 0 and preview_parent < words.size():
+        eligible.append(preview_parent)
     for i in range(words.size() - 1, -1, -1):
+        if not eligible.has(i):
+            eligible.append(i)
+    var blocked_hit: bool = false
+    for i in eligible:
         var word: Dictionary = words[i]
         if word["state"] != "solved":
             continue
@@ -1121,10 +1133,13 @@ func _click_tile(p: Vector2i) -> void:
         if anchor < 0:
             continue
         if bool(word["spawned"]) and not extra_branch_armed:
-            _message("Esta palavra já ramificou. Compre um ramo extra para reutilizá-la.")
-            return
+            blocked_hit = true
+            continue
         last_navigation_arrow = Vector2i.ZERO
         _select_anchor(i, anchor)
+        return
+    if blocked_hit:
+        _message("Esta palavra ja foi usada. Selecione uma letra iluminada da palavra atual.")
         return
     for i in range(words.size() - 1, -1, -1):
         if words[i]["state"] == "active" and _cells(words[i]).has(p):
@@ -1468,6 +1483,14 @@ func _refresh_board() -> void:
         focus_cell = focus_cells[next_index]
     elif preview_parent >= 0 and preview_anchor >= 0:
         focus_cell = _cells(words[preview_parent])[preview_anchor]
+    # Marca TODAS as letras da palavra que pode gerar o proximo ramo.
+    # Palavras anteriores permanecem no tabuleiro, mas sem este destaque.
+    if preview_parent >= 0 and preview_parent < words.size():
+        var source_word: Dictionary = words[preview_parent]
+        if source_word["state"] == "solved" and (not bool(source_word["spawned"]) or extra_branch_armed):
+            for source_cell in _cells(source_word):
+                if board.has(source_cell):
+                    tile_state[source_cell] = "branch_source"
     # A letra de cruzamento da palavra antiga permanece iluminada,
     # mesmo quando a proxima letra da palavra nova esta em outra casa.
     if preview_parent >= 0 and preview_parent < words.size():
@@ -1495,6 +1518,8 @@ func _refresh_board() -> void:
                 mat = _material_cached("focus", CURRENT_LETTER, true)
             "anchor_focus":
                 mat = _material_cached("anchor_focus", Color("#f2c79d"), true)
+            "branch_source":
+                mat = _material_cached("branch_source", Color("#a9d8cc"), true)
             _:
                 if level_mode and p == exit_cell:
                     mat = _material_cached("exit", Color("#6ab79a"), true)
@@ -1503,7 +1528,7 @@ func _refresh_board() -> void:
         tile.material_override = mat
         if letters.has(p):
             _draw_text(p, String(letters[p]), Color("#342632"), 0.64)
-        elif kind == "selected" or kind == "active" or kind == "focus" or kind == "anchor_focus":
+        elif kind == "selected" or kind == "active" or kind == "focus" or kind == "anchor_focus" or kind == "branch_source":
             _draw_text(p, "·", Color("#f7d7db"), 0.42, 66)
         elif level_mode and p == exit_cell:
             _draw_text(p, "⇧", Color("#c7f6d5"), 0.55, 84)
