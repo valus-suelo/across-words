@@ -267,13 +267,13 @@ func _make_ui() -> void:
     indicators.alignment = BoxContainer.ALIGNMENT_CENTER
     indicators.add_theme_constant_override("separation", 22)
     top_column.add_child(indicators)
-    time_label = _make_label("⌛ 0:38", 24)
-    crown_label = _make_label("♛ ○ ○ ○", 24)
-    energy_label = _make_label("⚡ 10/10", 24)
+    time_label = _make_label("TEMPO 0:38", 19)
+    crown_label = _make_label("COROAS 0/3", 19)
+    energy_label = _make_label("ENERGIA 10/10", 19)
     indicators.add_child(time_label)
     indicators.add_child(crown_label)
     indicators.add_child(energy_label)
-    score_label = _make_label("★ 0  ·  ◆ 0  ·  COMBO ×0", 19)
+    score_label = _make_label("PONTOS 0  |  MOEDAS 0  |  COMBO 0", 17)
     top_column.add_child(score_label)
     clue_label = _make_label("Resolva a palavra destacada para começar.", 21)
     clue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -326,7 +326,7 @@ func _make_ui() -> void:
     direction_left.visible = false
     direction_right.visible = false
     next_clue_button = Button.new()
-    next_clue_button.text = "OUTRA PISTA ↻"
+    next_clue_button.text = "OUTRA PISTA"
     next_clue_button.custom_minimum_size.y = 44
     next_clue_button.pressed.connect(_next_preview_clue)
     direction_row.add_child(next_clue_button)
@@ -341,7 +341,7 @@ func _make_ui() -> void:
     confirm.pressed.connect(_submit)
     actions.add_child(confirm)
     var buy := Button.new()
-    buy.text = "+ RAMO (◆3)"
+    buy.text = "+ RAMO (3)"
     buy.custom_minimum_size = Vector2(168, 58)
     buy.add_theme_font_size_override("font_size", 18)
     buy.pressed.connect(_buy_path)
@@ -367,7 +367,7 @@ func _make_ui() -> void:
     mode_button.pressed.connect(_show_main_menu)
     footer.add_child(mode_button)
     var restart := Button.new()
-    restart.text = "↻ Reiniciar"
+    restart.text = "REINICIAR"
     restart.pressed.connect(_new_game)
     footer.add_child(restart)
 
@@ -469,10 +469,10 @@ func _add_keyboard_row(parent: VBoxContainer, letters: String, with_erase: bool 
         keys.add_child(key_button)
     if with_erase:
         var erase_button := Button.new()
-        erase_button.text = "⌫"
+        erase_button.text = "APAGAR"
         erase_button.tooltip_text = "Apagar última letra"
         erase_button.focus_mode = Control.FOCUS_NONE
-        erase_button.custom_minimum_size = Vector2(72, 52)
+        erase_button.custom_minimum_size = Vector2(100, 52)
         erase_button.add_theme_font_size_override("font_size", 24)
         erase_button.pressed.connect(_erase_character)
         keys.add_child(erase_button)
@@ -1174,11 +1174,11 @@ func _refresh_board() -> void:
         elif level_mode and p == exit_cell:
             _draw_text(p, "⇧", Color("#c7f6d5"), 0.55, 84)
         elif pickups.has(p):
-            var symbol: String = "◆"
+            var symbol: String = "$"
             match pickups[p]:
                 "energy": symbol = "+"
-                "time": symbol = "⌛"
-                "crown": symbol = "♛"
+                "time": symbol = "T"
+                "crown": symbol = "C"
             _draw_text(p, symbol, Color("#fff0dc"), 0.50, 64)
     _update_hud()
     _update_letter_slots()
@@ -1201,13 +1201,10 @@ func _update_hud() -> void:
     direction_left.visible = false
     direction_right.visible = false
     next_clue_button.visible = preview_choices.size() > 1
-    time_label.text = "⌛ %d:%02d" % [seconds / 60, seconds % 60]
-    var crown_text: String = "♛ "
-    for i in range(3):
-        crown_text += "● " if i < crowns else "○ "
-    crown_label.text = crown_text
-    energy_label.text = "⚡ %d/%d" % [energy, ENERGY_MAX]
-    score_label.text = "★ %d     ◆ %d     COMBO ×%d" % [points, coins, combo]
+    time_label.text = "TEMPO %d:%02d" % [seconds / 60, seconds % 60]
+    crown_label.text = "COROAS %d/3" % crowns
+    energy_label.text = "ENERGIA %d/%d" % [energy, ENERGY_MAX]
+    score_label.text = "PONTOS %d  |  MOEDAS %d  |  COMBO %d" % [points, coins, combo]
 
 func _message(value: String) -> void:
     message_label.text = value
