@@ -13,7 +13,9 @@ const BG := Color("#2a222d")
 const BASE := Color("#594551")
 const ACTIVE := Color("#a4778d")
 const SELECTED := Color("#e4aeb3")
-const SOLVED := Color("#d7afbb")
+const SOLVED := Color("#876a79")
+const CURRENT_LETTER := Color("#ffe2a1")
+const MAP_VISION_MOVES := 4
 const GOLD := Color("#e6b96d")
 const RED := Color("#df667b")
 
@@ -146,6 +148,7 @@ var selected_info: Label
 var letter_slots: HBoxContainer
 var material_cache: Dictionary = {}
 var last_expire_update: int = -1
+var map_vision_moves: int = 0
 var path_time: float = STORY_MAP_TIME
 var menu_overlay: ColorRect
 var mode_button: Button
@@ -283,7 +286,7 @@ func _layout_hud() -> void:
     hud_bottom.offset_top = -365.0 if wide else -405.0
     hud_bottom.offset_bottom = 0.0
 
-    var key_height: float = 43.0 if wide else 47.0
+    var key_height: float = 57.0 if wide else 60.0
     var key_font: int = 20 if wide else 21
     for key_row in hud_keyboard.get_children():
         for key_button in key_row.get_children():
@@ -304,7 +307,7 @@ func _layout_hud() -> void:
         hud_story_button.add_theme_font_size_override("font_size", 25 if wide else 20)
         hud_infinite_button.add_theme_font_size_override("font_size", 25 if wide else 20)
 
-    camera.size = 17.0 if wide else 20.0
+    camera.size = (23.0 if wide else 27.0) if map_vision_moves > 0 else (17.0 if wide else 20.0)
     visible_origin = Vector2i(999999, 999999)
     _sync_visible_board(true)
 
@@ -358,6 +361,7 @@ func _make_ui() -> void:
     column.add_theme_constant_override("separation", 3)
     bottom.add_child(column)
     selected_info = _make_label("TOQUE NUMA PALAVRA OU LETRA", 16)
+    selected_info.visible = false
     column.add_child(selected_info)
     entry = LineEdit.new()
     entry.placeholder_text = "Entrada interna"
@@ -376,6 +380,7 @@ func _make_ui() -> void:
     letter_slots = HBoxContainer.new()
     letter_slots.alignment = BoxContainer.ALIGNMENT_CENTER
     letter_slots.add_theme_constant_override("separation", 4)
+    letter_slots.visible = false
     column.add_child(letter_slots)
     var direction_row := HBoxContainer.new()
     direction_row.add_theme_constant_override("separation", 8)
@@ -626,6 +631,8 @@ func _new_game() -> void:
     regen = 0.0
     elapsed = 0.0
     path_time = STORY_MAP_TIME if level_mode else INFINITE_MAP_TIME
+    map_vision_moves = 0
+    _layout_hud()
     typed_buffer = ""
     camera_target = Vector3(0, 25, 1.4)
     camera.position = camera_target
@@ -637,6 +644,7 @@ func _new_game() -> void:
     _spawn_pickup(Vector2i(4, -2), "coin")
     _spawn_pickup(Vector2i(-4, 3), "energy")
     _spawn_pickup(Vector2i(3, 4), "crown")
+    _spawn_pickup(Vector2i(-5, -3), "vision")
     _assign_entry("")
     entry.release_focus()
     _sync_visible_board(true)
@@ -1020,6 +1028,10 @@ func _submit() -> void:
         words[chosen] = word
         last_solved_word = chosen
         last_navigation_arrow = Vector2i.ZERO
+    if map_vision_moves > 0:
+        map_vision_moves -= 1
+        if map_vision_moves == 0:
+            _layout_hud()
     energy -= 1
     combo += 1
     # Tempo é global do mapa: resolver palavras NÃO reinicia o relógio.
@@ -1079,6 +1091,10 @@ func _collect_pickups() -> void:
                 energy = mini(ENERGY_MAX, energy + 3)
             "time":
                 path_time += 12.0
+            "vision":
+                map_vision_moves = MAP_VISION_MOVES + 1
+                _message("Visão ampliada por %d palavras!" % MAP_VISION_MOVES)
+                _layout_hud()
         pickups.erase(p)
     if rng.randf() < 0.35:
         var last: Dictionary = words.back()
@@ -1087,7 +1103,7 @@ func _collect_pickups() -> void:
         for attempt in range(20):
             var p := center + Vector2i(rng.randi_range(-6, 6), rng.randi_range(-6, 6))
             if not solved_cells.has(p) and not pickups.has(p):
-                _spawn_pickup(p, ["coin", "energy", "time"][rng.randi_range(0, 2)])
+                _spawn_pickup(p, ["coin", "energy", "time", "vision"][rng.randi_range(0, 3)])
                 break
 
 func _spawn_pickup(p: Vector2i, kind: String) -> void:
@@ -1265,6 +1281,7 @@ func _refresh_board() -> void:
                 "energy": symbol = "+"
                 "time": symbol = "T"
                 "crown": symbol = "C"
+                "vision": symbol = "V"
             _draw_text(p, symbol, Color("#fff0dc"), 0.50, 64)
     _update_hud()
     _update_letter_slots()
@@ -1290,7 +1307,7 @@ func _update_hud() -> void:
     time_label.text = "TEMPO %d:%02d" % [seconds / 60, seconds % 60]
     crown_label.text = "COROAS %d/3" % crowns
     energy_label.text = "ENERGIA %d/%d" % [energy, ENERGY_MAX]
-    score_label.text = "PONTOS %d  |  MOEDAS %d  |  COMBO %d" % [points, coins, combo]
+    score_label.text = "PONTOS %d  |  MOEDAS %d  |  COMBO %d%s" % [points, coins, combo, "  |  VISAO %d" % map_vision_moves if map_vision_moves > 0 else ""]
 
 func _message(value: String) -> void:
     message_label.text = value
@@ -1465,11 +1482,7 @@ func _unhandled_input(event: InputEvent) -> void:
     if game_over or (is_instance_valid(menu_overlay) and menu_overlay.visible):
         return
     if event is InputEventMouseButton:
-        if event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
-            camera.size = maxf(13.0, camera.size - 1.0)
-        elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-            camera.size = minf(40.0, camera.size + 1.0)
-        elif event.button_index == MOUSE_BUTTON_LEFT:
+        if event.button_index == MOUSE_BUTTON_LEFT:
             if event.pressed:
                 _start_pointer(event.position)
             else:
