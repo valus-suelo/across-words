@@ -221,7 +221,7 @@ func _make_world() -> void:
     add_child(light)
     camera = Camera3D.new()
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-    camera.size = 25.0
+    camera.size = 20.0
     camera.position = Vector3(0, 25, 1.4)
     camera.rotation_degrees = Vector3(-90, 0, 0)
     camera.current = true
@@ -257,33 +257,29 @@ func _layout_hud() -> void:
     var view_size: Vector2 = get_viewport().get_visible_rect().size
     if view_size.x <= 0.0 or view_size.y <= 0.0:
         return
-    var desktop: bool = view_size.x > view_size.y * 1.15
+    var landscape: bool = view_size.x > view_size.y
+    # Mesma composicao em todas as plataformas: HUD superior, mapa, teclado inferior.
     hud_top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
     hud_top.offset_left = 0.0
     hud_top.offset_right = 0.0
     hud_top.offset_top = 0.0
-    hud_top.offset_bottom = 128.0 if desktop else 152.0
-    if desktop:
-        hud_bottom.anchor_left = 1.0
-        hud_bottom.anchor_right = 1.0
-        hud_bottom.anchor_top = 0.0
-        hud_bottom.anchor_bottom = 1.0
-        hud_bottom.offset_left = -420.0
-        hud_bottom.offset_right = 0.0
-        hud_bottom.offset_top = 128.0
-        hud_bottom.offset_bottom = 0.0
-    else:
-        hud_bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-        hud_bottom.offset_left = 0.0
-        hud_bottom.offset_right = 0.0
-        hud_bottom.offset_top = -430.0
-        hud_bottom.offset_bottom = 0.0
-    var narrow: bool = view_size.x < 620.0
+    hud_top.offset_bottom = 115.0 if landscape else 152.0
+    hud_bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+    hud_bottom.offset_left = 0.0
+    hud_bottom.offset_right = 0.0
+    hud_bottom.offset_top = -300.0 if landscape else -430.0
+    hud_bottom.offset_bottom = 0.0
+    var key_height: float = 37.0 if landscape else 42.0
+    var key_font: int = 18 if landscape else 20
     for key_row in hud_keyboard.get_children():
         for key_button in key_row.get_children():
             if key_button is Button:
-                key_button.custom_minimum_size.y = 40.0 if narrow else 46.0
-                key_button.add_theme_font_size_override("font_size", 17 if narrow else 20)
+                key_button.custom_minimum_size.y = key_height
+                key_button.add_theme_font_size_override("font_size", key_font)
+    # Mais zoom que o prototipo anterior; a area de quadrados acompanha a tela.
+    camera.size = 17.0 if landscape else 20.0
+    visible_origin = Vector2i(999999, 999999)
+    _sync_visible_board(true)
 
 func _make_ui() -> void:
     var layer := CanvasLayer.new()
@@ -1538,8 +1534,13 @@ func _sync_visible_board(force: bool = false) -> void:
         return
     visible_origin = center
     var needed: Dictionary = {}
-    for y in range(center.y - VISIBLE_RADIUS_Y, center.y + VISIBLE_RADIUS_Y + 1):
-        for x in range(center.x - VISIBLE_RADIUS_X, center.x + VISIBLE_RADIUS_X + 1):
+    # A malha cobre toda a largura projetada da camera, mesmo em ultrawide.
+    var view_size: Vector2 = get_viewport().get_visible_rect().size
+    var aspect: float = view_size.x / maxf(1.0, view_size.y)
+    var radius_x: int = maxi(VISIBLE_RADIUS_X, ceili(camera.size * aspect / (2.0 * GAP)) + 4)
+    var radius_y: int = maxi(VISIBLE_RADIUS_Y, ceili(camera.size / (2.0 * GAP)) + 4)
+    for y in range(center.y - radius_y, center.y + radius_y + 1):
+        for x in range(center.x - radius_x, center.x + radius_x + 1):
             needed[Vector2i(x, y)] = true
     for p in board.keys():
         if not needed.has(p):
