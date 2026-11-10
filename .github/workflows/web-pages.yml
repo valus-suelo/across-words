@@ -43,20 +43,21 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.local/share/godot/export_templates/4.7.2.stable
-          key: godot-4.7.2-web-templates-v1
+          key: godot-4.7.2-web-nothreads-v2
       - name: Instalar templates Web oficiais
         shell: bash
         run: |
           set -euo pipefail
           TEMPLATES="$HOME/.local/share/godot/export_templates/4.7.2.stable"
           mkdir -p "$TEMPLATES"
-          if [[ ! -s "$TEMPLATES/web_release.zip" ]]; then
+          if [[ ! -s "$TEMPLATES/web_nothreads_release.zip" || ! -s "$TEMPLATES/web_nothreads_debug.zip" ]]; then
             VER=4.7.2-stable
             curl -fL --retry 3 --retry-delay 5 "https://github.com/godotengine/godot-builds/releases/download/${VER}/Godot_v${VER}_export_templates.tpz" -o /tmp/templates.tpz
-            unzip -p /tmp/templates.tpz templates/web_release.zip > "$TEMPLATES/web_release.zip"
-            unzip -p /tmp/templates.tpz templates/web_debug.zip > "$TEMPLATES/web_debug.zip"
+            unzip -p /tmp/templates.tpz templates/web_nothreads_release.zip > "$TEMPLATES/web_nothreads_release.zip"
+            unzip -p /tmp/templates.tpz templates/web_nothreads_debug.zip > "$TEMPLATES/web_nothreads_debug.zip"
           fi
-          test -s "$TEMPLATES/web_release.zip"
+          test -s "$TEMPLATES/web_nothreads_release.zip"
+          test -s "$TEMPLATES/web_nothreads_debug.zip"
           echo "4.7.2.stable" > "$TEMPLATES/version.txt"
       - name: Importar recursos e exportar HTML5
         shell: bash
