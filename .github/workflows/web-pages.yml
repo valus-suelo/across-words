@@ -1,0 +1,87 @@
+name: Publicar jogo no GitHub Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "main.gd"
+      - "main.tscn"
+      - "project.godot"
+      - "export_presets.cfg"
+      - ".github/workflows/web-pages.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Obter projeto
+        uses: actions/checkout@v4
+      - name: Baixar Godot 4.7.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER=4.7.2-stable
+          curl -fL --retry 3 "https://github.com/godotengine/godot-builds/releases/download/${VER}/Godot_v${VER}_linux.x86_64.zip" -o /tmp/godot.zip
+          mkdir -p /tmp/godot-bin
+          unzip -q /tmp/godot.zip -d /tmp/godot-bin
+          GODOT="$(find /tmp/godot-bin -type f -name 'Godot_v*_linux.x86_64' | head -1)"
+          test -n "$GODOT"
+          chmod +x "$GODOT"
+          echo "GODOT_BIN=$GODOT" >> "$GITHUB_ENV"
+      - name: Cache dos templates Web
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/godot/export_templates/4.7.2.stable
+          key: godot-4.7.2-web-templates-v1
+      - name: Instalar templates Web oficiais
+        shell: bash
+        run: |
+          set -euo pipefail
+          TEMPLATES="$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          mkdir -p "$TEMPLATES"
+          if [[ ! -s "$TEMPLATES/web_release.zip" ]]; then
+            VER=4.7.2-stable
+            curl -fL --retry 3 --retry-delay 5 "https://github.com/godotengine/godot-builds/releases/download/${VER}/Godot_v${VER}_export_templates.tpz" -o /tmp/templates.tpz
+            unzip -p /tmp/templates.tpz templates/web_release.zip > "$TEMPLATES/web_release.zip"
+            unzip -p /tmp/templates.tpz templates/web_debug.zip > "$TEMPLATES/web_debug.zip"
+          fi
+          test -s "$TEMPLATES/web_release.zip"
+          echo "4.7.2.stable" > "$TEMPLATES/version.txt"
+      - name: Importar recursos e exportar HTML5
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$GODOT_BIN" --headless --path . --editor --quit
+          mkdir -p build/web
+          "$GODOT_BIN" --headless --path . --export-release "Web" build/web/index.html
+          test -s build/web/index.html
+          test -f build/web/index.wasm
+          touch build/web/.nojekyll
+          ls -lah build/web/
+      - name: Preparar GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Enviar arquivos do site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v4
