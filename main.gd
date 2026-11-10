@@ -661,7 +661,7 @@ func _new_game() -> void:
     enemy_cell = Vector2i(-100, -100)
     var initial: Array = DICTIONARY[rng.randi_range(0, DICTIONARY.size() - 1)]
     var first_answer: String = String(initial[0])
-    var first: Dictionary = {"answer": first_answer, "clue": String(initial[1]), "start": Vector2i(-first_answer.length() / 2, 0), "dir": Vector2i(1, 0), "time": WORD_TIME, "state": "active", "spawned": false}
+    var first: Dictionary = {"answer": first_answer, "clue": String(initial[1]), "start": Vector2i(-int(first_answer.length() / 2), 0), "dir": Vector2i(1, 0), "time": WORD_TIME, "state": "active", "spawned": false}
     words.append(first)
     used[first_answer] = true
     if level_mode:
@@ -675,6 +675,66 @@ func _new_game() -> void:
     _choose(0)
     _refresh_board()
     _message("Comece com %s. %s" % [first_answer, "Encontre a saída!" if level_mode else "Sobreviva o máximo possível!"])
+
+# Constrói uma rota possível sem revelar nem fixar as palavras no mapa.
+# A simulação é revertida; o jogador continua livre para escolher seus ramos.
+func _plan_level() -> void:
+    level_route.clear()
+    var first_word: Dictionary = words[0].duplicate(true)
+    var best_route: Array[Vector2i] = []
+    var best_exit: Vector2i = Vector2i(0, -6)
+    var best_distance: int = -1
+    var target_steps: int = mini(2 + level_number, 10)
+    for attempt in range(28):
+        words.resize(1)
+        words[0] = first_word.duplicate(true)
+        words[0]["state"] = "solved"
+        var route: Array[Vector2i] = _cells(words[0])
+        var parent_idx: int = 0
+        for depth in range(target_steps):
+            var parent: Dictionary = words[parent_idx]
+            var candidates: Array[Dictionary] = []
+            var parent_cells: Array[Vector2i] = _cells(parent)
+            var directions: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if Vector2i(parent["dir"]).x != 0 else [Vector2i(-1, 0), Vector2i(1, 0)]
+            for anchor in range(parent_cells.size()):
+                for direction in directions:
+                    candidates.append_array(_possible_children(parent_idx, anchor, direction))
+            if candidates.is_empty():
+                break
+            var selected: Dictionary = candidates[rng.randi_range(0, candidates.size() - 1)].duplicate(true)
+            selected["state"] = "solved"
+            parent["spawned"] = true
+            words[parent_idx] = parent
+            words.append(selected)
+            parent_idx = words.size() - 1
+            for cell in _cells(selected):
+                if not route.has(cell):
+                    route.append(cell)
+        if words.size() > 1:
+            var start_cells: Array[Vector2i] = _cells(words[0])
+            for cell in _cells(words.back()):
+                if start_cells.has(cell):
+                    continue
+                var distance: int = absi(cell.x) + absi(cell.y)
+                if distance > best_distance:
+                    best_distance = distance
+                    best_exit = cell
+                    best_route = route.duplicate()
+        if best_distance >= 4 + level_number * 3:
+            break
+    words.resize(1)
+    words[0] = first_word
+    exit_cell = best_exit
+    level_route = best_route
+    # As coroas ficam em casas alcançáveis pela rota planejada.
+    var candidates: Array[Vector2i] = []
+    var initial_cells: Array[Vector2i] = _cells(first_word)
+    for cell in level_route:
+        if not initial_cells.has(cell) and cell != exit_cell:
+            candidates.append(cell)
+    candidates.shuffle()
+    for i in range(mini(3, candidates.size())):
+        _spawn_pickup(candidates[i], "crown")
 
 func _cells(word: Dictionary) -> Array[Vector2i]:
     var result: Array[Vector2i] = []
