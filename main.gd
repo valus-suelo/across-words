@@ -723,7 +723,7 @@ func _new_game() -> void:
     var initial: Dictionary = _choose_start_word()
     current_category = String(initial["category"])
     var first_answer: String = String(initial["answer"])
-    var first: Dictionary = {"answer": first_answer, "clue": String(initial["clue"]), "start": Vector2i(-int(first_answer.length() / 2), 0), "dir": Vector2i(1, 0), "time": WORD_TIME, "state": "active", "spawned": false}
+    var first: Dictionary = {"answer": first_answer, "clue": String(initial["clue"]), "category": current_category, "difficulty": int(initial["difficulty"]), "start": Vector2i(-int(first_answer.length() / 2), 0), "dir": Vector2i(1, 0), "time": WORD_TIME, "state": "active", "spawned": false}
     words.append(first)
     used[first_answer] = true
     if level_mode:
@@ -858,7 +858,7 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
             continue
         var answer: String = String(item["answer"])
         var trial: Dictionary = {
-            "answer": answer, "clue": String(item["clue"]), "start": crossing,
+            "answer": answer, "clue": String(item["clue"]), "category": String(item["category"]), "difficulty": int(item["difficulty"]), "start": crossing,
             "dir": direction, "time": WORD_TIME,
             "state": "active", "spawned": false
         }
@@ -881,6 +881,10 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
             choices.append(trial)
     # Candidatas maiores primeiro, sem bloquear alternativas pequenas.
     choices.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+        var a_theme: bool = String(a.get("category", "")) == current_category
+        var b_theme: bool = String(b.get("category", "")) == current_category
+        if a_theme != b_theme:
+            return a_theme
         return String(a["answer"]).length() > String(b["answer"]).length())
     return choices
 
@@ -1513,11 +1517,11 @@ func _refresh_board() -> void:
 func _update_hud() -> void:
     var seconds: int = maxi(0, int(ceil(path_time)))
     if not preview.is_empty():
-        clue_label.text = "%s  (%d letras)" % [preview["clue"], String(preview["answer"]).length()]
+        clue_label.text = "[%s] %s  (%d letras)" % [String(preview.get("category", "GERAL")).capitalize(), preview["clue"], String(preview["answer"]).length()]
         selected_info.text = "RASCUNHO · %d/%d PISTAS" % [preview_choice_index + 1, preview_choices.size()]
     elif chosen >= 0 and chosen < words.size() and words[chosen]["state"] == "active":
         var word: Dictionary = words[chosen]
-        clue_label.text = "%s  (%d letras)" % [word["clue"], String(word["answer"]).length()]
+        clue_label.text = "[%s] %s  (%d letras)" % [String(word.get("category", "GERAL")).capitalize(), word["clue"], String(word["answer"]).length()]
         selected_info.text = "PALAVRA SELECIONADA"
     elif preview_parent >= 0:
         clue_label.text = "Nenhuma palavra do dicionário neste sentido; experimente outra direção."
