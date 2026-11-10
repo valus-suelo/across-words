@@ -669,6 +669,8 @@ func _new_game() -> void:
     _spawn_pickup(Vector2i(4, -2), "coin")
     _spawn_pickup(Vector2i(-4, 3), "energy")
     _spawn_pickup(Vector2i(-5, -3), "vision")
+    if not level_mode:
+        _spawn_pickup(Vector2i(3, 4), "crown")
     _assign_entry("")
     entry.release_focus()
     _sync_visible_board(true)
@@ -732,6 +734,10 @@ func _plan_level() -> void:
     for cell in level_route:
         if not initial_cells.has(cell) and cell != exit_cell:
             candidates.append(cell)
+    if candidates.size() < 3:
+        for cell in level_route:
+            if cell != exit_cell and not candidates.has(cell):
+                candidates.append(cell)
     candidates.shuffle()
     for i in range(mini(3, candidates.size())):
         _spawn_pickup(candidates[i], "crown")
@@ -1188,7 +1194,10 @@ func _collect_pickups() -> void:
         for attempt in range(20):
             var p := center + Vector2i(rng.randi_range(-6, 6), rng.randi_range(-6, 6))
             if not solved_cells.has(p) and not pickups.has(p):
-                _spawn_pickup(p, ["coin", "energy", "time", "vision"][rng.randi_range(0, 3)])
+                var kinds: Array[String] = ["coin", "energy", "time", "vision"]
+                if not level_mode:
+                    kinds.append("crown")
+                _spawn_pickup(p, kinds[rng.randi_range(0, kinds.size() - 1)])
                 break
 
 func _spawn_pickup(p: Vector2i, kind: String) -> void:
