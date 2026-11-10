@@ -127,6 +127,12 @@ var camera: Camera3D
 var hud_top: PanelContainer
 var hud_bottom: PanelContainer
 var hud_keyboard: VBoxContainer
+var hud_menu_panel: PanelContainer
+var hud_menu_title: Label
+var hud_menu_subtitle: Label
+var hud_menu_hint: Label
+var hud_story_button: Button
+var hud_infinite_button: Button
 var ui: Control
 var score_label: Label
 var status_label: Label
@@ -254,30 +260,51 @@ func _make_label(text_value: String, size: int = 23) -> Label:
 func _layout_hud() -> void:
     if not is_instance_valid(hud_top) or not is_instance_valid(hud_bottom):
         return
-    var view_size: Vector2 = get_viewport().get_visible_rect().size
-    if view_size.x <= 0.0 or view_size.y <= 0.0:
+    var screen: Vector2 = get_viewport().get_visible_rect().size
+    if screen.x < 1.0 or screen.y < 1.0:
         return
-    var landscape: bool = view_size.x > view_size.y
-    # Mesma composicao em todas as plataformas: HUD superior, mapa, teclado inferior.
+    var wide: bool = screen.x > screen.y
+    var compact: bool = screen.x < 660.0
     hud_top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
     hud_top.offset_left = 0.0
     hud_top.offset_right = 0.0
     hud_top.offset_top = 0.0
-    hud_top.offset_bottom = 115.0 if landscape else 152.0
-    hud_bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-    hud_bottom.offset_left = 0.0
-    hud_bottom.offset_right = 0.0
-    hud_bottom.offset_top = -385.0 if landscape else -430.0
+    hud_top.offset_bottom = 112.0 if wide else 145.0
+
+    # Teclado centralizado, com largura maxima (como no Termo).
+    # Nao estica as teclas ate as bordas de monitores ultrawide.
+    var keyboard_width: float = minf(screen.x - 12.0, 900.0 if wide else 720.0)
+    hud_bottom.anchor_left = 0.5
+    hud_bottom.anchor_right = 0.5
+    hud_bottom.anchor_top = 1.0
+    hud_bottom.anchor_bottom = 1.0
+    hud_bottom.offset_left = -keyboard_width * 0.5
+    hud_bottom.offset_right = keyboard_width * 0.5
+    hud_bottom.offset_top = -365.0 if wide else -405.0
     hud_bottom.offset_bottom = 0.0
-    var key_height: float = 37.0 if landscape else 42.0
-    var key_font: int = 18 if landscape else 20
+
+    var key_height: float = 43.0 if wide else 47.0
+    var key_font: int = 20 if wide else 21
     for key_row in hud_keyboard.get_children():
         for key_button in key_row.get_children():
             if key_button is Button:
                 key_button.custom_minimum_size.y = key_height
                 key_button.add_theme_font_size_override("font_size", key_font)
-    # Mais zoom que o prototipo anterior; a area de quadrados acompanha a tela.
-    camera.size = 17.0 if landscape else 20.0
+
+    if is_instance_valid(hud_menu_panel):
+        # Tamanho maior no computador, limitado pelo viewport para nao cortar no celular.
+        var menu_width: float = minf(screen.x - 28.0, 900.0 if wide else 590.0)
+        var menu_height: float = minf(screen.y - 28.0, 620.0 if wide else 530.0)
+        hud_menu_panel.custom_minimum_size = Vector2(menu_width, menu_height)
+        hud_menu_title.add_theme_font_size_override("font_size", 56 if wide else 40)
+        hud_menu_subtitle.add_theme_font_size_override("font_size", 28 if wide else 23)
+        hud_menu_hint.add_theme_font_size_override("font_size", 20 if wide else 17)
+        hud_story_button.custom_minimum_size.y = 92.0 if wide else 75.0
+        hud_infinite_button.custom_minimum_size.y = 92.0 if wide else 75.0
+        hud_story_button.add_theme_font_size_override("font_size", 25 if wide else 20)
+        hud_infinite_button.add_theme_font_size_override("font_size", 25 if wide else 20)
+
+    camera.size = 17.0 if wide else 20.0
     visible_origin = Vector2i(999999, 999999)
     _sync_visible_board(true)
 
@@ -465,6 +492,7 @@ func _make_ui() -> void:
     menu_center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     menu_overlay.add_child(menu_center)
     var menu_panel := PanelContainer.new()
+    hud_menu_panel = menu_panel
     menu_panel.custom_minimum_size = Vector2(590, 540)
     menu_panel.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#ad8193")))
     menu_center.add_child(menu_panel)
@@ -472,22 +500,27 @@ func _make_ui() -> void:
     menu_col.add_theme_constant_override("separation", 22)
     menu_panel.add_child(menu_col)
     var menu_title := _make_label("ACROSS-WORDS", 42)
+    hud_menu_title = menu_title
     menu_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     menu_col.add_child(menu_title)
     var subtitle := _make_label("Escolha sua aventura", 23)
+    hud_menu_subtitle = subtitle
     subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     menu_col.add_child(subtitle)
     var story := Button.new()
+    hud_story_button = story
     story.text = "HISTÓRIA  ·  ENCONTRE A SAÍDA"
     story.custom_minimum_size.y = 80
     story.pressed.connect(func() -> void: _start_mode(true))
     menu_col.add_child(story)
     var infinite := Button.new()
+    hud_infinite_button = infinite
     infinite.text = "INFINITO  ·  SOBREVIVA"
     infinite.custom_minimum_size.y = 80
     infinite.pressed.connect(func() -> void: _start_mode(false))
     menu_col.add_child(infinite)
     var hint := _make_label("Um relógio por mapa. O tempo não reinicia ao resolver palavras.", 18)
+    hud_menu_hint = hint
     hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     menu_col.add_child(hint)
