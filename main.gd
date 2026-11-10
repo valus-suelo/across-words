@@ -124,6 +124,9 @@ var pickups: Dictionary = {}
 var game_over: bool = false
 var rng := RandomNumberGenerator.new()
 var camera: Camera3D
+var hud_top: PanelContainer
+var hud_bottom: PanelContainer
+var hud_keyboard: VBoxContainer
 var ui: Control
 var score_label: Label
 var status_label: Label
@@ -183,6 +186,8 @@ func _ready() -> void:
     rng.randomize()
     _make_world()
     _make_ui()
+    get_viewport().size_changed.connect(_layout_hud)
+    _layout_hud()
     _new_game()
     _show_main_menu()
 
@@ -245,6 +250,40 @@ func _make_label(text_value: String, size: int = 23) -> Label:
     label.add_theme_color_override("font_color", Color("#f9dfe0"))
     return label
 
+func _layout_hud() -> void:
+    if not is_instance_valid(hud_top) or not is_instance_valid(hud_bottom):
+        return
+    var view_size: Vector2 = get_viewport().get_visible_rect().size
+    if view_size.x <= 0.0 or view_size.y <= 0.0:
+        return
+    var desktop: bool = view_size.x > view_size.y * 1.15
+    hud_top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+    hud_top.offset_left = 0.0
+    hud_top.offset_right = 0.0
+    hud_top.offset_top = 0.0
+    hud_top.offset_bottom = 128.0 if desktop else 152.0
+    if desktop:
+        hud_bottom.anchor_left = 1.0
+        hud_bottom.anchor_right = 1.0
+        hud_bottom.anchor_top = 0.0
+        hud_bottom.anchor_bottom = 1.0
+        hud_bottom.offset_left = -420.0
+        hud_bottom.offset_right = 0.0
+        hud_bottom.offset_top = 128.0
+        hud_bottom.offset_bottom = 0.0
+    else:
+        hud_bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+        hud_bottom.offset_left = 0.0
+        hud_bottom.offset_right = 0.0
+        hud_bottom.offset_top = -430.0
+        hud_bottom.offset_bottom = 0.0
+    var narrow: bool = view_size.x < 620.0
+    for key_row in hud_keyboard.get_children():
+        for key_button in key_row.get_children():
+            if key_button is Button:
+                key_button.custom_minimum_size.y = 40.0 if narrow else 46.0
+                key_button.add_theme_font_size_override("font_size", 17 if narrow else 20)
+
 func _make_ui() -> void:
     var layer := CanvasLayer.new()
     add_child(layer)
@@ -254,18 +293,19 @@ func _make_ui() -> void:
     layer.add_child(ui)
 
     var top := PanelContainer.new()
+    hud_top = top
     top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-    top.offset_bottom = 196.0
+    top.offset_bottom = 152.0
     top.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#77545e")))
     ui.add_child(top)
     var top_column := VBoxContainer.new()
-    top_column.add_theme_constant_override("separation", 6)
+    top_column.add_theme_constant_override("separation", 3)
     top.add_child(top_column)
-    var title := _make_label("ACROSS-WORDS", 30)
+    var title := _make_label("ACROSS-WORDS", 24)
     top_column.add_child(title)
     var indicators := HBoxContainer.new()
     indicators.alignment = BoxContainer.ALIGNMENT_CENTER
-    indicators.add_theme_constant_override("separation", 22)
+    indicators.add_theme_constant_override("separation", 10)
     top_column.add_child(indicators)
     time_label = _make_label("TEMPO 0:38", 19)
     crown_label = _make_label("COROAS 0/3", 19)
@@ -275,18 +315,23 @@ func _make_ui() -> void:
     indicators.add_child(energy_label)
     score_label = _make_label("PONTOS 0  |  MOEDAS 0  |  COMBO 0", 17)
     top_column.add_child(score_label)
-    clue_label = _make_label("Resolva a palavra destacada para começar.", 21)
+    var clue_panel := PanelContainer.new()
+    clue_panel.add_theme_stylebox_override("panel", _panel_style(Color("#80566d"), Color("#edb8c7")))
+    top_column.add_child(clue_panel)
+    clue_label = _make_label("Resolva a palavra destacada para começar.", 22)
     clue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    clue_label.custom_minimum_size.y = 55
-    top_column.add_child(clue_label)
+    clue_label.custom_minimum_size.y = 45
+    clue_label.add_theme_color_override("font_color", Color("#fff1d8"))
+    clue_panel.add_child(clue_label)
 
     var bottom := PanelContainer.new()
+    hud_bottom = bottom
     bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-    bottom.offset_top = -535.0
+    bottom.offset_top = -430.0
     bottom.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#77545e")))
     ui.add_child(bottom)
     var column := VBoxContainer.new()
-    column.add_theme_constant_override("separation", 10)
+    column.add_theme_constant_override("separation", 5)
     bottom.add_child(column)
     selected_info = _make_label("TOQUE NUMA PALAVRA OU LETRA", 18)
     column.add_child(selected_info)
@@ -352,6 +397,7 @@ func _make_ui() -> void:
     column.add_child(message_label)
     # Teclado integrado à HUD: sempre visível durante a partida.
     var keyboard := VBoxContainer.new()
+    hud_keyboard = keyboard
     keyboard.add_theme_constant_override("separation", 5)
     column.add_child(keyboard)
     _add_keyboard_row(keyboard, "QWERTYUIOP")
