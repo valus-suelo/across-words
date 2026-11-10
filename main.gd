@@ -5,6 +5,8 @@ const VISIBLE_RADIUS_X := 9
 const VISIBLE_RADIUS_Y := 15
 const GAP := 1.02
 const WORD_TIME := 38.0
+const STORY_MAP_TIME := 300.0
+const INFINITE_MAP_TIME := 360.0
 const ENERGY_MAX := 10
 const REGEN_SECONDS := 20.0
 const BG := Color("#2a222d")
@@ -135,7 +137,9 @@ var selected_info: Label
 var letter_slots: HBoxContainer
 var material_cache: Dictionary = {}
 var last_expire_update: int = -1
-var path_time: float = WORD_TIME
+var path_time: float = STORY_MAP_TIME
+var menu_overlay: ColorRect
+var mode_button: Button
 var typed_buffer: String = ""
 var camera_target: Vector3 = Vector3(0, 25, 1.4)
 var visible_origin: Vector2i = Vector2i(999999, 999999)
@@ -181,6 +185,7 @@ func _ready() -> void:
     _make_world()
     _make_ui()
     _new_game()
+    _show_main_menu()
 
 func _material_cached(name: String, color: Color, glow: bool = false) -> StandardMaterial3D:
     if material_cache.has(name):
@@ -356,13 +361,9 @@ func _make_ui() -> void:
     column.add_child(footer)
     status_label = _make_label("Teclado: escrever · setas: selecionar · Backspace: apagar · Enter: confirmar", 14)
     footer.add_child(status_label)
-    var mode_button := Button.new()
-    mode_button.text = "MODO: ∞"
-    mode_button.pressed.connect(func() -> void:
-        level_mode = not level_mode
-        mode_button.text = "MODO: FASE" if level_mode else "MODO: ∞"
-        _new_game()
-    )
+    mode_button = Button.new()
+    mode_button.text = "MENU"
+    mode_button.pressed.connect(_show_main_menu)
     footer.add_child(mode_button)
     var restart := Button.new()
     restart.text = "↻ Reiniciar"
@@ -400,7 +401,68 @@ func _make_ui() -> void:
     result_action.custom_minimum_size.y = 72
     result_action.pressed.connect(_result_continue)
     result_column.add_child(result_action)
+    var result_menu := Button.new()
+    result_menu.text = "VOLTAR AO MENU"
+    result_menu.custom_minimum_size.y = 56
+    result_menu.pressed.connect(_show_main_menu)
+    result_column.add_child(result_menu)
     result_overlay.hide()
+
+    # Menu inicial separado da HUD e da tela de resultado.
+    var menu_layer := CanvasLayer.new()
+    menu_layer.layer = 20
+    add_child(menu_layer)
+    menu_overlay = ColorRect.new()
+    menu_overlay.color = Color("#201924")
+    menu_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    menu_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+    menu_layer.add_child(menu_overlay)
+    var menu_center := CenterContainer.new()
+    menu_center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    menu_overlay.add_child(menu_center)
+    var menu_panel := PanelContainer.new()
+    menu_panel.custom_minimum_size = Vector2(590, 540)
+    menu_panel.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#ad8193")))
+    menu_center.add_child(menu_panel)
+    var menu_col := VBoxContainer.new()
+    menu_col.add_theme_constant_override("separation", 22)
+    menu_panel.add_child(menu_col)
+    var menu_title := _make_label("ACROSS-WORDS", 42)
+    menu_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    menu_col.add_child(menu_title)
+    var subtitle := _make_label("Escolha sua aventura", 23)
+    subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    menu_col.add_child(subtitle)
+    var story := Button.new()
+    story.text = "HISTÓRIA  ·  ENCONTRE A SAÍDA"
+    story.custom_minimum_size.y = 80
+    story.pressed.connect(func() -> void: _start_mode(true))
+    menu_col.add_child(story)
+    var infinite := Button.new()
+    infinite.text = "INFINITO  ·  SOBREVIVA"
+    infinite.custom_minimum_size.y = 80
+    infinite.pressed.connect(func() -> void: _start_mode(false))
+    menu_col.add_child(infinite)
+    var hint := _make_label("Um relógio por mapa. O tempo não reinicia ao resolver palavras.", 18)
+    hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    menu_col.add_child(hint)
+
+func _show_main_menu() -> void:
+    game_over = true
+    if is_instance_valid(result_overlay):
+        result_overlay.hide()
+    if is_instance_valid(menu_overlay):
+        menu_overlay.show()
+    if is_instance_valid(entry):
+        entry.release_focus()
+
+func _start_mode(story: bool) -> void:
+    level_mode = story
+    level_number = 1
+    _new_game()
+    menu_overlay.hide()
+    _message("HISTÓRIA: encontre a saída!" if story else "INFINITO: sobreviva e acumule pontos!")
 
 func _show_result(victory: bool, reason: String) -> void:
     if game_over and result_overlay.visible:
@@ -448,7 +510,7 @@ func _new_game() -> void:
     combo = 0
     regen = 0.0
     elapsed = 0.0
-    path_time = WORD_TIME
+    path_time = STORY_MAP_TIME if level_mode else INFINITE_MAP_TIME
     typed_buffer = ""
     camera_target = Vector3(0, 25, 1.4)
     camera.position = camera_target
@@ -845,13 +907,8 @@ func _submit() -> void:
         last_navigation_arrow = Vector2i.ZERO
     energy -= 1
     combo += 1
-    var quick: bool = path_time >= WORD_TIME * 0.55
-    # O relógio só é renovado depois de CONFIRMAR uma resposta correta.
-    path_time = WORD_TIME + (minf(8.0, float(combo - 1) * 2.0) if quick else 0.0)
+    # Tempo é global do mapa: resolver palavras NÃO reinicia o relógio.
     points += 100 + mini(combo, 10) * 15
-    if quick and combo >= 2:
-        energy = mini(ENERGY_MAX, energy + 1)
-        path_time += 5.0
     _clear_preview(false)
     drafts.clear()  # Só CONFIRMAR descarta alternativas.
     typed_buffer = ""
@@ -1245,6 +1302,8 @@ func _select_anchor_by_arrow(arrow: Vector2i) -> void:
     _message("Letra %s (%d/%d)" % [_anchor_letter(parent_index, anchor_index), slot + 1, count])
 
 func _input(event: InputEvent) -> void:
+    if game_over or (is_instance_valid(menu_overlay) and menu_overlay.visible):
+        return
     var key_event := event as InputEventKey
     if key_event == null:
         return
@@ -1291,6 +1350,8 @@ func _navigate_arrow(direction: Vector2i) -> void:
         _apply_direction(direction)
 
 func _unhandled_input(event: InputEvent) -> void:
+    if game_over or (is_instance_valid(menu_overlay) and menu_overlay.visible):
+        return
     if event is InputEventMouseButton:
         if event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
             camera.size = maxf(13.0, camera.size - 1.0)
