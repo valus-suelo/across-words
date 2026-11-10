@@ -77,7 +77,7 @@ jobs:
           snippet = Path("web/loading-screen.html").read_text(encoding="utf-8")
           html = page.read_text(encoding="utf-8")
           assert "</body>" in html, "Shell Web do Godot sem fechamento de body"
-          page.write_text(html.replace("</body>", snippet + "\\n</body>", 1), encoding="utf-8")
+          page.write_text(html.replace("</body>", snippet + "\n</body>", 1), encoding="utf-8")
           PY
           touch build/web/.nojekyll
           ls -lah build/web/
