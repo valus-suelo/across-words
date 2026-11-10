@@ -1776,14 +1776,23 @@ func _move_pointer(screen_pos: Vector2) -> void:
         pointer_dragged = true
         # If gesture starts on a solved letter, select it exactly once.
         # Otherwise keep the active parent; gestures work anywhere on the board.
+        var drag_sources: Array[int] = []
+        if preview_parent >= 0 and preview_parent < words.size():
+            drag_sources.append(preview_parent)
         for i in range(words.size() - 1, -1, -1):
-            if words[i]["state"] == "solved":
-                var anchor: int = _cells(words[i]).find(pointer_cell)
-                if anchor >= 0:
-                    if preview_parent != i or preview_anchor != anchor:
-                        last_navigation_arrow = Vector2i.ZERO
-                        _select_anchor(i, anchor)
-                    break
+            if not drag_sources.has(i):
+                drag_sources.append(i)
+        for i in drag_sources:
+            if words[i]["state"] != "solved":
+                continue
+            if bool(words[i]["spawned"]) and not extra_branch_armed:
+                continue
+            var anchor: int = _cells(words[i]).find(pointer_cell)
+            if anchor >= 0:
+                if preview_parent != i or preview_anchor != anchor:
+                    last_navigation_arrow = Vector2i.ZERO
+                    _select_anchor(i, anchor)
+                break
         gesture_cursor = pointer_start
 
     var movement: Vector2 = screen_pos - gesture_cursor
