@@ -1262,6 +1262,14 @@ func _refresh_board() -> void:
         focus_cell = focus_cells[next_index]
     elif preview_parent >= 0 and preview_anchor >= 0:
         focus_cell = _cells(words[preview_parent])[preview_anchor]
+    # A letra de cruzamento da palavra antiga permanece iluminada,
+    # mesmo quando a proxima letra da palavra nova esta em outra casa.
+    if preview_parent >= 0 and preview_parent < words.size():
+        var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
+        if preview_anchor >= 0 and preview_anchor < parent_cells.size():
+            var crossing_cell: Vector2i = parent_cells[preview_anchor]
+            if board.has(crossing_cell):
+                tile_state[crossing_cell] = "anchor_focus"
     if board.has(focus_cell):
         tile_state[focus_cell] = "focus"
     for p in board.keys():
@@ -1279,6 +1287,8 @@ func _refresh_board() -> void:
                 mat = _material_cached("draft", Color("#846777"))
             "focus":
                 mat = _material_cached("focus", CURRENT_LETTER, true)
+            "anchor_focus":
+                mat = _material_cached("anchor_focus", Color("#f2c79d"), true)
             _:
                 if level_mode and p == exit_cell:
                     mat = _material_cached("exit", Color("#6ab79a"), true)
@@ -1287,7 +1297,7 @@ func _refresh_board() -> void:
         tile.material_override = mat
         if letters.has(p):
             _draw_text(p, String(letters[p]), Color("#342632"), 0.64)
-        elif kind == "selected" or kind == "active" or kind == "focus":
+        elif kind == "selected" or kind == "active" or kind == "focus" or kind == "anchor_focus":
             _draw_text(p, "·", Color("#f7d7db"), 0.42, 66)
         elif level_mode and p == exit_cell:
             _draw_text(p, "⇧", Color("#c7f6d5"), 0.55, 84)
