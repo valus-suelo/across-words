@@ -193,16 +193,77 @@ var level_number: int = 1
 var run_points: int = 0
 var completed_levels: Array[Dictionary] = []
 var level_route: Array[Vector2i] = []
+var word_bank: Array[Dictionary] = []
+var words_by_initial: Dictionary = {}
+var current_category: String = "GERAL"
 
 func _ready() -> void:
     get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
     rng.randomize()
+    _load_word_bank()
     _make_world()
     _make_ui()
     get_viewport().size_changed.connect(_layout_hud)
     _layout_hud()
     _new_game()
     _show_main_menu()
+
+func _load_word_bank() -> void:
+    word_bank.clear()
+    words_by_initial.clear()
+    var file := FileAccess.open("res://data/words.json", FileAccess.READ)
+    if file != null:
+        var parsed: Variant = JSON.parse_string(file.get_as_text())
+        if parsed is Dictionary and parsed.has("words") and parsed["words"] is Array:
+            for record in parsed["words"]:
+                if not record is Dictionary:
+                    continue
+                var answer: String = String(record.get("answer", "")).to_upper()
+                var clue: String = String(record.get("clue", "")).strip_edges()
+                if answer.length() < 2 or clue.is_empty():
+                    continue
+                var valid: bool = true
+                for letter in answer:
+                    if letter < "A" or letter > "Z":
+                        valid = false
+                        break
+                if not valid:
+                    continue
+                var item: Dictionary = {
+                    "answer": answer,
+                    "clue": clue,
+                    "category": String(record.get("category", "GERAL")),
+                    "difficulty": clampi(int(record.get("difficulty", 1)), 1, 3)
+                }
+                word_bank.append(item)
+    if word_bank.is_empty():
+        for pair in DICTIONARY:
+            word_bank.append({"answer": String(pair[0]), "clue": String(pair[1]), "category": "GERAL", "difficulty": 1})
+    for item in word_bank:
+        var initial: String = String(item["answer"]).substr(0, 1)
+        if not words_by_initial.has(initial):
+            words_by_initial[initial] = []
+        words_by_initial[initial].append(item)
+    print("Across-Words: %d palavras carregadas" % word_bank.size())
+
+func _word_difficulty_allowed(item: Dictionary) -> bool:
+    if not level_mode:
+        return true
+    var allowed: int = 1 if level_number <= 2 else (2 if level_number <= 5 else 3)
+    return int(item.get("difficulty", 1)) <= allowed
+
+func _choose_start_word() -> Dictionary:
+    var pool: Array[Dictionary] = []
+    for item in word_bank:
+        var length: int = String(item["answer"]).length()
+        if length < 4 or length > 8 or not _word_difficulty_allowed(item):
+            continue
+        if level_mode and level_number <= 2 and int(item["difficulty"]) != 1:
+            continue
+        pool.append(item)
+    if pool.is_empty():
+        return word_bank[rng.randi_range(0, word_bank.size() - 1)]
+    return pool[rng.randi_range(0, pool.size() - 1)]
 
 func _material_cached(name: String, color: Color, glow: bool = false) -> StandardMaterial3D:
     if material_cache.has(name):
@@ -659,9 +720,10 @@ func _new_game() -> void:
     camera.position = camera_target
     game_over = false
     enemy_cell = Vector2i(-100, -100)
-    var initial: Array = DICTIONARY[rng.randi_range(0, DICTIONARY.size() - 1)]
-    var first_answer: String = String(initial[0])
-    var first: Dictionary = {"answer": first_answer, "clue": String(initial[1]), "start": Vector2i(-int(first_answer.length() / 2), 0), "dir": Vector2i(1, 0), "time": WORD_TIME, "state": "active", "spawned": false}
+    var initial: Dictionary = _choose_start_word()
+    current_category = String(initial["category"])
+    var first_answer: String = String(initial["answer"])
+    var first: Dictionary = {"answer": first_answer, "clue": String(initial["clue"]), "start": Vector2i(-int(first_answer.length() / 2), 0), "dir": Vector2i(1, 0), "time": WORD_TIME, "state": "active", "spawned": false}
     words.append(first)
     used[first_answer] = true
     if level_mode:
@@ -789,12 +851,14 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
     # Impedimento por inimigo: não é permitido traçar uma palavra sobre ele.
     if enemy_cell == crossing:
         return choices
-    for item in DICTIONARY:
-        var answer: String = item[0]
-        if answer[0] != parent_answer[anchor]:
+    var initial_letter: String = parent_answer.substr(anchor, 1)
+    var source: Array = words_by_initial.get(initial_letter, [])
+    for item in source:
+        if not _word_difficulty_allowed(item):
             continue
+        var answer: String = String(item["answer"])
         var trial: Dictionary = {
-            "answer": answer, "clue": item[1], "start": crossing,
+            "answer": answer, "clue": String(item["clue"]), "start": crossing,
             "dir": direction, "time": WORD_TIME,
             "state": "active", "spawned": false
         }
