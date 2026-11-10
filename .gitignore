@@ -1,0 +1,16 @@
+# Godot caches and editor artifacts
+.godot/
+.import/
+*.tmp
+
+# Android artifacts and secrets
+builds/
+*.apk
+*.aab
+*.keystore
+*.jks
+android/build/
+
+# Operating system
+.DS_Store
+Thumbs.db

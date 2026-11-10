@@ -1,20 +1,41 @@
-# Across-Words v0.14 — correção das setas horizontais
+# Across-Words — Godot 4.7 / Android APK
 
-## Diagnóstico confirmado no código
-Na v0.13, `_select_anchor_by_arrow` tratava `KEY_LEFT` como incremento de índice e `KEY_RIGHT` como decremento. Isso invertia a navegação horizontal, embora as setas verticais funcionassem.
+Jogo de palavras cruzadas para celular. **Código do jogo preservado da v0.14**, incluindo o controle horizontal que foi corrigido.
 
-## Correção
-- Ordenação espacial por X crescente para palavras horizontais; Y crescente para verticais.
-- Esquerda: índice -1; direita: índice +1; cima: índice -1; baixo: índice +1.
-- A primeira tecla escolhe uma casa perto da extremidade correspondente; todas as casas permanecem acessíveis por navegação circular.
-- As setas perpendiculares continuam mudando apenas o lado da ramificação.
-- Câmera segue a palavra pré-visualizada como antes.
-- Arrastar usa o mesmo manipulador das setas, portanto a correção horizontal também vale para o gesto.
+## Como publicar o projeto no repositório
 
-## Teste manual
-1. Resolva COLHER horizontal. Selecione O com o mouse. Pressione direita: deve ir a L. Pressione esquerda: deve voltar a O.
-2. Com COLHER vertical, selecione O. Pressione baixo: deve ir a L. Pressione cima: deve voltar a O.
-3. Arraste horizontalmente em área vazia do tabuleiro; deve percorrer letras na direção do gesto.
-4. Observe a prévia vertical: ela pode mudar de palavra quando a âncora muda, pois as candidatas dependem da letra selecionada. Isso não deve mudar a ordem das âncoras.
+Repositório: https://github.com/valus-suelo/across-words
 
-O pacote não foi executado no editor Godot neste ambiente.
+1. Extraia este arquivo ZIP no computador.
+2. Copie o conteúdo da pasta extraída **para a raiz do repositório** (a raiz deve conter `project.godot`, nunca uma pasta extra com esse nome).
+3. Inclua o arquivo `.github/workflows/android-apk.yml` (no GitHub web, criar esse arquivo com **Add file > Create new file** também funciona).
+4. Confirme o envio (commit) na branch `main`.
+
+## Como obter o APK
+
+1. Abra https://github.com/valus-suelo/across-words/actions
+2. Abra a ação **Gerar APK Android (teste)**.
+3. Se não iniciar automaticamente, clique em **Run workflow** na branch `main`.
+4. Quando concluir com sucesso, baixe **Across-Words-v0.14-Android-APK** em *Artifacts*.
+5. Extraia o `.zip` baixado do GitHub. Dentro dele estará o arquivo `across-words-v014-debug.apk`.
+6. Transfira o `.apk` para o celular Android e instale, autorizando a instalação de APKs para o aplicativo usado para abri-lo.
+
+## Tecnologia e limitações
+
+- Godot Standard **4.7.2**, retrocompatível com o projeto criado em 4.7.
+- Android SDK 35, OpenJDK 17, template Android oficial da mesma versão.
+- `arm64-v8a` apenas: a maioria dos celulares Android modernos; aparelhos antigos de 32 bits não são suportados por este APK.
+- Assinatura de **debug**, apenas para testes, não publicar na Play Store.
+- O workflow recria a chave debug a cada execução. Pode ser necessário desinstalar um APK antigo antes de instalar outra compilação (chaves diferentes).
+- O primeiro download dos templates é grande (~1 GB). O GitHub Actions armazena em cache para próximas execuções.
+- Os arquivos de CI foram verificados quanto à estrutura, mas **nenhuma execução real no GitHub foi concluída nesta sessão**.
+- Para gerar AAB de publicação na Play Store, posteriormente será necessária uma configuração de assinatura de release, com keystore persistente e segura.
+
+## Arquivos importantes
+
+- `project.godot`: configurações do jogo e orientação vertical.
+- `main.gd`: jogabilidade, câmera e seleção de letras da versão 0.14.
+- `main.tscn`: cena inicial.
+- `export_presets.cfg`: preset Android para exportação `.apk` de debug.
+- `.github/workflows/android-apk.yml`: pipeline de compilação.
+- `.gitignore`: ignora arquivos temporários e chaves de assinatura.

@@ -1,0 +1,146 @@
+name: Gerar APK Android (teste)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'main.gd'
+      - 'main.tscn'
+      - 'project.godot'
+      - 'export_presets.cfg'
+      - '.github/workflows/android-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  android-debug:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GODOT_VERSION: '4.7.2'
+      GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+      GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+    steps:
+      - name: Baixar o projeto
+        uses: actions/checkout@v4
+
+      - name: Instalar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar SDK Android 35
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "ANDROID_HOME=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          test -d "${ANDROID_HOME:-${ANDROID_SDK_ROOT}}"
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT}}"
+          SDKMANAGER="${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platform-tools" "build-tools;35.0.1" "platforms;android-35"
+          test -x "$SDK_ROOT/build-tools/35.0.1/apksigner"
+          test -x "$SDK_ROOT/build-tools/35.0.1/zipalign"
+
+      - name: Baixar Godot 4.7.2 Standard
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GODOT_VERSION}-stable"
+          URL="https://github.com/godotengine/godot-builds/releases/download/${VERSION}/Godot_v${VERSION}_linux.x86_64.zip"
+          curl -fL --retry 3 --retry-delay 5 "$URL" -o "$RUNNER_TEMP/godot.zip"
+          mkdir -p "$RUNNER_TEMP/godot"
+          unzip -q "$RUNNER_TEMP/godot.zip" -d "$RUNNER_TEMP/godot"
+          GODOT_BIN="$(find "$RUNNER_TEMP/godot" -maxdepth 2 -type f -name 'Godot_v*_linux.x86_64' | head -n 1)"
+          test -n "$GODOT_BIN"
+          chmod +x "$GODOT_BIN"
+          echo "GODOT_BIN=$GODOT_BIN" >> "$GITHUB_ENV"
+          "$GODOT_BIN" --version
+
+      - name: Recuperar templates Android do cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/godot/export_templates/4.7.2.stable
+          key: godot-4.7.2-android-debug-template-v1
+
+      - name: Instalar template Android de debug
+        shell: bash
+        run: |
+          set -euo pipefail
+          TEMPLATES="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$TEMPLATES"
+          if [[ ! -s "$TEMPLATES/android_debug.apk" ]]; then
+            VERSION="${GODOT_VERSION}-stable"
+            URL="https://github.com/godotengine/godot-builds/releases/download/${VERSION}/Godot_v${VERSION}_export_templates.tpz"
+            echo "Baixando pacote oficial de templates (arquivo grande; cacheado depois da primeira execução)..."
+            curl -fL --retry 3 --retry-delay 10 "$URL" -o "$RUNNER_TEMP/templates.tpz"
+            unzip -p "$RUNNER_TEMP/templates.tpz" templates/android_debug.apk > "$TEMPLATES/android_debug.apk"
+          fi
+          test -s "$TEMPLATES/android_debug.apk"
+          printf '%s\n' "${GODOT_VERSION}.stable" > "$TEMPLATES/version.txt"
+
+      - name: Configurar keystore de teste e editor Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android"
+          keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" \
+            -storepass android -alias androiddebugkey -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname 'CN=Android Debug,O=Across Words,C=BR'
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=$HOME/.android/debug.keystore" >> "$GITHUB_ENV"
+
+          # Godot cria o arquivo de preferências antes de configurá-lo.
+          "$GODOT_BIN" --headless --path . --editor --quit
+          SETTINGS="$HOME/.config/godot/editor_settings-4.7.tres"
+          test -s "$SETTINGS"
+          python3 - "$SETTINGS" "${ANDROID_HOME:-${ANDROID_SDK_ROOT}}" "$JAVA_HOME" "$HOME/.android/debug.keystore" <<'PYTHON'
+          from pathlib import Path
+          import sys
+          file, sdk, java, key = sys.argv[1:]
+          p = Path(file)
+          content = p.read_text()
+          # Estas opções ficam em [resource] do arquivo .tres; evita duplicar opções.
+          keys = {
+              'export/android/android_sdk_path': sdk,
+              'export/android/java_sdk_path': java,
+              'export/android/debug_keystore': key,
+              'export/android/debug_keystore_user': 'androiddebugkey',
+              'export/android/debug_keystore_pass': 'android',
+          }
+          import re
+          for name, value in keys.items():
+              line = name + ' = ' + repr(value).replace("'", '"')
+              pattern = r'(?m)^' + re.escape(name) + r'\s*=.*$'
+              if re.search(pattern, content):
+                  content = re.sub(pattern, lambda _m: line, content)
+              else:
+                  content += '\n' + line
+          p.write_text(content)
+          PYTHON
+
+      - name: Validar projeto Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$GODOT_BIN" --headless --path . --editor --quit
+
+      - name: Exportar APK Android de teste
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p builds
+          "$GODOT_BIN" --headless --path . --export-debug Android builds/across-words-v014-debug.apk
+          test -s builds/across-words-v014-debug.apk
+          echo "APK gerado: $(du -h builds/across-words-v014-debug.apk)"
+
+      - name: Disponibilizar APK para download
+        uses: actions/upload-artifact@v4
+        with:
+          name: Across-Words-v0.14-Android-APK
+          path: builds/across-words-v014-debug.apk
+          if-no-files-found: error
+          retention-days: 14
