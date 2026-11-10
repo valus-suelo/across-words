@@ -167,7 +167,6 @@ var next_clue_button: Button
 var input_syncing: bool = false
 var extra_branch_armed: bool = false
 var last_solved_word: int = -1  # palavra mais recente para navegação sem clique
-var mobile_keyboard_button: Button
 # Direção de ramificação e direção da última varredura de letras.
 var preferred_branch_direction: Vector2i = Vector2i.ZERO
 var last_navigation_arrow: Vector2i = Vector2i.ZERO
@@ -256,7 +255,7 @@ func _make_ui() -> void:
 
     var top := PanelContainer.new()
     top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-    top.offset_bottom = 152.0
+    top.offset_bottom = 196.0
     top.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#77545e")))
     ui.add_child(top)
     var top_column := VBoxContainer.new()
@@ -276,10 +275,14 @@ func _make_ui() -> void:
     indicators.add_child(energy_label)
     score_label = _make_label("★ 0  ·  ◆ 0  ·  COMBO ×0", 19)
     top_column.add_child(score_label)
+    clue_label = _make_label("Resolva a palavra destacada para começar.", 21)
+    clue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    clue_label.custom_minimum_size.y = 55
+    top_column.add_child(clue_label)
 
     var bottom := PanelContainer.new()
     bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-    bottom.offset_top = -395.0
+    bottom.offset_top = -535.0
     bottom.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#77545e")))
     ui.add_child(bottom)
     var column := VBoxContainer.new()
@@ -287,12 +290,9 @@ func _make_ui() -> void:
     bottom.add_child(column)
     selected_info = _make_label("TOQUE NUMA PALAVRA OU LETRA", 18)
     column.add_child(selected_info)
-    clue_label = _make_label("Resolva a palavra destacada para começar.", 23)
-    clue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    clue_label.custom_minimum_size.y = 62
-    column.add_child(clue_label)
     entry = LineEdit.new()
-    entry.placeholder_text = "Teclado virtual"
+    entry.placeholder_text = "Entrada interna"
+    entry.virtual_keyboard_enabled = false
     entry.max_length = 18
     entry.alignment = HORIZONTAL_ALIGNMENT_CENTER
     # Entrada interna: não é exibida como caixa de texto.
@@ -340,12 +340,6 @@ func _make_ui() -> void:
     confirm.add_theme_font_size_override("font_size", 22)
     confirm.pressed.connect(_submit)
     actions.add_child(confirm)
-    mobile_keyboard_button = Button.new()
-    mobile_keyboard_button.text = "⌨"
-    mobile_keyboard_button.tooltip_text = "Abrir teclado virtual (celular)"
-    mobile_keyboard_button.custom_minimum_size = Vector2(58, 58)
-    mobile_keyboard_button.pressed.connect(_open_mobile_keyboard)
-    actions.add_child(mobile_keyboard_button)
     var buy := Button.new()
     buy.text = "+ RAMO (◆3)"
     buy.custom_minimum_size = Vector2(168, 58)
@@ -356,10 +350,17 @@ func _make_ui() -> void:
     message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     message_label.custom_minimum_size.y = 32
     column.add_child(message_label)
+    # Teclado integrado à HUD: sempre visível durante a partida.
+    var keyboard := VBoxContainer.new()
+    keyboard.add_theme_constant_override("separation", 5)
+    column.add_child(keyboard)
+    _add_keyboard_row(keyboard, "QWERTYUIOP")
+    _add_keyboard_row(keyboard, "ASDFGHJKL")
+    _add_keyboard_row(keyboard, "ZXCVBNM", true)
     var footer := HBoxContainer.new()
     footer.alignment = BoxContainer.ALIGNMENT_CENTER
     column.add_child(footer)
-    status_label = _make_label("Teclado: escrever · setas: selecionar · Backspace: apagar · Enter: confirmar", 14)
+    status_label = _make_label("Arraste para selecionar · Toque nas letras para escrever", 14)
     footer.add_child(status_label)
     mode_button = Button.new()
     mode_button.text = "MENU"
@@ -447,6 +448,34 @@ func _make_ui() -> void:
     hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     menu_col.add_child(hint)
+
+func _add_keyboard_row(parent: VBoxContainer, letters: String, with_erase: bool = false) -> void:
+    var keys := HBoxContainer.new()
+    keys.alignment = BoxContainer.ALIGNMENT_CENTER
+    keys.add_theme_constant_override("separation", 4)
+    parent.add_child(keys)
+    for i in range(letters.length()):
+        var character: String = letters.substr(i, 1)
+        var key_button := Button.new()
+        key_button.text = character
+        key_button.focus_mode = Control.FOCUS_NONE
+        key_button.custom_minimum_size.y = 52
+        key_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+        key_button.add_theme_font_size_override("font_size", 22)
+        key_button.add_theme_stylebox_override("normal", _panel_style(Color("#604957"), Color("#8d6b7b")))
+        key_button.add_theme_stylebox_override("hover", _panel_style(Color("#8a6577"), Color("#d7afbb")))
+        key_button.add_theme_stylebox_override("pressed", _panel_style(Color("#b88b9f"), Color("#f1cbd7")))
+        key_button.pressed.connect(_type_character.bind(character))
+        keys.add_child(key_button)
+    if with_erase:
+        var erase_button := Button.new()
+        erase_button.text = "⌫"
+        erase_button.tooltip_text = "Apagar última letra"
+        erase_button.focus_mode = Control.FOCUS_NONE
+        erase_button.custom_minimum_size = Vector2(72, 52)
+        erase_button.add_theme_font_size_override("font_size", 24)
+        erase_button.pressed.connect(_erase_character)
+        keys.add_child(erase_button)
 
 func _show_main_menu() -> void:
     game_over = true

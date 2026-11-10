@@ -133,14 +133,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p builds
-          "$GODOT_BIN" --headless --path . --export-debug Android builds/across-words-v015-debug.apk
-          test -s builds/across-words-v015-debug.apk
-          echo "APK gerado: $(du -h builds/across-words-v015-debug.apk)"
+          "$GODOT_BIN" --headless --path . --export-debug Android builds/across-words-v017-debug.apk
+          test -s builds/across-words-v017-debug.apk
+          echo "APK gerado: $(du -h builds/across-words-v017-debug.apk)"
 
       - name: Disponibilizar APK para download
         uses: actions/upload-artifact@v4
         with:
-          name: Across-Words-v0.15-Android-APK
-          path: builds/across-words-v015-debug.apk
+          name: Across-Words-v0.17-Android-APK
+          path: builds/across-words-v017-debug.apk
           if-no-files-found: error
           retention-days: 14
