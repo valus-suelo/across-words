@@ -355,9 +355,9 @@ func _make_ui() -> void:
     bottom.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#77545e")))
     ui.add_child(bottom)
     var column := VBoxContainer.new()
-    column.add_theme_constant_override("separation", 5)
+    column.add_theme_constant_override("separation", 3)
     bottom.add_child(column)
-    selected_info = _make_label("TOQUE NUMA PALAVRA OU LETRA", 18)
+    selected_info = _make_label("TOQUE NUMA PALAVRA OU LETRA", 16)
     column.add_child(selected_info)
     entry = LineEdit.new()
     entry.placeholder_text = "Entrada interna"
@@ -396,7 +396,7 @@ func _make_ui() -> void:
     direction_right.visible = false
     next_clue_button = Button.new()
     next_clue_button.text = "OUTRA PISTA"
-    next_clue_button.custom_minimum_size.y = 44
+    next_clue_button.custom_minimum_size.y = 35
     next_clue_button.pressed.connect(_next_preview_clue)
     direction_row.add_child(next_clue_button)
     var actions := HBoxContainer.new()
@@ -405,41 +405,51 @@ func _make_ui() -> void:
     var confirm := Button.new()
     confirm.text = "CONFIRMAR"
     confirm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    confirm.custom_minimum_size.y = 58
+    confirm.custom_minimum_size.y = 46
     confirm.add_theme_font_size_override("font_size", 22)
     confirm.pressed.connect(_submit)
     actions.add_child(confirm)
     var buy := Button.new()
     buy.text = "+ RAMO (3)"
-    buy.custom_minimum_size = Vector2(168, 58)
+    buy.custom_minimum_size = Vector2(148, 46)
     buy.add_theme_font_size_override("font_size", 18)
     buy.pressed.connect(_buy_path)
     actions.add_child(buy)
     message_label = _make_label("", 17)
     message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    message_label.custom_minimum_size.y = 32
+    message_label.custom_minimum_size.y = 26
     column.add_child(message_label)
     # Teclado integrado à HUD: sempre visível durante a partida.
     var keyboard := VBoxContainer.new()
     hud_keyboard = keyboard
-    keyboard.add_theme_constant_override("separation", 5)
+    keyboard.add_theme_constant_override("separation", 4)
     column.add_child(keyboard)
     _add_keyboard_row(keyboard, "QWERTYUIOP")
     _add_keyboard_row(keyboard, "ASDFGHJKL")
     _add_keyboard_row(keyboard, "ZXCVBNM", true)
-    var footer := HBoxContainer.new()
-    footer.alignment = BoxContainer.ALIGNMENT_CENTER
-    column.add_child(footer)
-    status_label = _make_label("Arraste para selecionar · Toque nas letras para escrever", 14)
-    footer.add_child(status_label)
+    # Controles de sessao no topo, fora do teclado.
+    var header_buttons := HBoxContainer.new()
+    header_buttons.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    header_buttons.offset_left = -215.0
+    header_buttons.offset_right = -8.0
+    header_buttons.offset_top = 8.0
+    header_buttons.offset_bottom = 44.0
+    header_buttons.add_theme_constant_override("separation", 6)
+    ui.add_child(header_buttons)
     mode_button = Button.new()
     mode_button.text = "MENU"
+    mode_button.focus_mode = Control.FOCUS_NONE
+    mode_button.custom_minimum_size = Vector2(92, 34)
     mode_button.pressed.connect(_show_main_menu)
-    footer.add_child(mode_button)
+    header_buttons.add_child(mode_button)
     var restart := Button.new()
     restart.text = "REINICIAR"
+    restart.focus_mode = Control.FOCUS_NONE
+    restart.custom_minimum_size = Vector2(106, 34)
     restart.pressed.connect(_new_game)
-    footer.add_child(restart)
+    header_buttons.add_child(restart)
+    status_label = _make_label("Arraste para selecionar", 14)
+    status_label.visible = false
 
     # Tela modal acima da HUD. Só é exibida no fim da partida.
     var result_layer := CanvasLayer.new()
@@ -548,7 +558,7 @@ func _add_keyboard_row(parent: VBoxContainer, letters: String, with_erase: bool 
         erase_button.text = "APAGAR"
         erase_button.tooltip_text = "Apagar última letra"
         erase_button.focus_mode = Control.FOCUS_NONE
-        erase_button.custom_minimum_size = Vector2(100, 52)
+        erase_button.custom_minimum_size = Vector2(88, 43)
         erase_button.add_theme_font_size_override("font_size", 24)
         erase_button.pressed.connect(_erase_character)
         keys.add_child(erase_button)
