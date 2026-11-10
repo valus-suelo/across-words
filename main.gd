@@ -1250,6 +1250,20 @@ func _refresh_board() -> void:
                 tile_state[p] = "selected"
                 if i < typed.length():
                     letters[p] = typed[i]
+    # Realce da proxima letra a digitar, diretamente no tabuleiro.
+    var focus_cell: Vector2i = Vector2i(999999, 999999)
+    var focus_cells: Array[Vector2i] = []
+    if not preview.is_empty():
+        focus_cells = _cells(preview)
+    elif chosen >= 0 and chosen < words.size() and words[chosen]["state"] == "active":
+        focus_cells = _cells(words[chosen])
+    if not focus_cells.is_empty():
+        var next_index: int = mini(entry.text.length(), focus_cells.size() - 1)
+        focus_cell = focus_cells[next_index]
+    elif preview_parent >= 0 and preview_anchor >= 0:
+        focus_cell = _cells(words[preview_parent])[preview_anchor]
+    if board.has(focus_cell):
+        tile_state[focus_cell] = "focus"
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
         var kind: String = tile_state.get(p, "base")
@@ -1263,6 +1277,8 @@ func _refresh_board() -> void:
                 mat = _material_cached("selected", SELECTED, true)
             "draft":
                 mat = _material_cached("draft", Color("#846777"))
+            "focus":
+                mat = _material_cached("focus", CURRENT_LETTER, true)
             _:
                 if level_mode and p == exit_cell:
                     mat = _material_cached("exit", Color("#6ab79a"), true)
@@ -1271,7 +1287,7 @@ func _refresh_board() -> void:
         tile.material_override = mat
         if letters.has(p):
             _draw_text(p, String(letters[p]), Color("#342632"), 0.64)
-        elif kind == "selected" or kind == "active":
+        elif kind == "selected" or kind == "active" or kind == "focus":
             _draw_text(p, "·", Color("#f7d7db"), 0.42, 66)
         elif level_mode and p == exit_cell:
             _draw_text(p, "⇧", Color("#c7f6d5"), 0.55, 84)
@@ -1367,7 +1383,7 @@ func _process(delta: float) -> void:
         var kind: String = tile_state.get(p, "base")
         if kind == "solved":
             tile.position.y = 0.26
-        elif kind == "active" or kind == "selected":
+        elif kind == "active" or kind == "selected" or kind == "focus":
             tile.position.y = 0.10 + sin(elapsed * 2.6 + float(p.x) * 0.7 + float(p.y) * 0.45) * 0.06
         else:
             tile.position.y = sin(elapsed * 1.5 + float(p.x) * 0.35 + float(p.y) * 0.4) * 0.04
