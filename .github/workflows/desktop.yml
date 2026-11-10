@@ -1,0 +1,62 @@
+name: Compilar jogo para computador
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "main.gd"
+      - "main.tscn"
+      - "project.godot"
+      - "export_presets.cfg"
+      - ".github/workflows/desktop.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar Godot e templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER=4.7.2-stable
+          curl -fL --retry 3 "https://github.com/godotengine/godot-builds/releases/download/${VER}/Godot_v${VER}_linux.x86_64.zip" -o /tmp/godot.zip
+          mkdir -p /tmp/godot-bin
+          unzip -q /tmp/godot.zip -d /tmp/godot-bin
+          GODOT="$(find /tmp/godot-bin -type f -name 'Godot_v*_linux.x86_64' | head -1)"
+          chmod +x "$GODOT"
+          echo "GODOT_BIN=$GODOT" >> "$GITHUB_ENV"
+          curl -fL --retry 3 "https://github.com/godotengine/godot-builds/releases/download/${VER}/Godot_v${VER}_export_templates.tpz" -o /tmp/templates.tpz
+          DIR="$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          mkdir -p "$DIR"
+          unzip -p /tmp/templates.tpz templates/windows_release_x86_64.exe > "$DIR/windows_release_x86_64.exe"
+          unzip -p /tmp/templates.tpz templates/linux_release.x86_64 > "$DIR/linux_release.x86_64"
+          test -s "$DIR/windows_release_x86_64.exe"
+          test -s "$DIR/linux_release.x86_64"
+          echo "4.7.2.stable" > "$DIR/version.txt"
+      - name: Exportar Windows e Linux
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$GODOT_BIN" --headless --path . --editor --quit
+          mkdir -p build/windows build/linux
+          "$GODOT_BIN" --headless --path . --export-release "Windows Desktop" build/windows/Across-Words.exe
+          "$GODOT_BIN" --headless --path . --export-release "Linux" build/linux/Across-Words.x86_64
+          test -s build/windows/Across-Words.exe
+          test -s build/linux/Across-Words.x86_64
+          chmod +x build/linux/Across-Words.x86_64
+      - name: Windows para download
+        uses: actions/upload-artifact@v4
+        with:
+          name: Across-Words-Windows
+          path: build/windows/
+      - name: Linux para download
+        uses: actions/upload-artifact@v4
+        with:
+          name: Across-Words-Linux
+          path: build/linux/
