@@ -267,7 +267,7 @@ func _layout_hud() -> void:
     hud_bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
     hud_bottom.offset_left = 0.0
     hud_bottom.offset_right = 0.0
-    hud_bottom.offset_top = -300.0 if landscape else -430.0
+    hud_bottom.offset_top = -385.0 if landscape else -430.0
     hud_bottom.offset_bottom = 0.0
     var key_height: float = 37.0 if landscape else 42.0
     var key_font: int = 18 if landscape else 20
