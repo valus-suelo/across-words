@@ -183,6 +183,7 @@ var result_action: Button
 var level_number: int = 1
 
 func _ready() -> void:
+    get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
     rng.randomize()
     _make_world()
     _make_ui()
