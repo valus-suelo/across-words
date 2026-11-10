@@ -190,6 +190,9 @@ var result_title: Label
 var result_stats: Label
 var result_action: Button
 var level_number: int = 1
+var run_points: int = 0
+var completed_levels: Array[Dictionary] = []
+var level_route: Array[Vector2i] = []
 
 func _ready() -> void:
     get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
@@ -580,24 +583,42 @@ func _show_main_menu() -> void:
 func _start_mode(story: bool) -> void:
     level_mode = story
     level_number = 1
+    run_points = 0
+    completed_levels.clear()
     _new_game()
     menu_overlay.hide()
     _message("HISTÓRIA: encontre a saída!" if story else "INFINITO: sobreviva e acumule pontos!")
+
+func _run_summary() -> String:
+    var summary: String = "Fases concluídas: %d  |  Pontos totais: %d" % [completed_levels.size(), run_points + points]
+    if level_mode:
+        for record in completed_levels:
+            summary += "\nFase %d: %d/3 coroas · %d pontos" % [record["level"], record["crowns"], record["points"]]
+    return summary
 
 func _show_result(victory: bool, reason: String) -> void:
     if game_over and result_overlay.visible:
         return
     game_over = true
-    result_title.text = "VITÓRIA!" if victory else "GAME OVER"
+    if victory and level_mode:
+        completed_levels.append({"level": level_number, "crowns": mini(crowns, 3), "points": points})
+    result_title.text = "FASE CONCLUÍDA!" if victory else "GAME OVER"
     result_title.add_theme_color_override("font_color", Color("#e5bd74") if victory else Color("#df7587"))
-    result_stats.text = "%s\n\nPontuação: %d\nPalavras: %d  ·  Coroas: %d/3\nMoedas: %d  ·  Combo: %d" % [reason, points, _solved_count(), crowns, coins, combo]
-    result_action.text = "PRÓXIMO NÍVEL" if victory else "TENTAR NOVAMENTE"
+    if level_mode:
+        result_stats.text = "%s\n\n%s\n\nPalavras nesta fase: %d" % [reason, _run_summary(), _solved_count()]
+    else:
+        result_stats.text = "%s\n\nPontuação: %d\nPalavras: %d  ·  Combo: %d" % [reason, points, _solved_count(), combo]
+    result_action.text = "PRÓXIMO NÍVEL" if victory else "NOVA PARTIDA"
     result_overlay.show()
 
 func _result_continue() -> void:
-    if result_title.text == "VITÓRIA!":
-        level_mode = true
+    if result_title.text == "FASE CONCLUÍDA!":
+        run_points += points
         level_number += 1
+    else:
+        level_number = 1
+        run_points = 0
+        completed_levels.clear()
     _new_game()
 
 func _new_game() -> void:
@@ -638,19 +659,22 @@ func _new_game() -> void:
     camera.position = camera_target
     game_over = false
     enemy_cell = Vector2i(-100, -100)
-    var first: Dictionary = {"answer": "CASA", "clue": "Lugar onde moramos", "start": Vector2i(-2, 0), "dir": Vector2i(1, 0), "time": WORD_TIME, "state": "active", "spawned": false}
+    var initial: Array = DICTIONARY[rng.randi_range(0, DICTIONARY.size() - 1)]
+    var first_answer: String = String(initial[0])
+    var first: Dictionary = {"answer": first_answer, "clue": String(initial[1]), "start": Vector2i(-first_answer.length() / 2, 0), "dir": Vector2i(1, 0), "time": WORD_TIME, "state": "active", "spawned": false}
     words.append(first)
-    used["CASA"] = true
+    used[first_answer] = true
+    if level_mode:
+        _plan_level()
     _spawn_pickup(Vector2i(4, -2), "coin")
     _spawn_pickup(Vector2i(-4, 3), "energy")
-    _spawn_pickup(Vector2i(3, 4), "crown")
     _spawn_pickup(Vector2i(-5, -3), "vision")
     _assign_entry("")
     entry.release_focus()
     _sync_visible_board(true)
     _choose(0)
     _refresh_board()
-    _message("Digite CASA diretamente: as letras aparecem nos espaços e no mapa, sem clicar em casas.")
+    _message("Comece com %s. %s" % [first_answer, "Encontre a saída!" if level_mode else "Sobreviva o máximo possível!"])
 
 func _cells(word: Dictionary) -> Array[Vector2i]:
     var result: Array[Vector2i] = []
@@ -1085,7 +1109,8 @@ func _collect_pickups() -> void:
                 coins += 1
                 points += 50
             "crown":
-                crowns += 1
+                if level_mode:
+                    crowns = mini(3, crowns + 1)
                 points += 500
             "energy":
                 energy = mini(ENERGY_MAX, energy + 3)
@@ -1371,7 +1396,7 @@ func _update_hud() -> void:
     direction_right.visible = false
     next_clue_button.visible = preview_choices.size() > 1
     time_label.text = "TEMPO %d:%02d" % [seconds / 60, seconds % 60]
-    crown_label.text = "COROAS %d/3" % crowns
+    crown_label.text = "FASE %d  ·  COROAS %d/3" % [level_number, crowns] if level_mode else "INFINITO"
     energy_label.text = "ENERGIA %d/%d" % [energy, ENERGY_MAX]
     score_label.text = "PONTOS %d  |  MOEDAS %d  |  COMBO %d%s" % [points, coins, combo, "  |  VISAO %d" % map_vision_moves if map_vision_moves > 0 else ""]
 
