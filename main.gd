@@ -1,0 +1,1423 @@
+extends Node3D
+
+# Across-Words v0.10 — Godot 4.7, resposta única sincronizada entre teclado, slots e tabuleiro.
+const VISIBLE_RADIUS_X := 9
+const VISIBLE_RADIUS_Y := 15
+const GAP := 1.02
+const WORD_TIME := 38.0
+const ENERGY_MAX := 10
+const REGEN_SECONDS := 20.0
+const BG := Color("#2a222d")
+const BASE := Color("#594551")
+const ACTIVE := Color("#a4778d")
+const SELECTED := Color("#e4aeb3")
+const SOLVED := Color("#d7afbb")
+const GOLD := Color("#e6b96d")
+const RED := Color("#df667b")
+
+const DICTIONARY := [
+    ["CASA", "Lugar onde moramos"], ["SOL", "Estrela que ilumina a Terra"],
+    ["LUA", "Satélite natural da Terra"], ["MAR", "Grande extensão de água salgada"],
+    ["RIO", "Curso natural de água"], ["FLOR", "Parte colorida de muitas plantas"],
+    ["GATO", "Felino doméstico"], ["PATO", "Ave de bico largo"],
+    ["ROSA", "Flor frequentemente associada ao amor"], ["VENTO", "Ar em movimento"],
+    ["TERRA", "Planeta em que vivemos"], ["PEDRA", "Fragmento sólido de rocha"],
+    ["PORTA", "Entrada que pode ser aberta"], ["LIVRO", "Obra formada por páginas"],
+    ["PONTE", "Construção para atravessar um obstáculo"], ["TEMPO", "Pode ser medido em segundos"],
+    ["NUVEM", "Conjunto de gotículas suspensas no céu"], ["AREIA", "Grãos finos encontrados na praia"],
+    ["NOITE", "Período sem luz solar direta"], ["FOLHA", "Parte verde de muitas plantas"],
+    ["RATO", "Pequeno roedor"], ["BOLO", "Doce comum em aniversários"],
+    ["MESA", "Móvel com tampo e pernas"], ["JANELA", "Abertura que deixa entrar luz"],
+    ["CAMPO", "Área aberta de terreno"], ["ESTRELA", "Astro que emite luz própria"],
+    ["LAGO", "Corpo de água cercado por terra"], ["MATO", "Vegetação espontânea"],
+    ["SAPO", "Anfíbio que costuma saltar"], ["FARO", "Sentido associado ao olfato"],
+    ["PENA", "Revestimento do corpo das aves"], ["PRAIA", "Faixa de areia junto ao mar"],
+    ["FONTE", "Local de onde brota água"], ["CARTA", "Mensagem escrita em papel"],
+    ["TRIGO", "Cereal utilizado para fazer farinha"], ["NORTE", "Um dos pontos cardeais"],
+    ["SUL", "Ponto cardeal oposto ao norte"], ["OESTE", "Direção em que o Sol se põe"],
+    ["LESTE", "Direção em que o Sol nasce"], ["COROA", "Adorno usado sobre a cabeça"],
+    ["OURO", "Metal precioso amarelo"], ["REDE", "Conjunto de fios entrelaçados"],
+    ["MUNDO", "O planeta e tudo que nele existe"], ["MURAL", "Pintura feita em uma parede"],
+    ["DOCE", "Alimento de sabor açucarado"], ["BARCO", "Embarcação pequena"],
+    ["NAVIO", "Embarcação de grande porte"], ["MOTOR", "Máquina que produz movimento"],
+    ["TREVO", "Planta associada à sorte"], ["LIMAO", "Fruta cítrica azeda"],
+    ["MELAO", "Fruta grande e doce"], ["CINTO", "Acessório usado na cintura"],
+    ["PULSO", "Região entre a mão e o antebraço"], ["CANTO", "Ato de cantar"],
+    ["BANCO", "Assento comprido ou instituição financeira"], ["BOLSA", "Objeto para carregar pertences"],
+    ["LAPIS", "Objeto usado para escrever e desenhar"], ["PAPEL", "Material usado para escrever"],
+    ["LINHA", "Traço comprido e estreito"], ["PONTO", "Pequena marca ou sinal"],
+    ["TINTA", "Substância usada para pintar"], ["FESTA", "Comemoração com convidados"],
+    ["DANCA", "Movimentos do corpo ao ritmo da música"], ["MUSICA", "Arte de organizar sons"],
+    ["PRATO", "Utensílio usado para servir comida"], ["GARFO", "Talher com pontas"],
+    ["COLHER", "Talher usado para líquidos"], ["FACA", "Utensílio com lâmina cortante"],
+    ["AMOR", "Sentimento profundo"], ["AMIGO", "Pessoa de quem se gosta"],
+    ["AGUA", "Líquido essencial à vida"], ["ASA", "Parte usada pelas aves para voar"],
+    ["AR", "Mistura de gases que respiramos"], ["ANEL", "Joia usada no dedo"],
+    ["ABELHA", "Inseto que produz mel"], ["ARTE", "Expressão criativa"],
+    ["ANJO", "Ser alado de tradição religiosa"], ["ACERTO", "Resposta correta"],
+    ["BOLA", "Objeto redondo usado em jogos"], ["BICO", "Parte da boca de uma ave"],
+    ["BEBE", "Criança muito pequena"], ["BRISA", "Vento leve"],
+    ["CAMA", "Móvel usado para dormir"], ["COPO", "Recipiente para beber"],
+    ["CEU", "Espaço acima da Terra"], ["CUBO", "Sólido de seis faces quadradas"],
+    ["DADO", "Cubo usado em jogos"], ["DEDO", "Parte da mão"],
+    ["DENTE", "Estrutura usada para mastigar"], ["DIA", "Período de luz solar"],
+    ["ECO", "Reflexão de um som"], ["ERVA", "Planta de caule macio"],
+    ["ESCOLA", "Lugar de aprender"], ["ESTADO", "Divisão de um país"],
+    ["FADA", "Ser mágico dos contos"], ["FOGO", "Chama que aquece"],
+    ["FRIO", "Temperatura baixa"], ["FITA", "Faixa de tecido ou papel"],
+    ["GEMA", "Parte amarela do ovo"], ["GELO", "Água congelada"],
+    ["GALO", "Ave que canta de manhã"], ["GOTA", "Pequena porção de líquido"],
+    ["HORA", "Unidade de tempo"], ["HINO", "Canção oficial"],
+    ["ILHA", "Terra cercada de água"], ["IMA", "Objeto que atrai ferro"],
+    ["IDEIA", "Pensamento ou plano"], ["IOIO", "Brinquedo que sobe e desce"],
+    ["JOGO", "Atividade com regras"], ["JARRA", "Recipiente com alça"],
+    ["JOIA", "Objeto precioso de adorno"], ["JUIZ", "Pessoa que julga"],
+    ["KIWI", "Fruta de casca marrom e polpa verde"], ["KART", "Veículo pequeno de corrida"],
+    ["LADO", "Uma das faces ou direções"], ["LEAO", "Grande felino de juba"],
+    ["LUZ", "Permite enxergar"], ["LOBO", "Canídeo selvagem"],
+    ["MAO", "Extremidade do braço"], ["MALA", "Bagagem de viagem"],
+    ["MEL", "Alimento doce produzido por abelhas"], ["MOEDA", "Peça de dinheiro"],
+    ["NOME", "Palavra que identifica"], ["NARIZ", "Órgão usado para cheirar"],
+    ["OVO", "Produzido por muitas aves"], ["OLHO", "Órgão da visão"],
+    ["ONDA", "Movimento do mar"], ["OSSO", "Parte do esqueleto"],
+    ["PIPA", "Brinquedo que voa com vento"], ["PEIXE", "Animal aquático"],
+    ["PE", "Extremidade inferior da perna"], ["PAZ", "Ausência de guerra"],
+    ["QUEIJO", "Alimento feito de leite"], ["QUADRO", "Objeto pendurado na parede"],
+    ["QUEDA", "Ato de cair"], ["QUENTE", "De temperatura elevada"],
+    ["RUA", "Via pública"], ["REI", "Soberano de um reino"],
+    ["RODA", "Peça circular de veículos"], ["RAIZ", "Parte subterrânea da planta"],
+    ["SALA", "Cômodo de estar"], ["SELO", "Pequena etiqueta postal"],
+    ["SINO", "Objeto que toca ao ser balançado"], ["SUCO", "Bebida de frutas"],
+    ["TETO", "Parte superior de um cômodo"], ["TREM", "Veículo que anda em trilhos"],
+    ["TATU", "Mamífero de carapaça"], ["TOCA", "Abrigo de animais"],
+    ["UVA", "Fruta em cachos"], ["URSO", "Mamífero grande e peludo"],
+    ["UNHA", "Estrutura na ponta do dedo"], ["UNIAO", "Ato de juntar"],
+    ["VIDA", "Existência de um ser"], ["VACA", "Fêmea do boi"],
+    ["VALE", "Região baixa entre elevações"], ["VELA", "Objeto de cera com pavio"],
+    ["WEB", "A rede mundial de páginas"], ["WIFI", "Conexão sem fio"],
+    ["XADREZ", "Jogo de tabuleiro com peças"], ["XALE", "Peça de tecido sobre os ombros"],
+    ["XICARA", "Recipiente para café"], ["XAROPE", "Líquido espesso e doce"],
+    ["YOGA", "Prática corporal e meditativa"], ["YAKISOBA", "Prato de macarrão com vegetais"],
+    ["ZEBRA", "Animal listrado"], ["ZERO", "Número que representa ausência"],
+    ["ZONA", "Região ou área"], ["ZINCO", "Elemento químico metálico"]
+]
+
+
+var board: Dictionary = {}               # Vector2i -> MeshInstance3D
+var tile_state: Dictionary = {}          # Vector2i -> String
+var visual_nodes: Array[Node3D] = []
+var words: Array[Dictionary] = []
+var used: Dictionary = {}
+var chosen: int = -1
+var points: int = 0
+var coins: int = 0
+var crowns: int = 0
+var energy: int = ENERGY_MAX
+var combo: int = 0
+var regen: float = 0.0
+var elapsed: float = 0.0
+var enemy_cell := Vector2i(-100, -100)
+var enemy_node: MeshInstance3D
+var pickups: Dictionary = {}
+var game_over: bool = false
+var rng := RandomNumberGenerator.new()
+var camera: Camera3D
+var ui: Control
+var score_label: Label
+var status_label: Label
+var time_label: Label
+var crown_label: Label
+var energy_label: Label
+var clue_label: Label
+var entry: LineEdit
+var message_label: Label
+var selected_info: Label
+var letter_slots: HBoxContainer
+var material_cache: Dictionary = {}
+var last_expire_update: int = -1
+var path_time: float = WORD_TIME
+var typed_buffer: String = ""
+var camera_target: Vector3 = Vector3(0, 25, 1.4)
+var visible_origin: Vector2i = Vector2i(999999, 999999)
+var shared_tile_mesh: BoxMesh
+var pointer_start: Vector2 = Vector2.ZERO
+var pointer_cell: Vector2i = Vector2i.ZERO
+var pointer_down: bool = false
+var pointer_dragged: bool = false
+var pointer_pan: bool = false
+var level_mode: bool = false
+var exit_cell := Vector2i(0, -24)
+const LEVEL_SAFE_RADIUS := 35
+
+# Uma tentativa não altera words, used nem o tabuleiro permanente.
+var preview: Dictionary = {}
+var drafts: Dictionary = {}  # chave parent:anchor -> {text, dir}; permanece até CONFIRMAR
+var preview_parent: int = -1
+var preview_anchor: int = -1
+var preview_dir := Vector2i.ZERO
+var preview_choices: Array[Dictionary] = []
+var preview_choice_index: int = 0
+var direction_left: Button
+var direction_right: Button
+var next_clue_button: Button
+var input_syncing: bool = false
+var extra_branch_armed: bool = false
+var last_solved_word: int = -1  # palavra mais recente para navegação sem clique
+var mobile_keyboard_button: Button
+# Direção de ramificação e direção da última varredura de letras.
+var preferred_branch_direction: Vector2i = Vector2i.ZERO
+var last_navigation_arrow: Vector2i = Vector2i.ZERO
+# Acumulador de deslocamento para gestos contínuos, em qualquer casa da área 3D.
+var gesture_cursor: Vector2 = Vector2.ZERO
+const DRAG_STEP_PX := 40.0
+var result_overlay: ColorRect
+var result_title: Label
+var result_stats: Label
+var result_action: Button
+var level_number: int = 1
+
+func _ready() -> void:
+    rng.randomize()
+    _make_world()
+    _make_ui()
+    _new_game()
+
+func _material_cached(name: String, color: Color, glow: bool = false) -> StandardMaterial3D:
+    if material_cache.has(name):
+        return material_cache[name]
+    var mat := StandardMaterial3D.new()
+    mat.albedo_color = color
+    mat.roughness = 0.84
+    if glow:
+        mat.emission_enabled = true
+        mat.emission = color
+        mat.emission_energy_multiplier = 0.35
+    material_cache[name] = mat
+    return mat
+
+func _make_world() -> void:
+    var environment := WorldEnvironment.new()
+    var env := Environment.new()
+    env.background_mode = Environment.BG_COLOR
+    env.background_color = BG
+    env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+    env.ambient_light_color = Color.WHITE
+    env.ambient_light_energy = 0.9
+    environment.environment = env
+    add_child(environment)
+    var light := DirectionalLight3D.new()
+    light.rotation_degrees = Vector3(-55, 25, 15)
+    light.light_energy = 1.05
+    add_child(light)
+    camera = Camera3D.new()
+    camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+    camera.size = 25.0
+    camera.position = Vector3(0, 25, 1.4)
+    camera.rotation_degrees = Vector3(-90, 0, 0)
+    camera.current = true
+    add_child(camera)
+    shared_tile_mesh = BoxMesh.new()
+    shared_tile_mesh.size = Vector3(0.94, 0.17, 0.94)
+    # Os blocos visíveis são criados após a interface estar pronta.
+
+func _panel_style(fill: Color, edge: Color) -> StyleBoxFlat:
+    var style := StyleBoxFlat.new()
+    style.bg_color = fill
+    style.border_color = edge
+    style.set_border_width_all(2)
+    style.set_corner_radius_all(22)
+    style.content_margin_left = 16
+    style.content_margin_right = 16
+    style.content_margin_top = 10
+    style.content_margin_bottom = 10
+    return style
+
+func _make_label(text_value: String, size: int = 23) -> Label:
+    var label := Label.new()
+    label.text = text_value
+    label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    label.add_theme_font_size_override("font_size", size)
+    label.add_theme_color_override("font_color", Color("#f9dfe0"))
+    return label
+
+func _make_ui() -> void:
+    var layer := CanvasLayer.new()
+    add_child(layer)
+    ui = Control.new()
+    ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    layer.add_child(ui)
+
+    var top := PanelContainer.new()
+    top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+    top.offset_bottom = 152.0
+    top.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#77545e")))
+    ui.add_child(top)
+    var top_column := VBoxContainer.new()
+    top_column.add_theme_constant_override("separation", 6)
+    top.add_child(top_column)
+    var title := _make_label("ACROSS-WORDS", 30)
+    top_column.add_child(title)
+    var indicators := HBoxContainer.new()
+    indicators.alignment = BoxContainer.ALIGNMENT_CENTER
+    indicators.add_theme_constant_override("separation", 22)
+    top_column.add_child(indicators)
+    time_label = _make_label("⌛ 0:38", 24)
+    crown_label = _make_label("♛ ○ ○ ○", 24)
+    energy_label = _make_label("⚡ 10/10", 24)
+    indicators.add_child(time_label)
+    indicators.add_child(crown_label)
+    indicators.add_child(energy_label)
+    score_label = _make_label("★ 0  ·  ◆ 0  ·  COMBO ×0", 19)
+    top_column.add_child(score_label)
+
+    var bottom := PanelContainer.new()
+    bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+    bottom.offset_top = -395.0
+    bottom.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#77545e")))
+    ui.add_child(bottom)
+    var column := VBoxContainer.new()
+    column.add_theme_constant_override("separation", 10)
+    bottom.add_child(column)
+    selected_info = _make_label("TOQUE NUMA PALAVRA OU LETRA", 18)
+    column.add_child(selected_info)
+    clue_label = _make_label("Resolva a palavra destacada para começar.", 23)
+    clue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    clue_label.custom_minimum_size.y = 62
+    column.add_child(clue_label)
+    entry = LineEdit.new()
+    entry.placeholder_text = "Teclado virtual"
+    entry.max_length = 18
+    entry.alignment = HORIZONTAL_ALIGNMENT_CENTER
+    # Entrada interna: não é exibida como caixa de texto.
+    # No Android, o botão de teclado pode focá-la para abrir o teclado nativo.
+    entry.custom_minimum_size = Vector2(1, 1)
+    entry.modulate.a = 0.0
+    entry.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+    entry.add_theme_font_size_override("font_size", 1)
+    entry.text_submitted.connect(func(_value: String): _submit())
+    entry.text_changed.connect(_on_entry_changed)
+    column.add_child(entry)
+    letter_slots = HBoxContainer.new()
+    letter_slots.alignment = BoxContainer.ALIGNMENT_CENTER
+    letter_slots.add_theme_constant_override("separation", 4)
+    column.add_child(letter_slots)
+    var direction_row := HBoxContainer.new()
+    direction_row.add_theme_constant_override("separation", 8)
+    column.add_child(direction_row)
+    direction_left = Button.new()
+    direction_left.text = "↑ CIMA"
+    direction_left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    direction_left.custom_minimum_size.y = 44
+    direction_left.pressed.connect(func(): _set_preview_direction(-1))
+    direction_row.add_child(direction_left)
+    direction_right = Button.new()
+    direction_right.text = "↓ BAIXO"
+    direction_right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    direction_right.custom_minimum_size.y = 44
+    direction_right.pressed.connect(func(): _set_preview_direction(1))
+    direction_row.add_child(direction_right)
+    direction_left.visible = false
+    direction_right.visible = false
+    next_clue_button = Button.new()
+    next_clue_button.text = "OUTRA PISTA ↻"
+    next_clue_button.custom_minimum_size.y = 44
+    next_clue_button.pressed.connect(_next_preview_clue)
+    direction_row.add_child(next_clue_button)
+    var actions := HBoxContainer.new()
+    actions.add_theme_constant_override("separation", 12)
+    column.add_child(actions)
+    var confirm := Button.new()
+    confirm.text = "CONFIRMAR"
+    confirm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    confirm.custom_minimum_size.y = 58
+    confirm.add_theme_font_size_override("font_size", 22)
+    confirm.pressed.connect(_submit)
+    actions.add_child(confirm)
+    mobile_keyboard_button = Button.new()
+    mobile_keyboard_button.text = "⌨"
+    mobile_keyboard_button.tooltip_text = "Abrir teclado virtual (celular)"
+    mobile_keyboard_button.custom_minimum_size = Vector2(58, 58)
+    mobile_keyboard_button.pressed.connect(_open_mobile_keyboard)
+    actions.add_child(mobile_keyboard_button)
+    var buy := Button.new()
+    buy.text = "+ RAMO (◆3)"
+    buy.custom_minimum_size = Vector2(168, 58)
+    buy.add_theme_font_size_override("font_size", 18)
+    buy.pressed.connect(_buy_path)
+    actions.add_child(buy)
+    message_label = _make_label("", 17)
+    message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    message_label.custom_minimum_size.y = 32
+    column.add_child(message_label)
+    var footer := HBoxContainer.new()
+    footer.alignment = BoxContainer.ALIGNMENT_CENTER
+    column.add_child(footer)
+    status_label = _make_label("Teclado: escrever · setas: selecionar · Backspace: apagar · Enter: confirmar", 14)
+    footer.add_child(status_label)
+    var mode_button := Button.new()
+    mode_button.text = "MODO: ∞"
+    mode_button.pressed.connect(func() -> void:
+        level_mode = not level_mode
+        mode_button.text = "MODO: FASE" if level_mode else "MODO: ∞"
+        _new_game()
+    )
+    footer.add_child(mode_button)
+    var restart := Button.new()
+    restart.text = "↻ Reiniciar"
+    restart.pressed.connect(_new_game)
+    footer.add_child(restart)
+
+    # Tela modal acima da HUD. Só é exibida no fim da partida.
+    var result_layer := CanvasLayer.new()
+    result_layer.layer = 10
+    add_child(result_layer)
+    result_overlay = ColorRect.new()
+    result_overlay.color = Color(0.10, 0.07, 0.12, 0.91)
+    result_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    result_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+    result_layer.add_child(result_overlay)
+    var result_center := CenterContainer.new()
+    result_center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    result_overlay.add_child(result_center)
+    var result_panel := PanelContainer.new()
+    result_panel.custom_minimum_size = Vector2(560, 390)
+    result_panel.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#ad8193")))
+    result_center.add_child(result_panel)
+    var result_column := VBoxContainer.new()
+    result_column.add_theme_constant_override("separation", 22)
+    result_panel.add_child(result_column)
+    result_title = _make_label("FIM DE JOGO", 42)
+    result_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    result_column.add_child(result_title)
+    result_stats = _make_label("", 25)
+    result_stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    result_stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    result_column.add_child(result_stats)
+    result_action = Button.new()
+    result_action.text = "JOGAR NOVAMENTE"
+    result_action.custom_minimum_size.y = 72
+    result_action.pressed.connect(_result_continue)
+    result_column.add_child(result_action)
+    result_overlay.hide()
+
+func _show_result(victory: bool, reason: String) -> void:
+    if game_over and result_overlay.visible:
+        return
+    game_over = true
+    result_title.text = "VITÓRIA!" if victory else "GAME OVER"
+    result_title.add_theme_color_override("font_color", Color("#e5bd74") if victory else Color("#df7587"))
+    result_stats.text = "%s\n\nPontuação: %d\nPalavras: %d  ·  Coroas: %d/3\nMoedas: %d  ·  Combo: %d" % [reason, points, _solved_count(), crowns, coins, combo]
+    result_action.text = "PRÓXIMO NÍVEL" if victory else "TENTAR NOVAMENTE"
+    result_overlay.show()
+
+func _result_continue() -> void:
+    if result_title.text == "VITÓRIA!":
+        level_mode = true
+        level_number += 1
+    _new_game()
+
+func _new_game() -> void:
+    for node in visual_nodes:
+        if is_instance_valid(node): node.queue_free()
+    visual_nodes.clear()
+    if is_instance_valid(enemy_node): enemy_node.queue_free()
+    enemy_node = null
+    words.clear()
+    used.clear()
+    pickups.clear()
+    chosen = -1
+    last_solved_word = -1
+    preferred_branch_direction = Vector2i.ZERO
+    last_navigation_arrow = Vector2i.ZERO
+    if is_instance_valid(result_overlay):
+        result_overlay.hide()
+    preview.clear()
+    drafts.clear()
+    preview_parent = -1
+    preview_anchor = -1
+    preview_dir = Vector2i.ZERO
+    preview_choices.clear()
+    preview_choice_index = 0
+    extra_branch_armed = false
+    points = 0
+    coins = 0
+    crowns = 0
+    energy = ENERGY_MAX
+    combo = 0
+    regen = 0.0
+    elapsed = 0.0
+    path_time = WORD_TIME
+    typed_buffer = ""
+    camera_target = Vector3(0, 25, 1.4)
+    camera.position = camera_target
+    game_over = false
+    enemy_cell = Vector2i(-100, -100)
+    var first: Dictionary = {"answer": "CASA", "clue": "Lugar onde moramos", "start": Vector2i(-2, 0), "dir": Vector2i(1, 0), "time": WORD_TIME, "state": "active", "spawned": false}
+    words.append(first)
+    used["CASA"] = true
+    _spawn_pickup(Vector2i(4, -2), "coin")
+    _spawn_pickup(Vector2i(-4, 3), "energy")
+    _spawn_pickup(Vector2i(3, 4), "crown")
+    _assign_entry("")
+    entry.release_focus()
+    _sync_visible_board(true)
+    _choose(0)
+    _refresh_board()
+    _message("Digite CASA diretamente: as letras aparecem nos espaços e no mapa, sem clicar em casas.")
+
+func _cells(word: Dictionary) -> Array[Vector2i]:
+    var result: Array[Vector2i] = []
+    var answer: String = word["answer"]
+    var start: Vector2i = word["start"]
+    var direction: Vector2i = word["dir"]
+    for i in range(answer.length()):
+        result.append(start + direction * i)
+    return result
+
+func _inside(_p: Vector2i) -> bool:
+    # O tabuleiro é logicamente infinito; só a região visível é desenhada.
+    return true
+
+func _occupied_letters() -> Dictionary:
+    var occupied: Dictionary = {}
+    for word in words:
+        if word["state"] == "destroyed" or word["state"] == "expired":
+            continue
+        var cells := _cells(word)
+        var answer: String = word["answer"]
+        for i in range(cells.size()):
+            occupied[cells[i]] = answer[i]
+    return occupied
+
+# Retorna os caminhos que usam precisamente a letra escolhida do pai.
+# Todas as opções válidas começam na letra selecionada, na direção escolhida.
+func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[Dictionary]:
+    var choices: Array[Dictionary] = []
+    if index < 0 or index >= words.size():
+        return choices
+    var parent: Dictionary = words[index]
+    if parent["state"] != "solved":
+        return choices
+    if bool(parent["spawned"]) and not extra_branch_armed:
+        return choices
+    var parent_cells: Array[Vector2i] = _cells(parent)
+    if anchor < 0 or anchor >= parent_cells.size():
+        return choices
+    var parent_dir: Vector2i = parent["dir"]
+    if direction == Vector2i.ZERO or parent_dir.x * direction.x + parent_dir.y * direction.y != 0:
+        return choices
+    var crossing: Vector2i = parent_cells[anchor]
+    var parent_answer: String = parent["answer"]
+    var occupied: Dictionary = _occupied_letters()
+    # Impedimento por inimigo: não é permitido traçar uma palavra sobre ele.
+    if enemy_cell == crossing:
+        return choices
+    for item in DICTIONARY:
+        var answer: String = item[0]
+        if answer[0] != parent_answer[anchor]:
+            continue
+        var trial: Dictionary = {
+            "answer": answer, "clue": item[1], "start": crossing,
+            "dir": direction, "time": WORD_TIME,
+            "state": "active", "spawned": false
+        }
+        var cells: Array[Vector2i] = _cells(trial)
+        var valid := true
+        var new_count := 0
+        for k in range(cells.size()):
+            var cell: Vector2i = cells[k]
+            if cell == enemy_cell:
+                valid = false
+                break
+            if occupied.has(cell):
+                if occupied[cell] != answer[k]:
+                    valid = false
+                    break
+            else:
+                new_count += 1
+        # Permite cruzamentos múltiplos e comprimentos curtos; não há limite de mapa.
+        if valid and new_count >= 1:
+            choices.append(trial)
+    # Candidatas maiores primeiro, sem bloquear alternativas pequenas.
+    choices.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+        return String(a["answer"]).length() > String(b["answer"]).length())
+    return choices
+
+# Cada letra de origem guarda SEU rascunho; direção não cria outro rascunho.
+# Ex.: ABELHA à direita e à esquerda são o mesmo texto, apenas as coordenadas mudam.
+func _draft_key(parent_idx: int, anchor: int) -> String:
+    return "%d:%d" % [parent_idx, anchor]
+
+func _anchor_letter(parent_idx: int, anchor: int) -> String:
+    if parent_idx < 0 or parent_idx >= words.size():
+        return ""
+    var answer: String = words[parent_idx]["answer"]
+    if anchor < 0 or anchor >= answer.length():
+        return ""
+    return answer.substr(anchor, 1)
+
+func _save_preview_draft() -> void:
+    if preview_parent < 0 or preview_anchor < 0:
+        return
+    var key: String = _draft_key(preview_parent, preview_anchor)
+    var value: String = entry.text.strip_edges().to_upper()
+    var prefix: String = _anchor_letter(preview_parent, preview_anchor)
+    if not value.begins_with(prefix):
+        value = prefix
+    drafts[key] = {"text": value, "dir": preview_dir}
+    typed_buffer = value
+
+func _answer_limit() -> int:
+    if not preview.is_empty():
+        return String(preview["answer"]).length()
+    if chosen >= 0 and chosen < words.size() and words[chosen]["state"] == "active":
+        return String(words[chosen]["answer"]).length()
+    return 0
+
+func _on_entry_changed(value: String) -> void:
+    if input_syncing:
+        return
+    # Uma unica resposta ativa: seja teclado fisico ou virtual, os tres lugares
+    # (texto interno, slots e tabuleiro) devem receber a MESMA string.
+    var clean: String = value.strip_edges().to_upper()
+    if preview_parent >= 0 and preview_anchor >= 0:
+        var prefix: String = _anchor_letter(preview_parent, preview_anchor)
+        # A ancora faz parte da palavra e nao pode ser apagada.
+        if not clean.begins_with(prefix):
+            clean = prefix + clean if not clean.is_empty() else prefix
+        var key: String = _draft_key(preview_parent, preview_anchor)
+        drafts[key] = {"text": clean, "dir": preview_dir}
+    var max_letters: int = _answer_limit()
+    if max_letters > 0 and clean.length() > max_letters:
+        clean = clean.substr(0, max_letters)
+    if preview_parent >= 0 and preview_anchor >= 0:
+        drafts[_draft_key(preview_parent, preview_anchor)] = {"text": clean, "dir": preview_dir}
+    # IMPORTANTE: digitar diretamente por _input nao dispara text_changed
+    # no LineEdit. Sem esta linha, cada tecla sobrescreve a anterior.
+    if entry.text != clean:
+        _assign_entry(clean)
+    typed_buffer = clean
+    _refresh_board()
+
+func _assign_entry(value: String) -> void:
+    input_syncing = true
+    entry.text = value
+    entry.caret_column = entry.text.length()
+    input_syncing = false
+
+# O teclado físico envia caracteres diretamente para os quadrados, sem clicar na entrada.
+# O LineEdit invisível ainda é usado somente para receber o teclado virtual no Android.
+func _type_character(character: String) -> void:
+    if game_over or (preview_parent < 0 and chosen < 0):
+        return
+    var limit: int = _answer_limit()
+    if limit <= 0 or entry.text.length() >= limit:
+        return
+    _on_entry_changed(entry.text + character)
+
+func _erase_character() -> void:
+    if game_over or (preview_parent < 0 and chosen < 0):
+        return
+    if entry.text.is_empty():
+        return
+    var minimum: int = 1 if preview_parent >= 0 else 0
+    if entry.text.length() <= minimum:
+        return
+    _on_entry_changed(entry.text.substr(0, entry.text.length() - 1))
+
+func _open_mobile_keyboard() -> void:
+    # Campo transparente: o usuário vê apenas os espaços da palavra.
+    entry.grab_focus()
+    if DisplayServer.has_feature(DisplayServer.FEATURE_VIRTUAL_KEYBOARD):
+        DisplayServer.virtual_keyboard_show(entry.text)
+
+func _clear_preview(save: bool = true) -> void:
+    if save:
+        _save_preview_draft()
+    preview.clear()
+    preview_parent = -1
+    preview_anchor = -1
+    preview_dir = Vector2i.ZERO
+    preview_choices.clear()
+    preview_choice_index = 0
+
+func _preview_default_direction(index: int) -> Vector2i:
+    var d: Vector2i = words[index]["dir"]
+    return Vector2i(0, 1) if d.x != 0 else Vector2i(1, 0)
+
+func _select_anchor(index: int, anchor: int) -> void:
+    if index < 0 or index >= words.size():
+        return
+    if anchor < 0 or anchor >= _cells(words[index]).size():
+        return
+    if preview_parent == index and preview_anchor == anchor:
+        return
+    _save_preview_draft()
+    preview_parent = index
+    last_solved_word = index
+    # Nao zerar last_navigation_arrow aqui: esta funcao e usada pelas setas.
+    preview_anchor = anchor
+    chosen = -1
+    var key: String = _draft_key(index, anchor)
+    var old: Dictionary = drafts.get(key, {})
+    # O lado escolhido tem prioridade ao avançar para outra letra.
+    var remembered_direction: Vector2i = preferred_branch_direction
+    var parent_direction: Vector2i = words[index]["dir"]
+    if remembered_direction == Vector2i.ZERO or parent_direction.x * remembered_direction.x + parent_direction.y * remembered_direction.y != 0:
+        remembered_direction = old.get("dir", _preview_default_direction(index))
+    preview_dir = remembered_direction
+    preferred_branch_direction = remembered_direction
+    var text_value: String = String(old.get("text", _anchor_letter(index, anchor)))
+    typed_buffer = text_value
+    _assign_entry(text_value)
+    _load_preview_choices()
+
+func _move_anchor(step: int) -> void:
+    if preview_parent < 0 or preview_parent >= words.size():
+        return
+    var count: int = _cells(words[preview_parent]).size()
+    var next_anchor: int = clampi(preview_anchor + step, 0, count - 1)
+    if next_anchor != preview_anchor:
+        _select_anchor(preview_parent, next_anchor)
+
+func _set_preview_direction(side: int) -> void:
+    if preview_parent < 0 or preview_parent >= words.size() or game_over:
+        return
+    var original: Vector2i = words[preview_parent]["dir"]
+    _apply_direction(Vector2i(0, side) if original.x != 0 else Vector2i(side, 0))
+
+func _load_preview_choices() -> void:
+    preview.clear()
+    preview_choices = _possible_children(preview_parent, preview_anchor, preview_dir)
+    preview_choice_index = 0
+    # Se a lista mudar ao inverter o sentido, a resposta digitada NÃO muda.
+    if preview_choices.is_empty():
+        var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
+        if preview_anchor >= 0 and preview_anchor < anchor_cells.size():
+            var selected_cell: Vector2i = anchor_cells[preview_anchor]
+            camera_target = Vector3(float(selected_cell.x) * GAP, 25.0, float(selected_cell.y) * GAP + 1.4)
+        _refresh_board()
+        _message("Nenhuma candidata conhecida nesse sentido. O rascunho continua editável.")
+        return
+    _show_preview_choice()
+
+func _show_preview_choice() -> void:
+    if preview_choices.is_empty():
+        return
+    preview = preview_choices[preview_choice_index].duplicate(true)
+    var key: String = _draft_key(preview_parent, preview_anchor)
+    var stored: Dictionary = drafts.get(key, {})
+    var typed: String = String(stored.get("text", _anchor_letter(preview_parent, preview_anchor)))
+    typed_buffer = typed
+    _assign_entry(typed)
+    _focus_word(preview)
+    _refresh_board()
+    _message("Digite sem clicar. Setas paralelas mudam a letra; perpendiculares invertem o sentido.")
+
+func _next_preview_clue() -> void:
+    if preview_choices.is_empty() or game_over:
+        return
+    _save_preview_draft()
+    preview_choice_index = (preview_choice_index + 1) % preview_choices.size()
+    _show_preview_choice()
+
+func _update_letter_slots() -> void:
+    if not is_instance_valid(letter_slots):
+        return
+    for child in letter_slots.get_children():
+        child.queue_free()
+    var count: int = 0
+    var typed: String = entry.text.to_upper()
+    if not preview.is_empty():
+        count = String(preview["answer"]).length()
+    elif chosen >= 0 and chosen < words.size() and words[chosen]["state"] == "active":
+        count = String(words[chosen]["answer"]).length()
+    elif preview_parent >= 0:
+        count = maxi(typed.length(), 1)
+    count = mini(count, entry.max_length)
+    for i in range(count):
+        var panel := PanelContainer.new()
+        panel.custom_minimum_size = Vector2(31, 43)
+        var color: Color = Color("#c58c9b") if i < typed.length() else Color("#604653")
+        panel.add_theme_stylebox_override("panel", _panel_style(color, Color("#b99aa9")))
+        panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        var letter := _make_label(typed.substr(i, 1) if i < typed.length() else "", 23)
+        letter.add_theme_color_override("font_color", Color("#32252f") if i < typed.length() else Color("#f9dfe0"))
+        letter.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        panel.add_child(letter)
+        letter_slots.add_child(panel)
+
+
+func _choose(index: int) -> void:
+    if index < 0 or index >= words.size():
+        return
+    if words[index]["state"] != "active":
+        return
+    _clear_preview()
+    chosen = index
+    _assign_entry(typed_buffer)
+    _focus_word(words[index])
+    _update_hud()
+    _refresh_board()
+
+func _click_tile(p: Vector2i) -> void:
+    if game_over:
+        return
+    # Casas resolvidas são clicáveis inclusive quando uma prévia as cruza.
+    for i in range(words.size() - 1, -1, -1):
+        var word: Dictionary = words[i]
+        if word["state"] != "solved":
+            continue
+        var anchor: int = _cells(word).find(p)
+        if anchor < 0:
+            continue
+        if bool(word["spawned"]) and not extra_branch_armed:
+            _message("Esta palavra já ramificou. Compre um ramo extra para reutilizá-la.")
+            return
+        last_navigation_arrow = Vector2i.ZERO
+        _select_anchor(i, anchor)
+        return
+    for i in range(words.size() - 1, -1, -1):
+        if words[i]["state"] == "active" and _cells(words[i]).has(p):
+            _choose(i)
+            _message("Palavra selecionada. Digite a resposta e confirme.")
+            return
+    _message("Toque numa letra resolvida para testar um novo caminho.")
+
+func _submit() -> void:
+    if game_over:
+        return
+    var word: Dictionary = {}
+    var committed_from_preview := not preview.is_empty()
+    if committed_from_preview:
+        word = preview.duplicate(true)
+    elif chosen >= 0 and chosen < words.size():
+        word = words[chosen].duplicate(true)
+    else:
+        _message("Selecione uma palavra ou uma letra e direção válidas.")
+        return
+    if energy <= 0:
+        _message("Sem raios! Aguarde recarga ou colete energia.")
+        return
+    var typed: String = entry.text.strip_edges().to_upper()
+    if committed_from_preview and not typed.begins_with(_anchor_letter(preview_parent, preview_anchor)):
+        _message("A resposta deve começar com a letra de origem selecionada.")
+        return
+    if typed != String(word["answer"]):
+        combo = 0
+        _message("Resposta incorreta. Você pode continuar editando sem perder o caminho.")
+        _update_hud()
+        return
+    if committed_from_preview:
+        # Revalida contra o tabuleiro no momento da confirmação.
+        var options := _possible_children(preview_parent, preview_anchor, preview_dir)
+        var still_valid := false
+        for option in options:
+            if option["answer"] == word["answer"]:
+                still_valid = true
+                break
+        if not still_valid or path_time <= 0.0:
+            _message("Caminho indisponível. Escolha outra letra ou direção.")
+            return
+        var parent: Dictionary = words[preview_parent]
+        if bool(parent["spawned"]):
+            if not extra_branch_armed or coins < 3:
+                _message("Para reutilizar esta palavra, ative um ramo extra (◆3).")
+                return
+            coins -= 3
+            extra_branch_armed = false
+        else:
+            parent["spawned"] = true
+            words[preview_parent] = parent
+        word["state"] = "solved"
+        words.append(word)
+        last_solved_word = words.size() - 1
+        last_navigation_arrow = Vector2i.ZERO
+        used[String(word["answer"])] = true
+    else:
+        if word["state"] != "active":
+            return
+        word["state"] = "solved"
+        words[chosen] = word
+        last_solved_word = chosen
+        last_navigation_arrow = Vector2i.ZERO
+    energy -= 1
+    combo += 1
+    var quick: bool = path_time >= WORD_TIME * 0.55
+    # O relógio só é renovado depois de CONFIRMAR uma resposta correta.
+    path_time = WORD_TIME + (minf(8.0, float(combo - 1) * 2.0) if quick else 0.0)
+    points += 100 + mini(combo, 10) * 15
+    if quick and combo >= 2:
+        energy = mini(ENERGY_MAX, energy + 1)
+        path_time += 5.0
+    _clear_preview(false)
+    drafts.clear()  # Só CONFIRMAR descarta alternativas.
+    typed_buffer = ""
+    if level_mode:
+        var solved_cells: Array[Vector2i] = _cells(word)
+        var last_cell: Vector2i = solved_cells.back()
+        var dist: int = absi(last_cell.x - exit_cell.x) + absi(last_cell.y - exit_cell.y)
+        if dist > LEVEL_SAFE_RADIUS:
+            var penalty: int = (dist - LEVEL_SAFE_RADIUS) * 15
+            points = maxi(0, points - penalty)
+            path_time = maxf(5.0, path_time - 3.0)
+        if solved_cells.has(exit_cell):
+            _collect_pickups()
+            _show_result(true, "Você encontrou a saída da fase %d!" % level_number)
+            _refresh_board()
+            return
+    _collect_pickups()
+    # Apenas o alvo atual provoca derrota; os demais custam pontos.
+    _enemy_turn()
+    if game_over:
+        _refresh_board()
+        return
+    if points >= 400 and enemy_cell.x == -100:
+        _spawn_enemy()
+    chosen = -1
+    _assign_entry("")
+    for i in range(words.size()):
+        if words[i]["state"] == "active":
+            chosen = i
+            break
+    _refresh_board()
+    if not game_over:
+        _message("Confirmada! Use setas paralelas à palavra para escolher uma letra, ou clique nela.")
+    _check_end()
+
+func _collect_pickups() -> void:
+    var solved_cells: Dictionary = {}
+    for word in words:
+        if word["state"] == "solved":
+            for p in _cells(word):
+                solved_cells[p] = true
+    for p in pickups.keys():
+        if not solved_cells.has(p):
+            continue
+        match pickups[p]:
+            "coin":
+                coins += 1
+                points += 50
+            "crown":
+                crowns += 1
+                points += 500
+            "energy":
+                energy = mini(ENERGY_MAX, energy + 3)
+            "time":
+                path_time += 12.0
+        pickups.erase(p)
+    if rng.randf() < 0.35:
+        var last: Dictionary = words.back()
+        var around: Array[Vector2i] = _cells(last)
+        var center: Vector2i = around[around.size() / 2]
+        for attempt in range(20):
+            var p := center + Vector2i(rng.randi_range(-6, 6), rng.randi_range(-6, 6))
+            if not solved_cells.has(p) and not pickups.has(p):
+                _spawn_pickup(p, ["coin", "energy", "time"][rng.randi_range(0, 2)])
+                break
+
+func _spawn_pickup(p: Vector2i, kind: String) -> void:
+    pickups[p] = kind
+
+func _buy_path() -> void:
+    if game_over:
+        return
+    if coins < 3:
+        _message("Você precisa de três moedas para habilitar um ramo extra.")
+        return
+    extra_branch_armed = not extra_branch_armed
+    _message("Ramo extra %s. Toque numa palavra já utilizada. Moedas só serão gastas ao confirmar." % ("ativado" if extra_branch_armed else "desativado"))
+    _update_hud()
+
+func _spawn_enemy() -> void:
+    var targets: Array[Vector2i] = []
+    for word in words:
+        if word["state"] == "solved":
+            targets.append_array(_cells(word))
+    if targets.is_empty():
+        return
+    var target: Vector2i = targets[rng.randi_range(0, targets.size() - 1)]
+    enemy_cell = target + Vector2i(4, 4)
+    enemy_node = MeshInstance3D.new()
+    var mesh := BoxMesh.new()
+    mesh.size = Vector3(0.72, 0.40, 0.72)
+    enemy_node.mesh = mesh
+    enemy_node.material_override = _material_cached("enemy", RED, true)
+    add_child(enemy_node)
+    _update_enemy_visual()
+
+func _enemy_turn() -> void:
+    if enemy_cell.x == -100:
+        return
+    var targets: Array[Vector2i] = []
+    for word in words:
+        if word["state"] == "solved":
+            targets.append_array(_cells(word))
+    if targets.is_empty():
+        return
+    var closest: Vector2i = targets[0]
+    var best: int = 99999
+    for p in targets:
+        var dist: int = absi(p.x - enemy_cell.x) + absi(p.y - enemy_cell.y)
+        if dist < best:
+            best = dist
+            closest = p
+    var dx: int = signi(closest.x - enemy_cell.x)
+    var dy: int = signi(closest.y - enemy_cell.y)
+    var step: Vector2i = Vector2i(dx, 0) if absi(closest.x - enemy_cell.x) >= absi(closest.y - enemy_cell.y) else Vector2i(0, dy)
+    enemy_cell += step
+    _update_enemy_visual()
+    # A palavra atual é a última confirmada. Colisão com ela encerra a partida.
+    # O inimigo continua perigoso mesmo se a palavra estiver em um cruzamento.
+    if last_solved_word >= 0 and last_solved_word < words.size():
+        var current_word: Dictionary = words[last_solved_word]
+        if current_word["state"] == "solved" and _cells(current_word).has(enemy_cell):
+            _show_result(false, "O inimigo alcançou sua palavra atual!")
+            return
+    for i in range(words.size()):
+        if words[i]["state"] == "solved" and _cells(words[i]).has(enemy_cell):
+            var word: Dictionary = words[i]
+            word["state"] = "destroyed"
+            words[i] = word
+            points = maxi(0, points - 75)
+            enemy_cell = Vector2i(-100, -100)
+            if is_instance_valid(enemy_node):
+                enemy_node.queue_free()
+            enemy_node = null
+            _message("Inimigo destruiu outra palavra! -75 pontos")
+            break
+
+func _update_enemy_visual() -> void:
+    if is_instance_valid(enemy_node):
+        enemy_node.position = Vector3(enemy_cell.x * GAP, 0.72, enemy_cell.y * GAP)
+
+func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_size: int = 78) -> void:
+    var label := Label3D.new()
+    label.text = caption
+    label.font_size = font_size
+    label.pixel_size = 0.006
+    label.modulate = color
+    label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+    label.no_depth_test = true
+    label.position = Vector3(p.x * GAP, height, p.y * GAP)
+    add_child(label)
+    visual_nodes.append(label)
+
+func _refresh_board() -> void:
+    for node in visual_nodes:
+        if is_instance_valid(node):
+            node.queue_free()
+    visual_nodes.clear()
+    tile_state.clear()
+    var letters: Dictionary = {}
+    for word in words:
+        if word["state"] == "destroyed" or word["state"] == "expired":
+            continue
+        var cells: Array[Vector2i] = _cells(word)
+        var answer: String = word["answer"]
+        for i in range(cells.size()):
+            var p: Vector2i = cells[i]
+            if word["state"] == "solved":
+                tile_state[p] = "solved"
+                letters[p] = answer[i]
+            elif not tile_state.has(p):
+                tile_state[p] = "active"
+    # Uma única orientação visual por âncora. Ao inverter, a prévia antiga desaparece.
+    # Outros rascunhos (em outras letras) permanecem até uma confirmação.
+    for key in drafts.keys():
+        var parts: PackedStringArray = String(key).split(":")
+        if parts.size() != 2:
+            continue
+        var pidx: int = int(parts[0])
+        var anchor: int = int(parts[1])
+        if pidx < 0 or pidx >= words.size() or anchor < 0 or anchor >= _cells(words[pidx]).size():
+            continue
+        var d: Vector2i = drafts[key].get("dir", Vector2i.ZERO)
+        if d == Vector2i.ZERO:
+            continue
+        var start: Vector2i = _cells(words[pidx])[anchor]
+        var typed: String = String(drafts[key].get("text", "")).to_upper()
+        for j in range(typed.length()):
+            var cell: Vector2i = start + d * j
+            if tile_state.get(cell, "") != "solved":
+                tile_state[cell] = "draft"
+                letters[cell] = typed[j]
+    if chosen >= 0 and chosen < words.size() and words[chosen]["state"] == "active":
+        var initial_cells: Array[Vector2i] = _cells(words[chosen])
+        var entered: String = entry.text.strip_edges().to_upper()
+        for i in range(initial_cells.size()):
+            var p: Vector2i = initial_cells[i]
+            if tile_state.get(p, "") != "solved":
+                tile_state[p] = "selected"
+                if i < entered.length():
+                    letters[p] = entered[i]
+    if not preview.is_empty():
+        var cells: Array[Vector2i] = _cells(preview)
+        var typed: String = entry.text.strip_edges().to_upper()
+        for i in range(cells.size()):
+            var p: Vector2i = cells[i]
+            if tile_state.get(p, "") != "solved":
+                tile_state[p] = "selected"
+                if i < typed.length():
+                    letters[p] = typed[i]
+    for p in board.keys():
+        var tile: MeshInstance3D = board[p]
+        var kind: String = tile_state.get(p, "base")
+        var mat: StandardMaterial3D = _material_cached("base", BASE)
+        match kind:
+            "solved":
+                mat = _material_cached("solved", SOLVED)
+            "active":
+                mat = _material_cached("active", ACTIVE, true)
+            "selected":
+                mat = _material_cached("selected", SELECTED, true)
+            "draft":
+                mat = _material_cached("draft", Color("#846777"))
+            _:
+                if level_mode and p == exit_cell:
+                    mat = _material_cached("exit", Color("#6ab79a"), true)
+                elif pickups.has(p):
+                    mat = _material_cached("gold", GOLD, true) if pickups[p] in ["coin", "crown"] else _material_cached("blue", Color("#72a5ae"), true)
+        tile.material_override = mat
+        if letters.has(p):
+            _draw_text(p, String(letters[p]), Color("#342632"), 0.64)
+        elif kind == "selected" or kind == "active":
+            _draw_text(p, "·", Color("#f7d7db"), 0.42, 66)
+        elif level_mode and p == exit_cell:
+            _draw_text(p, "⇧", Color("#c7f6d5"), 0.55, 84)
+        elif pickups.has(p):
+            var symbol: String = "◆"
+            match pickups[p]:
+                "energy": symbol = "+"
+                "time": symbol = "⌛"
+                "crown": symbol = "♛"
+            _draw_text(p, symbol, Color("#fff0dc"), 0.50, 64)
+    _update_hud()
+    _update_letter_slots()
+
+func _update_hud() -> void:
+    var seconds: int = maxi(0, int(ceil(path_time)))
+    if not preview.is_empty():
+        clue_label.text = "%s  (%d letras)" % [preview["clue"], String(preview["answer"]).length()]
+        selected_info.text = "RASCUNHO · %d/%d PISTAS" % [preview_choice_index + 1, preview_choices.size()]
+    elif chosen >= 0 and chosen < words.size() and words[chosen]["state"] == "active":
+        var word: Dictionary = words[chosen]
+        clue_label.text = "%s  (%d letras)" % [word["clue"], String(word["answer"]).length()]
+        selected_info.text = "PALAVRA SELECIONADA"
+    elif preview_parent >= 0:
+        clue_label.text = "Nenhuma palavra do dicionário neste sentido; experimente outra direção."
+        selected_info.text = "LETRA SELECIONADA · TEMPO CORRENDO"
+    else:
+        clue_label.text = "Selecione uma letra resolvida e escolha uma direção."
+        selected_info.text = "ESCOLHA UMA LETRA PARA RAMIFICAR"
+    direction_left.visible = false
+    direction_right.visible = false
+    next_clue_button.visible = preview_choices.size() > 1
+    time_label.text = "⌛ %d:%02d" % [seconds / 60, seconds % 60]
+    var crown_text: String = "♛ "
+    for i in range(3):
+        crown_text += "● " if i < crowns else "○ "
+    crown_label.text = crown_text
+    energy_label.text = "⚡ %d/%d" % [energy, ENERGY_MAX]
+    score_label.text = "★ %d     ◆ %d     COMBO ×%d" % [points, coins, combo]
+
+func _message(value: String) -> void:
+    message_label.text = value
+
+func _has_possible_path() -> bool:
+    for i in range(words.size()):
+        if words[i]["state"] != "solved":
+            continue
+        if bool(words[i]["spawned"]) and not (extra_branch_armed and coins >= 3):
+            continue
+        var directions: Array[Vector2i] = []
+        var original: Vector2i = words[i]["dir"]
+        if original.x != 0:
+            directions = [Vector2i(0, -1), Vector2i(0, 1)]
+        else:
+            directions = [Vector2i(-1, 0), Vector2i(1, 0)]
+        for j in range(_cells(words[i]).size()):
+            for direction in directions:
+                if not _possible_children(i, j, direction).is_empty():
+                    return true
+    return false
+
+func _check_end() -> void:
+    if game_over:
+        return
+    if level_mode:
+        # Não existem paredes. A penalidade por sair da área será aplicada em _submit.
+        pass
+    # Modo infinito: o fim depende de tempo/recursos, nunca do tamanho da grade.
+
+func _solved_count() -> int:
+    var result: int = 0
+    for word in words:
+        if word["state"] == "solved":
+            result += 1
+    return result
+
+func _process(delta: float) -> void:
+    elapsed += delta
+    if not game_over:
+        if energy < ENERGY_MAX:
+            regen += delta
+            if regen >= REGEN_SECONDS:
+                regen -= REGEN_SECONDS
+                energy += 1
+        else:
+            regen = 0.0
+        path_time = maxf(0.0, path_time - delta)
+        if path_time <= 0.0:
+            _show_result(false, "O tempo acabou!")
+        _update_hud()
+    # A câmera segue suavemente o centro da palavra selecionada.
+    camera.position = camera.position.lerp(camera_target, minf(1.0, delta * 6.0))
+    _sync_visible_board()
+    for p in board.keys():
+        var tile: MeshInstance3D = board[p]
+        var kind: String = tile_state.get(p, "base")
+        if kind == "solved":
+            tile.position.y = 0.26
+        elif kind == "active" or kind == "selected":
+            tile.position.y = 0.10 + sin(elapsed * 2.6 + float(p.x) * 0.7 + float(p.y) * 0.45) * 0.06
+        else:
+            tile.position.y = sin(elapsed * 1.5 + float(p.x) * 0.35 + float(p.y) * 0.4) * 0.04
+    if is_instance_valid(enemy_node):
+        enemy_node.position.y = 0.7 + sin(elapsed * 3.0) * 0.10
+
+func _screen_to_cell(screen_pos: Vector2) -> Vector2i:
+    var origin := camera.project_ray_origin(screen_pos)
+    var direction := camera.project_ray_normal(screen_pos)
+    var hit: Variant = Plane(Vector3.UP, 0.0).intersects_ray(origin, direction)
+    if hit == null:
+        return Vector2i(-1000, -1000)
+    var point: Vector3 = hit
+    return Vector2i(roundi(point.x / GAP), roundi(point.z / GAP))
+
+# Navegação espacial determinística. Não usa a lista de palavras candidatas.
+# O eixo e os índices são calculados pela posição real da casa, sem usar o
+# sentido em que a palavra foi escrita. Nunca altera a direção perpendicular.
+func _select_anchor_by_arrow(arrow: Vector2i) -> void:
+    var parent_index: int = preview_parent if preview_parent >= 0 else last_solved_word
+    if parent_index < 0 or parent_index >= words.size():
+        return
+    var parent: Dictionary = words[parent_index]
+    if parent["state"] != "solved":
+        return
+    if bool(parent["spawned"]) and not extra_branch_armed:
+        _message("Esta palavra já gerou um ramo. Escolha outra ou compre um ramo extra.")
+        return
+    var cells: Array[Vector2i] = _cells(parent)
+    var count: int = cells.size()
+    if count == 0:
+        return
+
+    # Ordem VISUAL: esquerda -> direita, cima -> baixo.
+    # A seta sempre desloca no mesmo sentido que aponta na tela.
+    var order: Array[int] = []
+    for i in range(count):
+        order.append(i)
+    var horizontal: bool = abs(cells[count - 1].x - cells[0].x) > 0
+    if horizontal:
+        if arrow.y != 0:
+            return
+        order.sort_custom(func(a: int, b: int) -> bool: return cells[a].x < cells[b].x)
+    else:
+        if arrow.x != 0:
+            return
+        order.sort_custom(func(a: int, b: int) -> bool: return cells[a].y < cells[b].y)
+
+    var slot: int = order.find(preview_anchor) if preview_parent == parent_index else -1
+    var step: int = arrow.x if horizontal else arrow.y
+    if slot < 0:
+        # Começar perto do cruzamento inicial sem bloquear nenhuma letra.
+        slot = mini(1, count - 1) if step > 0 else maxi(0, count - 2)
+    else:
+        # UMA casa no sentido físico da seta; sem inverter no eixo X.
+        slot = posmod(slot + step, count)
+
+    last_navigation_arrow = arrow
+    var anchor_index: int = order[slot]
+    _select_anchor(parent_index, anchor_index)
+    _message("Letra %s (%d/%d)" % [_anchor_letter(parent_index, anchor_index), slot + 1, count])
+
+func _input(event: InputEvent) -> void:
+    var key_event := event as InputEventKey
+    if key_event == null:
+        return
+    if not key_event.pressed or key_event.echo or key_event.ctrl_pressed or key_event.alt_pressed or key_event.meta_pressed:
+        return
+    var arrow := Vector2i.ZERO
+    match key_event.keycode:
+        KEY_UP: arrow = Vector2i(0, -1)
+        KEY_DOWN: arrow = Vector2i(0, 1)
+        KEY_LEFT: arrow = Vector2i(-1, 0)
+        KEY_RIGHT: arrow = Vector2i(1, 0)
+    if arrow != Vector2i.ZERO:
+        _navigate_arrow_from_anywhere(arrow)
+        get_viewport().set_input_as_handled()
+        return
+    if key_event.keycode == KEY_ENTER or key_event.keycode == KEY_KP_ENTER:
+        if not entry.has_focus():
+            _submit()
+            get_viewport().set_input_as_handled()
+        return
+    if entry.has_focus():
+        # Teclado nativo no celular: o próprio LineEdit atualiza os quadrados.
+        return
+    if key_event.keycode == KEY_BACKSPACE:
+        _erase_character()
+        get_viewport().set_input_as_handled()
+        return
+    if key_event.unicode > 0:
+        var letter: String = String.chr(key_event.unicode).to_upper()
+        if letter.length() == 1 and "ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÂÊÔÃÕÇ".contains(letter):
+            _type_character(letter)
+            get_viewport().set_input_as_handled()
+
+func _navigate_arrow(direction: Vector2i) -> void:
+    if preview_parent < 0 or preview_parent >= words.size():
+        return
+    var parent_dir: Vector2i = words[preview_parent]["dir"]
+    var dot_product: int = parent_dir.x * direction.x + parent_dir.y * direction.y
+    if dot_product != 0:
+        # As setas paralelas percorrem letras na ordem visual, sem consultar
+        # o dicionário e sem redefinir a direção perpendicular já escolhida.
+        _select_anchor_by_arrow(direction)
+    else:
+        _apply_direction(direction)
+
+func _unhandled_input(event: InputEvent) -> void:
+    if event is InputEventMouseButton:
+        if event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
+            camera.size = maxf(13.0, camera.size - 1.0)
+        elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+            camera.size = minf(40.0, camera.size + 1.0)
+        elif event.button_index == MOUSE_BUTTON_LEFT:
+            if event.pressed:
+                _start_pointer(event.position)
+            else:
+                _stop_pointer()
+    elif event is InputEventMouseMotion and pointer_down:
+        _move_pointer(event.position)
+    elif event is InputEventScreenTouch:
+        if event.pressed:
+            _start_pointer(event.position)
+        else:
+            _stop_pointer()
+    elif event is InputEventScreenDrag and pointer_down:
+        _move_pointer(event.position)
+
+func _start_pointer(screen_pos: Vector2) -> void:
+    pointer_start = screen_pos
+    gesture_cursor = screen_pos
+    pointer_cell = _screen_to_cell(screen_pos)
+    pointer_down = true
+    pointer_dragged = false
+
+func _stop_pointer() -> void:
+    if pointer_down and not pointer_dragged:
+        _click_tile(pointer_cell)
+    pointer_down = false
+
+func _move_pointer(screen_pos: Vector2) -> void:
+    if not pointer_down or game_over:
+        return
+    if screen_pos.distance_to(pointer_start) < 18.0 and not pointer_dragged:
+        return
+    if not pointer_dragged:
+        pointer_dragged = true
+        # If gesture starts on a solved letter, select it exactly once.
+        # Otherwise keep the active parent; gestures work anywhere on the board.
+        for i in range(words.size() - 1, -1, -1):
+            if words[i]["state"] == "solved":
+                var anchor: int = _cells(words[i]).find(pointer_cell)
+                if anchor >= 0:
+                    if preview_parent != i or preview_anchor != anchor:
+                        last_navigation_arrow = Vector2i.ZERO
+                        _select_anchor(i, anchor)
+                    break
+        gesture_cursor = pointer_start
+
+    var movement: Vector2 = screen_pos - gesture_cursor
+    var attempts: int = 0
+    while movement.length() >= DRAG_STEP_PX and attempts < 8:
+        var arrow: Vector2i = _gesture_direction(movement)
+        _navigate_arrow_from_anywhere(arrow)
+        gesture_cursor += Vector2(float(arrow.x), float(arrow.y)) * DRAG_STEP_PX
+        movement = screen_pos - gesture_cursor
+        attempts += 1
+
+func _gesture_direction(delta: Vector2) -> Vector2i:
+    if absf(delta.x) > absf(delta.y):
+        return Vector2i(1 if delta.x > 0.0 else -1, 0)
+    return Vector2i(0, 1 if delta.y > 0.0 else -1)
+
+func _navigate_arrow_from_anywhere(direction: Vector2i) -> void:
+    if game_over:
+        return
+    if preview_parent >= 0:
+        _navigate_arrow(direction)
+        return
+    if last_solved_word < 0 or last_solved_word >= words.size():
+        return
+    var parent_dir: Vector2i = words[last_solved_word]["dir"]
+    if parent_dir.x * direction.x + parent_dir.y * direction.y != 0:
+        _select_anchor_by_arrow(direction)
+    else:
+        # First perpendicular key selects the first physical letter, then sets direction.
+        # Do not fabricate an extra arrow press or advance the cursor twice.
+        _select_anchor(last_solved_word, 0)
+        last_navigation_arrow = Vector2i.ZERO
+        _apply_direction(direction)
+
+func _apply_direction(direction: Vector2i) -> void:
+    if preview_parent < 0 or preview_parent >= words.size():
+        return
+    var parent_dir: Vector2i = words[preview_parent]["dir"]
+    if direction == Vector2i.ZERO or parent_dir.x * direction.x + parent_dir.y * direction.y != 0:
+        return
+    if direction == preview_dir:
+        return
+    # Manter a mesma palavra e a mesma ordem no LineEdit.
+    # O array de casas muda de sentido, logo no tabuleiro ABELHA vira AHLEBA.
+    _save_preview_draft()
+    preview_dir = direction
+    preferred_branch_direction = direction
+    var key: String = _draft_key(preview_parent, preview_anchor)
+    drafts[key] = {"text": entry.text.to_upper(), "dir": direction}
+    _load_preview_choices()
+
+func _focus_word(word: Dictionary) -> void:
+    var cells: Array[Vector2i] = _cells(word)
+    if cells.is_empty():
+        return
+    var midpoint: Vector2i = cells[cells.size() / 2]
+    camera_target = Vector3(float(midpoint.x) * GAP, 25.0, float(midpoint.y) * GAP + 1.4)
+
+func _sync_visible_board(force: bool = false) -> void:
+    var center := Vector2i(roundi(camera.position.x / GAP), roundi(camera.position.z / GAP))
+    if not force and center == visible_origin:
+        return
+    visible_origin = center
+    var needed: Dictionary = {}
+    for y in range(center.y - VISIBLE_RADIUS_Y, center.y + VISIBLE_RADIUS_Y + 1):
+        for x in range(center.x - VISIBLE_RADIUS_X, center.x + VISIBLE_RADIUS_X + 1):
+            needed[Vector2i(x, y)] = true
+    for p in board.keys():
+        if not needed.has(p):
+            board[p].queue_free()
+            board.erase(p)
+    for p in needed.keys():
+        if board.has(p):
+            continue
+        var tile := MeshInstance3D.new()
+        tile.mesh = shared_tile_mesh
+        tile.material_override = _material_cached("base", BASE)
+        tile.position = Vector3(p.x * GAP, 0.0, p.y * GAP)
+        add_child(tile)
+        board[p] = tile
+    _refresh_board()
