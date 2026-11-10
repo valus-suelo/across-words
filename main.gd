@@ -723,7 +723,7 @@ func _new_game() -> void:
     var initial: Dictionary = _choose_start_word()
     current_category = String(initial["category"])
     var first_answer: String = String(initial["answer"])
-    var first: Dictionary = {"answer": first_answer, "clue": String(initial["clue"]), "category": current_category, "difficulty": int(initial["difficulty"]), "start": Vector2i(-int(first_answer.length() / 2), 0), "dir": Vector2i(1, 0), "time": WORD_TIME, "state": "active", "spawned": false}
+    var first: Dictionary = {"answer": first_answer, "clue": String(initial["clue"]), "category": current_category, "difficulty": int(initial["difficulty"]), "start": Vector2i(-int(first_answer.length() / 2), 0), "dir": Vector2i(1, 0), "time": WORD_TIME, "state": "solved", "spawned": false}
     words.append(first)
     used[first_answer] = true
     if level_mode:
@@ -733,12 +733,16 @@ func _new_game() -> void:
     _spawn_pickup(Vector2i(-5, -3), "vision")
     if not level_mode:
         _spawn_pickup(Vector2i(3, 4), "crown")
+    # A palavra inicial ja aparece resolvida nos dois modos.
+    # Seleciona automaticamente sua primeira letra para liberar as setas,
+    # as pistas de ramificacao e a digitacao sem clicar no tabuleiro.
     _assign_entry("")
     entry.release_focus()
     _sync_visible_board(true)
-    _choose(0)
+    last_navigation_arrow = Vector2i.ZERO
+    _select_anchor(0, 0)
     _refresh_board()
-    _message("Comece com %s. %s" % [first_answer, "Encontre a saída!" if level_mode else "Sobreviva o máximo possível!"])
+    _message("A palavra %s ja esta pronta. Use as setas para escolher a letra e o lado da proxima palavra!" % first_answer)
 
 # Constrói uma rota possível sem revelar nem fixar as palavras no mapa.
 # A simulação é revertida; o jogador continua livre para escolher seus ramos.
