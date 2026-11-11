@@ -746,7 +746,7 @@ func _new_game() -> void:
     entry.release_focus()
     _sync_visible_board(true)
     last_navigation_arrow = Vector2i.ZERO
-    _select_anchor(0, 0)
+    last_solved_word = 0
     _refresh_board()
     _message("A palavra %s ja esta pronta. Use as setas para escolher a letra e o lado da proxima palavra!" % first_answer)
 
@@ -1306,6 +1306,7 @@ func _submit() -> void:
     # Tempo é global do mapa: resolver palavras NÃO reinicia o relógio.
     points += 100 + mini(combo, 10) * 15
     _clear_preview(false)
+    last_solved_word = words.size() - 1
     drafts.clear()  # Só CONFIRMAR descarta alternativas.
     typed_buffer = ""
     if level_mode:
@@ -1589,8 +1590,9 @@ func _refresh_board() -> void:
         focus_cell = _cells(words[preview_parent])[preview_anchor]
     # Marca TODAS as letras da palavra que pode gerar o proximo ramo.
     # Palavras anteriores permanecem no tabuleiro, mas sem este destaque.
-    if preview_parent >= 0 and preview_parent < words.size():
-        var source_word: Dictionary = words[preview_parent]
+    var highlighted_parent: int = preview_parent if preview_parent >= 0 else last_solved_word
+    if highlighted_parent >= 0 and highlighted_parent < words.size():
+        var source_word: Dictionary = words[highlighted_parent]
         if source_word["state"] == "solved" and (not bool(source_word["spawned"]) or extra_branch_armed):
             for source_cell in _cells(source_word):
                 if board.has(source_cell):
@@ -1623,7 +1625,7 @@ func _refresh_board() -> void:
             "anchor_focus":
                 mat = _material_cached("anchor_focus", Color("#f2c79d"), true)
             "branch_source":
-                mat = _material_cached("branch_source", Color("#a9d8cc"), true)
+                mat = _material_cached("branch_source", Color("#f3d46a"), true)
             _:
                 if level_mode and p == exit_cell:
                     mat = _material_cached("exit", Color("#6ab79a"), true)
