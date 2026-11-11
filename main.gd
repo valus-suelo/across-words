@@ -1846,8 +1846,21 @@ func _start_pointer(screen_pos: Vector2) -> void:
     pointer_start = screen_pos
     gesture_cursor = screen_pos
     pointer_cell = _screen_to_cell(screen_pos)
-    pointer_down = true
+    # Gestos so comecam sobre uma letra resolvida e selecionavel.
+    # Arrastar sobre espaco vazio nao deve alterar a palavra.
+    pointer_down = false
     pointer_dragged = false
+    for i in range(words.size() - 1, -1, -1):
+        if words[i]["state"] != "solved":
+            continue
+        if bool(words[i]["spawned"]) and not extra_branch_armed:
+            continue
+        if _cells(words[i]).has(pointer_cell):
+            pointer_down = true
+            break
+    # As setas desenhadas continuam clicaveis fora das letras.
+    if not pointer_down and _try_tap_branch_arrow(screen_pos):
+        return
 
 func _stop_pointer() -> void:
     if pointer_down and not pointer_dragged:
@@ -1858,12 +1871,11 @@ func _stop_pointer() -> void:
 func _move_pointer(screen_pos: Vector2) -> void:
     if not pointer_down or game_over:
         return
-    if screen_pos.distance_to(pointer_start) < 18.0 and not pointer_dragged:
+    if screen_pos.distance_to(pointer_start) < 30.0 and not pointer_dragged:
         return
     if not pointer_dragged:
         pointer_dragged = true
-        # If gesture starts on a solved letter, select it exactly once.
-        # Otherwise keep the active parent; gestures work anywhere on the board.
+        # O gesto so existe se comecou sobre uma letra valida.
         var drag_sources: Array[int] = []
         if preview_parent >= 0 and preview_parent < words.size():
             drag_sources.append(preview_parent)
