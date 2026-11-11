@@ -1015,10 +1015,7 @@ func _erase_character() -> void:
     var minimum: int = 1 if preview_parent >= 0 else 0
     if entry.text.length() <= minimum:
         return
-    if not preview.is_empty():
-        _on_entry_changed(_remove_last_editable_letter(entry.text))
-    else:
-        _on_entry_changed(entry.text.substr(0, entry.text.length() - 1))
+    _on_entry_changed(entry.text.substr(0, entry.text.length() - 1))
 
 func _open_mobile_keyboard() -> void:
     # Campo transparente: o usuário vê apenas os espaços da palavra.
