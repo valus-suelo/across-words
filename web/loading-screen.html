@@ -28,8 +28,16 @@
   const status = document.getElementById('status');
   const progress = document.getElementById('status-progress');
   const notice = document.getElementById('status-notice');
-  let started = false;
+  let finished = false;
+  function dismiss() {
+    if (finished) return;
+    finished = true;
+    bar.style.width = '100%';
+    overlay.classList.add('aw-done');
+    window.setTimeout(() => overlay.remove(), 420);
+  }
   function sync() {
+    if (finished) return;
     if (progress) {
       const value = Number(progress.value);
       const max = Number(progress.max);
@@ -40,18 +48,20 @@
     if (notice && notice.textContent.trim() && getComputedStyle(notice).display !== 'none') {
       caption.textContent = notice.textContent.trim();
     }
-    // O shell oficial esconde #status ao concluir a inicializacao do motor.
-    if (started && status && getComputedStyle(status).display === 'none') {
-      bar.style.width = '100%';
-      overlay.classList.add('aw-done');
-      setTimeout(() => overlay.remove(), 420);
-    } else if (status && getComputedStyle(status).display !== 'none') {
-      started = true;
-    }
+    // O status oficial fica oculto quando o jogo termina de iniciar.
+    if (status && getComputedStyle(status).display === 'none') dismiss();
   }
+  // Observa a inicializacao mesmo se o status ja estiver oculto ao carregar.
   if (status) new MutationObserver(sync).observe(status, { attributes: true, attributeFilter: ['style', 'class'] });
   if (progress) new MutationObserver(sync).observe(progress, { attributes: true, attributeFilter: ['value', 'max', 'style'] });
   if (notice) new MutationObserver(sync).observe(notice, { attributes: true, childList: true, characterData: true, subtree: true });
-  sync();
+  window.addEventListener('load', () => window.setTimeout(sync, 200), { once: true });
+  // Nunca deixa o jogador preso numa tela que cobre o jogo por tempo indefinido.
+  window.setTimeout(() => {
+    if (!finished) {
+      dismiss();
+      console.warn('Across-Words: loading overlay removed after timeout; check Godot console if game is not visible.');
+    }
+  }, 12000);
 })();
 </script>
