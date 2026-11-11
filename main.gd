@@ -865,6 +865,8 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
         if not _word_difficulty_allowed(item):
             continue
         var answer: String = String(item["answer"])
+        if used.has(answer):
+            continue
         var trial: Dictionary = {
             "answer": answer, "clue": String(item["clue"]), "category": String(item["category"]), "difficulty": int(item["difficulty"]), "start": crossing,
             "dir": direction, "time": WORD_TIME,
@@ -887,13 +889,13 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
         # Permite cruzamentos múltiplos e comprimentos curtos; não há limite de mapa.
         if valid and new_count >= 1:
             choices.append(trial)
-    # Candidatas maiores primeiro, sem bloquear alternativas pequenas.
+    # Sorteia alternativas validas: a ordem do JSON nao define a resposta.
+    # O tema da fase continua tendo uma preferencia leve.
+    choices.shuffle()
     choices.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
         var a_theme: bool = String(a.get("category", "")) == current_category
         var b_theme: bool = String(b.get("category", "")) == current_category
-        if a_theme != b_theme:
-            return a_theme
-        return String(a["answer"]).length() > String(b["answer"]).length())
+        return a_theme and not b_theme)
     return choices
 
 # Cada letra de origem guarda SEU rascunho; direção não cria outro rascunho.
@@ -927,26 +929,63 @@ func _answer_limit() -> int:
         return String(words[chosen]["answer"]).length()
     return 0
 
+# Letras resolvidas do tabuleiro nao precisam ser digitadas novamente.
+# A entrada armazena apenas o texto ate a ultima casa preenchida.
+func _locked_letters_for_preview() -> Dictionary:
+    var locked: Dictionary = {}
+    if preview.is_empty():
+        return locked
+    var occupied: Dictionary = _occupied_letters()
+    var cells: Array[Vector2i] = _cells(preview)
+    for i in range(cells.size()):
+        if occupied.has(cells[i]):
+            locked[i] = String(occupied[cells[i]])
+    return locked
+
+func _fill_locked_letters(value: String) -> String:
+    if preview.is_empty():
+        return value
+    var locked: Dictionary = _locked_letters_for_preview()
+    var result: String = value
+    var limit: int = String(preview["answer"]).length()
+    while result.length() < limit and locked.has(result.length()):
+        result += String(locked[result.length()])
+    return result
+
+func _remove_last_editable_letter(value: String) -> String:
+    var locked: Dictionary = _locked_letters_for_preview()
+    var i: int = value.length() - 1
+    while i > 0 and locked.has(i):
+        i -= 1
+    if i <= 0:
+        return value
+    return _fill_locked_letters(value.substr(0, i))
+
 func _on_entry_changed(value: String) -> void:
     if input_syncing:
         return
-    # Uma unica resposta ativa: seja teclado fisico ou virtual, os tres lugares
-    # (texto interno, slots e tabuleiro) devem receber a MESMA string.
     var clean: String = value.strip_edges().to_upper()
+    var max_letters: int = _answer_limit()
     if preview_parent >= 0 and preview_anchor >= 0:
         var prefix: String = _anchor_letter(preview_parent, preview_anchor)
-        # A ancora faz parte da palavra e nao pode ser apagada.
+        var old_text: String = entry.text.to_upper()
         if not clean.begins_with(prefix):
-            clean = prefix + clean if not clean.is_empty() else prefix
-        var key: String = _draft_key(preview_parent, preview_anchor)
-        drafts[key] = {"text": clean, "dir": preview_dir}
-    var max_letters: int = _answer_limit()
+            clean = prefix
+        elif not preview.is_empty():
+            if clean.length() < old_text.length() and old_text.begins_with(clean):
+                clean = _remove_last_editable_letter(old_text)
+            elif clean.length() > old_text.length() and clean.begins_with(old_text):
+                var appended: String = clean.substr(old_text.length())
+                clean = old_text
+                for j in range(appended.length()):
+                    clean = _fill_locked_letters(clean)
+                    if clean.length() < max_letters:
+                        clean += appended[j]
+            clean = _fill_locked_letters(clean)
     if max_letters > 0 and clean.length() > max_letters:
         clean = clean.substr(0, max_letters)
     if preview_parent >= 0 and preview_anchor >= 0:
         drafts[_draft_key(preview_parent, preview_anchor)] = {"text": clean, "dir": preview_dir}
-    # IMPORTANTE: digitar diretamente por _input nao dispara text_changed
-    # no LineEdit. Sem esta linha, cada tecla sobrescreve a anterior.
     if entry.text != clean:
         _assign_entry(clean)
     typed_buffer = clean
@@ -976,7 +1015,10 @@ func _erase_character() -> void:
     var minimum: int = 1 if preview_parent >= 0 else 0
     if entry.text.length() <= minimum:
         return
-    _on_entry_changed(entry.text.substr(0, entry.text.length() - 1))
+    if not preview.is_empty():
+        _on_entry_changed(_remove_last_editable_letter(entry.text))
+    else:
+        _on_entry_changed(entry.text.substr(0, entry.text.length() - 1))
 
 func _open_mobile_keyboard() -> void:
     # Campo transparente: o usuário vê apenas os espaços da palavra.
@@ -1062,7 +1104,9 @@ func _show_preview_choice() -> void:
     var stored: Dictionary = drafts.get(key, {})
     var typed: String = String(stored.get("text", _anchor_letter(preview_parent, preview_anchor)))
     typed_buffer = typed
-    _assign_entry(typed)
+    _assign_entry(_fill_locked_letters(typed))
+    typed_buffer = entry.text
+    drafts[key] = {"text": entry.text, "dir": preview_dir}
     _focus_word(preview)
     _refresh_board()
     _message("Digite sem clicar. Setas paralelas mudam a letra; perpendiculares invertem o sentido.")
@@ -1605,13 +1649,9 @@ func _solved_count() -> int:
 func _process(delta: float) -> void:
     elapsed += delta
     if not game_over:
-        if energy < ENERGY_MAX:
-            regen += delta
-            if regen >= REGEN_SECONDS:
-                regen -= REGEN_SECONDS
-                energy += 1
-        else:
-            regen = 0.0
+        # Energia e um recurso de sobrevivencia, sem regeneracao passiva.
+        if energy <= 0:
+            _show_result(false, "Sua energia acabou!")
         path_time = maxf(0.0, path_time - delta)
         if path_time <= 0.0:
             _show_result(false, "O tempo acabou!")
