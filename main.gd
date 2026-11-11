@@ -760,9 +760,17 @@ func _new_game() -> void:
     used[first_answer] = true
     if level_mode:
         _plan_level()
-    _spawn_pickup(Vector2i(4, -2), "coin")
-    _spawn_pickup(Vector2i(-4, 3), "energy")
-    _spawn_pickup(Vector2i(-5, -3), "vision")
+    if not level_mode:
+        _spawn_pickup(Vector2i(4, -2), "coin")
+        _spawn_pickup(Vector2i(-4, 3), "energy")
+        _spawn_pickup(Vector2i(-5, -3), "vision")
+    else:
+        if level_number >= 4:
+            _spawn_pickup(Vector2i(-3, 2), "energy")
+        if level_number >= 5:
+            _spawn_pickup(Vector2i(3, -3), "time")
+        if level_number >= 6:
+            _spawn_pickup(Vector2i(-4, -3), "vision")
     if not level_mode:
         _spawn_pickup(Vector2i(3, 4), "crown")
     # A palavra inicial ja aparece resolvida nos dois modos.
@@ -862,6 +870,10 @@ func _plan_advanced_level() -> void:
     words[0] = first_word
     exit_cell = best_exit
     level_route = best_route
+    if level_route.is_empty():
+        level_route = _cells(first_word)
+    if not _inside_level(exit_cell):
+        exit_cell = level_route.back()
     # As coroas ficam em casas alcançáveis pela rota planejada.
     var candidates: Array[Vector2i] = []
     var initial_cells: Array[Vector2i] = _cells(first_word)
@@ -873,7 +885,11 @@ func _plan_advanced_level() -> void:
             if cell != exit_cell and not candidates.has(cell):
                 candidates.append(cell)
     candidates.shuffle()
-    for i in range(mini(3, candidates.size())):
+    if candidates.size() < 3:
+        for cell in _cells(first_word):
+            if cell != exit_cell and not candidates.has(cell):
+                candidates.append(cell)
+    for i in range(3):
         _spawn_pickup(candidates[i], "crown")
 
 func _cells(word: Dictionary) -> Array[Vector2i]:
