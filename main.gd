@@ -927,26 +927,66 @@ func _answer_limit() -> int:
         return String(words[chosen]["answer"]).length()
     return 0
 
+# Letras de palavras resolvidas sao fixas: aparecem automaticamente
+# no caminho e nao consomem uma tecla do jogador.
+func _locked_preview_letters() -> Dictionary:
+    var locked: Dictionary = {}
+    if preview.is_empty():
+        return locked
+    var occupied: Dictionary = _occupied_letters()
+    var cells: Array[Vector2i] = _cells(preview)
+    for i in range(cells.size()):
+        if occupied.has(cells[i]):
+            locked[i] = String(occupied[cells[i]])
+    return locked
+
+func _complete_locked_suffix(value: String, locked: Dictionary, limit: int) -> String:
+    var result: String = value
+    while result.length() < limit and locked.has(result.length()):
+        result += String(locked[result.length()])
+    return result
+
+func _erase_preview_letter() -> void:
+    var value: String = entry.text.to_upper()
+    var locked: Dictionary = _locked_preview_letters()
+    var minimum: int = 1 if preview_parent >= 0 else 0
+    # Volta ate a ultima letra realmente digitada, ignorando casas fixas.
+    var index: int = value.length() - 1
+    while index >= minimum and locked.has(index):
+        index -= 1
+    if index < minimum:
+        return
+    _on_entry_changed(value.substr(0, index))
+
 func _on_entry_changed(value: String) -> void:
     if input_syncing:
         return
-    # Uma unica resposta ativa: seja teclado fisico ou virtual, os tres lugares
-    # (texto interno, slots e tabuleiro) devem receber a MESMA string.
     var clean: String = value.strip_edges().to_upper()
+    var limit: int = _answer_limit()
     if preview_parent >= 0 and preview_anchor >= 0:
         var prefix: String = _anchor_letter(preview_parent, preview_anchor)
-        # A ancora faz parte da palavra e nao pode ser apagada.
+        var locked: Dictionary = _locked_preview_letters()
+        var previous: String = entry.text.to_upper()
+        # Ao apagar pelo teclado nativo, remove tambem as casas fixas do fim.
+        if clean.length() < previous.length() and previous.begins_with(clean):
+            var erase_index: int = previous.length() - 1
+            while erase_index >= 1 and locked.has(erase_index):
+                erase_index -= 1
+            clean = previous.substr(0, maxi(1, erase_index))
+        elif clean.begins_with(previous) and clean.length() > previous.length():
+            # Insere apenas letras digitadas; casas ja resolvidas sao puladas.
+            var appended: String = clean.substr(previous.length())
+            clean = previous
+            for j in range(appended.length()):
+                clean = _complete_locked_suffix(clean, locked, limit)
+                if clean.length() < limit:
+                    clean += appended[j]
         if not clean.begins_with(prefix):
-            clean = prefix + clean if not clean.is_empty() else prefix
-        var key: String = _draft_key(preview_parent, preview_anchor)
-        drafts[key] = {"text": clean, "dir": preview_dir}
-    var max_letters: int = _answer_limit()
-    if max_letters > 0 and clean.length() > max_letters:
-        clean = clean.substr(0, max_letters)
-    if preview_parent >= 0 and preview_anchor >= 0:
+            clean = prefix
+        clean = _complete_locked_suffix(clean, locked, limit)
         drafts[_draft_key(preview_parent, preview_anchor)] = {"text": clean, "dir": preview_dir}
-    # IMPORTANTE: digitar diretamente por _input nao dispara text_changed
-    # no LineEdit. Sem esta linha, cada tecla sobrescreve a anterior.
+    if limit > 0 and clean.length() > limit:
+        clean = clean.substr(0, limit)
     if entry.text != clean:
         _assign_entry(clean)
     typed_buffer = clean
@@ -976,7 +1016,10 @@ func _erase_character() -> void:
     var minimum: int = 1 if preview_parent >= 0 else 0
     if entry.text.length() <= minimum:
         return
-    _on_entry_changed(entry.text.substr(0, entry.text.length() - 1))
+    if preview_parent >= 0:
+        _erase_preview_letter()
+    else:
+        _on_entry_changed(entry.text.substr(0, entry.text.length() - 1))
 
 func _open_mobile_keyboard() -> void:
     # Campo transparente: o usuário vê apenas os espaços da palavra.
@@ -1062,7 +1105,9 @@ func _show_preview_choice() -> void:
     var stored: Dictionary = drafts.get(key, {})
     var typed: String = String(stored.get("text", _anchor_letter(preview_parent, preview_anchor)))
     typed_buffer = typed
-    _assign_entry(typed)
+    _assign_entry(_complete_locked_suffix(typed, _locked_preview_letters(), _answer_limit()))
+    typed_buffer = entry.text
+    drafts[key] = {"text": entry.text, "dir": preview_dir}
     _focus_word(preview)
     _refresh_board()
     _message("Digite sem clicar. Setas paralelas mudam a letra; perpendiculares invertem o sentido.")
