@@ -950,13 +950,14 @@ func _erase_preview_letter() -> void:
     var value: String = entry.text.to_upper()
     var locked: Dictionary = _locked_preview_letters()
     var minimum: int = 1 if preview_parent >= 0 else 0
-    # Volta ate a ultima letra realmente digitada, ignorando casas fixas.
+    # A rotina de entrada ignora as casas fixas no fim e apaga
+    # somente a ultima letra realmente digitada.
     var index: int = value.length() - 1
     while index >= minimum and locked.has(index):
         index -= 1
     if index < minimum:
         return
-    _on_entry_changed(value.substr(0, index))
+    _on_entry_changed(value.substr(0, value.length() - 1))
 
 func _on_entry_changed(value: String) -> void:
     if input_syncing:
