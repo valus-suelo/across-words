@@ -1474,7 +1474,13 @@ func _draw_branch_arrows() -> void:
         return
     var anchor: Vector2i = parent_cells[preview_anchor]
     var horizontal: bool = Vector2i(words[preview_parent]["dir"]).x != 0
-    var sides: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if horizontal else [Vector2i(-1, 0), Vector2i(1, 0)]
+    var sides: Array[Vector2i] = []
+    if horizontal:
+        sides.append(Vector2i(0, -1))
+        sides.append(Vector2i(0, 1))
+    else:
+        sides.append(Vector2i(-1, 0))
+        sides.append(Vector2i(1, 0))
     for side in sides:
         var active: bool = side == preview_dir
         var arrow := Label3D.new()
@@ -1498,7 +1504,13 @@ func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
         return false
     var anchor: Vector2i = parent_cells[preview_anchor]
     var horizontal: bool = Vector2i(words[preview_parent]["dir"]).x != 0
-    var sides: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if horizontal else [Vector2i(-1, 0), Vector2i(1, 0)]
+    var sides: Array[Vector2i] = []
+    if horizontal:
+        sides.append(Vector2i(0, -1))
+        sides.append(Vector2i(0, 1))
+    else:
+        sides.append(Vector2i(-1, 0))
+        sides.append(Vector2i(1, 0))
     for side in sides:
         var world_pos := Vector3((float(anchor.x) + float(side.x) * 0.43) * GAP, 0.93, (float(anchor.y) + float(side.y) * 0.43) * GAP)
         if camera.unproject_position(world_pos).distance_to(screen_pos) < 24.0:
