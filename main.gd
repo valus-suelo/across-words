@@ -166,6 +166,9 @@ var exit_cell := Vector2i(0, -24)
 const LEVEL_SAFE_RADIUS := 35
 const CAMPAIGN_LEVELS := 10
 const LEVEL_HALO := 9
+const LEVEL_INTRO_SECONDS := 3.4
+var level_intro_remaining: float = 0.0
+var level_intro_start_size: float = 18.0
 
 func _level_half_size() -> int:
     return 5 + clampi(level_number, 1, CAMPAIGN_LEVELS) - 1
@@ -757,6 +760,8 @@ func _new_game() -> void:
     suppress_touch_until_release = false
     camera_target = Vector3(0, 25, 1.4)
     camera.position = camera_target
+    level_intro_remaining = 0.0
+    camera.size = 18.0
     game_over = false
     enemy_cell = Vector2i(-100, -100)
     var initial: Dictionary = _choose_start_word()
@@ -789,6 +794,11 @@ func _new_game() -> void:
     last_navigation_arrow = Vector2i.ZERO
     last_solved_word = 0
     _focus_word(words[0])
+    if level_mode:
+        level_intro_remaining = LEVEL_INTRO_SECONDS
+        level_intro_start_size = maxf(18.0, float(_level_half_size() * 2 + 4) * GAP * 1.65)
+        camera.size = level_intro_start_size
+        camera.position = Vector3(0.0, 25.0, 0.0)
     _refresh_board()
     _message("A palavra %s ja esta pronta. Use as setas para escolher a letra e o lado da proxima palavra!" % first_answer)
 
@@ -1220,7 +1230,7 @@ func _load_preview_choices() -> void:
                 break
     elif not preview_choices.is_empty():
         fixed_branch_answers[branch_key] = String(preview_choices[0]["answer"])
-    if level_mode and level_number <= 5 and preview_choices.size() > 1:
+    if level_mode and level_number <= 4 and preview_choices.size() > 1:
         preview_choices.resize(1)
     preview_choice_index = 0
     # Se a lista mudar ao inverter o sentido, a resposta digitada NÃO muda.
@@ -1806,7 +1816,14 @@ func _solved_count() -> int:
 
 func _process(delta: float) -> void:
     elapsed += delta
-    if not game_over:
+    if level_intro_remaining > 0.0:
+        level_intro_remaining = maxf(0.0, level_intro_remaining - delta)
+        var progress: float = 1.0 - level_intro_remaining / LEVEL_INTRO_SECONDS
+        var eased: float = progress * progress * (3.0 - 2.0 * progress)
+        camera.size = lerpf(level_intro_start_size, 18.0 * camera_zoom_factor, eased)
+        if level_intro_remaining <= 0.0:
+            _sync_visible_board(true)
+    if not game_over and level_intro_remaining <= 0.0:
         # Energia e um recurso de sobrevivencia, sem regeneracao passiva.
         if energy <= 0:
             _show_result(false, "Sua energia acabou!")
