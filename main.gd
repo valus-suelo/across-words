@@ -224,6 +224,10 @@ var pinch_last_distance: float = 0.0
 var suppress_touch_until_release: bool = false
 var panning_board: bool = false
 var pan_last_screen: Vector2 = Vector2.ZERO
+var hud_gesture_fade: bool = false
+var hud_restore_delay: float = 0.0
+const HUD_IDLE_ALPHA := 0.92
+const HUD_GESTURE_ALPHA := 0.10
 
 func _ready() -> void:
     get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
@@ -415,7 +419,7 @@ func _make_ui() -> void:
     hud_top = top
     top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
     top.offset_bottom = 152.0
-    top.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#77545e")))
+    top.add_theme_stylebox_override("panel", _panel_style(Color(0.22, 0.17, 0.23, 0.22), Color(0.47, 0.33, 0.37, 0.28)))
     ui.add_child(top)
     var top_column := VBoxContainer.new()
     top_column.add_theme_constant_override("separation", 3)
@@ -435,7 +439,7 @@ func _make_ui() -> void:
     score_label = _make_label("PONTOS 0  |  MOEDAS 0  |  COMBO 0", 17)
     top_column.add_child(score_label)
     var clue_panel := PanelContainer.new()
-    clue_panel.add_theme_stylebox_override("panel", _panel_style(Color("#80566d"), Color("#edb8c7")))
+    clue_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.50, 0.34, 0.43, 0.38), Color(0.93, 0.72, 0.78, 0.45)))
     top_column.add_child(clue_panel)
     clue_label = _make_label("Resolva a palavra destacada para começar.", 22)
     clue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -447,7 +451,7 @@ func _make_ui() -> void:
     hud_bottom = bottom
     bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
     bottom.offset_top = -430.0
-    bottom.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#77545e")))
+    bottom.add_theme_stylebox_override("panel", _panel_style(Color(0.22, 0.17, 0.23, 0.22), Color(0.47, 0.33, 0.37, 0.28)))
     ui.add_child(bottom)
     var column := VBoxContainer.new()
     column.add_theme_constant_override("separation", 3)
@@ -758,6 +762,12 @@ func _new_game() -> void:
     active_touches.clear()
     pinch_last_distance = 0.0
     suppress_touch_until_release = false
+    hud_gesture_fade = false
+    hud_restore_delay = 0.0
+    if is_instance_valid(hud_top):
+        hud_top.modulate.a = HUD_IDLE_ALPHA
+    if is_instance_valid(hud_bottom):
+        hud_bottom.modulate.a = HUD_IDLE_ALPHA
     camera_target = Vector3(0, 25, 1.4)
     camera.position = camera_target
     level_intro_remaining = 0.0
@@ -1816,6 +1826,15 @@ func _solved_count() -> int:
 
 func _process(delta: float) -> void:
     elapsed += delta
+    if hud_gesture_fade:
+        hud_restore_delay = 0.45
+    elif hud_restore_delay > 0.0:
+        hud_restore_delay = maxf(0.0, hud_restore_delay - delta)
+    var hud_target_alpha: float = HUD_GESTURE_ALPHA if hud_gesture_fade or hud_restore_delay > 0.0 else HUD_IDLE_ALPHA
+    if is_instance_valid(hud_top):
+        hud_top.modulate.a = move_toward(hud_top.modulate.a, hud_target_alpha, delta * 3.6)
+    if is_instance_valid(hud_bottom):
+        hud_bottom.modulate.a = move_toward(hud_bottom.modulate.a, hud_target_alpha, delta * 3.6)
     if level_intro_remaining > 0.0:
         level_intro_remaining = maxf(0.0, level_intro_remaining - delta)
         var progress: float = 1.0 - level_intro_remaining / LEVEL_INTRO_SECONDS
@@ -2025,6 +2044,7 @@ func _unhandled_input(event: InputEvent) -> void:
                 panning_board = false
                 pointer_dragged = true
                 pinch_last_distance = _pinch_distance()
+                hud_gesture_fade = true
             elif not suppress_touch_until_release:
                 _start_pointer(event.position)
         else:
@@ -2036,6 +2056,7 @@ func _unhandled_input(event: InputEvent) -> void:
                 pinch_last_distance = 0.0
                 pointer_down = false
                 panning_board = false
+                hud_gesture_fade = false
             elif active_touches.size() == 1:
                 pinch_last_distance = 0.0
     elif event is InputEventScreenDrag:
@@ -2074,6 +2095,7 @@ func _start_pointer(screen_pos: Vector2) -> void:
 
 func _stop_pointer() -> void:
     panning_board = false
+    hud_gesture_fade = false
     if pointer_down and not pointer_dragged:
         if not _try_tap_branch_arrow(pointer_start):
             _click_tile(pointer_cell)
@@ -2082,6 +2104,7 @@ func _stop_pointer() -> void:
 func _move_pointer(screen_pos: Vector2) -> void:
     if panning_board:
         if screen_pos.distance_to(pointer_start) >= 18.0:
+            hud_gesture_fade = true
             _pan_camera(screen_pos - pan_last_screen)
         pan_last_screen = screen_pos
         return
@@ -2091,6 +2114,7 @@ func _move_pointer(screen_pos: Vector2) -> void:
         return
     if not pointer_dragged:
         pointer_dragged = true
+        hud_gesture_fade = true
         # O gesto so existe se comecou sobre uma letra valida.
         var drag_sources: Array[int] = []
         if preview_parent >= 0 and preview_parent < words.size():
