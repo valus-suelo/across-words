@@ -688,10 +688,10 @@ func _show_result(victory: bool, reason: String) -> void:
     result_title.text = "FASE CONCLUÍDA!" if victory else "GAME OVER"
     result_title.add_theme_color_override("font_color", Color("#e5bd74") if victory else Color("#df7587"))
     if level_mode:
-        result_stats.text = "%s\n\n%s\n\nPalavras nesta fase: %d" % [reason, _run_summary(), _solved_count()]
+        result_stats.text = "%s\n\nCoroas opcionais: %d/3 · Bônus: %d pontos\n\n%s\n\nPalavras nesta fase: %d" % [reason, crowns, crowns * 500, _run_summary(), _solved_count()]
     else:
         result_stats.text = "%s\n\nPontuação: %d\nPalavras: %d  ·  Combo: %d" % [reason, points, _solved_count(), combo]
-    result_action.text = "PRÓXIMO NÍVEL" if victory else "NOVA PARTIDA"
+    result_action.text = ("RECOMEÇAR CAMPANHA" if level_number >= CAMPAIGN_LEVELS else "PRÓXIMO NÍVEL") if victory and level_mode else ("NOVA PARTIDA" if not victory else "CONTINUAR")
     result_overlay.show()
 
 func _result_continue() -> void:
@@ -1360,7 +1360,6 @@ func _submit() -> void:
     # Tempo é global do mapa: resolver palavras NÃO reinicia o relógio.
     points += 100 + mini(combo, 10) * 15
     _clear_preview(false)
-    last_solved_word = words.size() - 1
     _focus_word(words[last_solved_word])
     drafts.clear()  # Só CONFIRMAR descarta alternativas.
     typed_buffer = ""
@@ -1379,11 +1378,12 @@ func _submit() -> void:
             return
     _collect_pickups()
     # Apenas o alvo atual provoca derrota; os demais custam pontos.
-    _enemy_turn()
+    if not level_mode or level_number >= 7:
+        _enemy_turn()
     if game_over:
         _refresh_board()
         return
-    if points >= 400 and enemy_cell.x == -100:
+    if (not level_mode and points >= 400 or level_mode and level_number >= 7 and points >= (550 if level_number <= 8 else 350)) and enemy_cell.x == -100:
         _spawn_enemy()
     chosen = -1
     _assign_entry("")
@@ -1457,6 +1457,9 @@ func _spawn_enemy() -> void:
         return
     var target: Vector2i = targets[rng.randi_range(0, targets.size() - 1)]
     enemy_cell = target + Vector2i(4, 4)
+    if level_mode:
+        enemy_cell.x = clampi(enemy_cell.x, -_level_half_size(), _level_half_size())
+        enemy_cell.y = clampi(enemy_cell.y, -_level_half_size(), _level_half_size())
     enemy_node = MeshInstance3D.new()
     var mesh := BoxMesh.new()
     mesh.size = Vector3(0.72, 0.40, 0.72)
