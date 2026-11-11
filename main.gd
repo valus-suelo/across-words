@@ -164,6 +164,16 @@ var pointer_pan: bool = false
 var level_mode: bool = false
 var exit_cell := Vector2i(0, -24)
 const LEVEL_SAFE_RADIUS := 35
+const CAMPAIGN_LEVELS := 10
+
+func _level_half_size() -> int:
+    return 5 + clampi(level_number, 1, CAMPAIGN_LEVELS) - 1
+
+func _inside_level(cell: Vector2i) -> bool:
+    if not level_mode:
+        return true
+    var radius: int = _level_half_size()
+    return absi(cell.x) <= radius and absi(cell.y) <= radius
 
 # Uma tentativa não altera words, used nem o tabuleiro permanente.
 var preview: Dictionary = {}
@@ -688,6 +698,10 @@ func _result_continue() -> void:
     if result_title.text == "FASE CONCLUÍDA!":
         run_points += points
         level_number += 1
+        if level_number > CAMPAIGN_LEVELS:
+            level_number = 1
+            run_points = 0
+            completed_levels.clear()
     else:
         level_number = 1
         run_points = 0
@@ -927,7 +941,7 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
         var new_count := 0
         for k in range(cells.size()):
             var cell: Vector2i = cells[k]
-            if cell == enemy_cell:
+            if not _inside_level(cell) or cell == enemy_cell:
                 valid = false
                 break
             if occupied.has(cell):
@@ -2088,7 +2102,9 @@ func _sync_visible_board(force: bool = false) -> void:
     var radius_y: int = maxi(VISIBLE_RADIUS_Y, ceili(camera.size / (2.0 * GAP)) + 4)
     for y in range(center.y - radius_y, center.y + radius_y + 1):
         for x in range(center.x - radius_x, center.x + radius_x + 1):
-            needed[Vector2i(x, y)] = true
+            var cell: Vector2i = Vector2i(x, y)
+            if _inside_level(cell):
+                needed[cell] = true
     for p in board.keys():
         if not needed.has(p):
             board[p].queue_free()
