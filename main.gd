@@ -1033,7 +1033,18 @@ func _on_entry_changed(value: String) -> void:
     if entry.text != clean:
         _assign_entry(clean)
     typed_buffer = clean
+    _focus_current_typing_cell()
     _refresh_board()
+
+func _focus_current_typing_cell() -> void:
+    if preview.is_empty():
+        return
+    var cells: Array[Vector2i] = _cells(preview)
+    if cells.is_empty():
+        return
+    # A proxima casa vazia e o destino; ao completar, fica na ultima.
+    var next_index: int = clampi(entry.text.length(), 0, cells.size() - 1)
+    _focus_cell(cells[next_index])
 
 func _assign_entry(value: String) -> void:
     input_syncing = true
@@ -1162,7 +1173,7 @@ func _show_preview_choice() -> void:
     _assign_entry(_fill_locked_letters(typed))
     typed_buffer = entry.text
     drafts[key] = {"text": entry.text, "dir": preview_dir}
-    _focus_cell(_cells(words[preview_parent])[preview_anchor])
+    _focus_current_typing_cell()
     _refresh_board()
     _message("Digite sem clicar. Setas paralelas mudam a letra; perpendiculares invertem o sentido.")
 
