@@ -196,6 +196,7 @@ var level_route: Array[Vector2i] = []
 var word_bank: Array[Dictionary] = []
 var words_by_initial: Dictionary = {}
 var current_category: String = "GERAL"
+var fixed_branch_answers: Dictionary = {}
 
 func _ready() -> void:
     get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
@@ -703,6 +704,7 @@ func _new_game() -> void:
         result_overlay.hide()
     preview.clear()
     drafts.clear()
+    fixed_branch_answers.clear()
     preview_parent = -1
     preview_anchor = -1
     preview_dir = Vector2i.ZERO
@@ -752,11 +754,44 @@ func _new_game() -> void:
 # A simulação é revertida; o jogador continua livre para escolher seus ramos.
 func _plan_level() -> void:
     level_route.clear()
+    if level_number <= 2:
+        # Tutorial: uma unica ramificacao, com saida e coroas perto da origem.
+        var first: Dictionary = words[0]
+        var possible: Array[Dictionary] = []
+        var directions: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)]
+        for anchor in range(String(first["answer"]).length()):
+            for direction in directions:
+                var options: Array[Dictionary] = _possible_children(0, anchor, direction)
+                for option in options:
+                    var cells: Array[Vector2i] = _cells(option)
+                    if cells.size() >= 5 and cells.size() <= 7:
+                        possible.append({"word": option, "anchor": anchor, "direction": direction})
+        if not possible.is_empty():
+            var chosen_route: Dictionary = possible[rng.randi_range(0, possible.size() - 1)]
+            var route_word: Dictionary = chosen_route["word"]
+            var route_cells: Array[Vector2i] = _cells(route_word)
+            var route_direction: Vector2i = chosen_route["direction"]
+            var route_anchor: int = int(chosen_route["anchor"])
+            var route_key: String = "%d:%d:%d:%d" % [0, route_anchor, route_direction.x, route_direction.y]
+            fixed_branch_answers[route_key] = String(route_word["answer"])
+            level_route = _cells(first)
+            for cell in route_cells:
+                if not level_route.has(cell):
+                    level_route.append(cell)
+            exit_cell = route_cells.back()
+            # Todas as coroas estao no caminho obrigatorio da primeira palavra.
+            for i in range(1, 4):
+                _spawn_pickup(route_cells[i], "crown")
+            return
+    _plan_advanced_level()
+
+func _plan_advanced_level() -> void:
+    level_route.clear()
     var first_word: Dictionary = words[0].duplicate(true)
     var best_route: Array[Vector2i] = []
     var best_exit: Vector2i = Vector2i(0, -6)
     var best_distance: int = -1
-    var target_steps: int = mini(2 + level_number, 10)
+    var target_steps: int = mini(maxi(2, level_number), 10)
     for attempt in range(28):
         words.resize(1)
         words[0] = first_word.duplicate(true)
@@ -1081,6 +1116,20 @@ func _set_preview_direction(side: int) -> void:
 func _load_preview_choices() -> void:
     preview.clear()
     preview_choices = _possible_children(preview_parent, preview_anchor, preview_dir)
+    # Uma resposta estavel por letra e direcao, sem trocar a cada visita.
+    var branch_key: String = "%d:%d:%d:%d" % [preview_parent, preview_anchor, preview_dir.x, preview_dir.y]
+    var pinned: String = String(fixed_branch_answers.get(branch_key, ""))
+    if not pinned.is_empty():
+        for i in range(preview_choices.size()):
+            if String(preview_choices[i]["answer"]) == pinned:
+                var pinned_choice: Dictionary = preview_choices[i]
+                preview_choices.remove_at(i)
+                preview_choices.insert(0, pinned_choice)
+                break
+    elif not preview_choices.is_empty():
+        fixed_branch_answers[branch_key] = String(preview_choices[0]["answer"])
+    if level_mode and level_number <= 5 and preview_choices.size() > 1:
+        preview_choices.resize(1)
     preview_choice_index = 0
     # Se a lista mudar ao inverter o sentido, a resposta digitada NÃO muda.
     if preview_choices.is_empty():
@@ -1109,7 +1158,7 @@ func _show_preview_choice() -> void:
     _message("Digite sem clicar. Setas paralelas mudam a letra; perpendiculares invertem o sentido.")
 
 func _next_preview_clue() -> void:
-    if preview_choices.is_empty() or game_over:
+    if preview_choices.is_empty() or game_over or (level_mode and level_number <= 5):
         return
     _save_preview_draft()
     preview_choice_index = (preview_choice_index + 1) % preview_choices.size()
@@ -1601,7 +1650,7 @@ func _update_hud() -> void:
         selected_info.text = "ESCOLHA UMA LETRA PARA RAMIFICAR"
     direction_left.visible = false
     direction_right.visible = false
-    next_clue_button.visible = preview_choices.size() > 1
+    next_clue_button.visible = preview_choices.size() > 1 and (not level_mode or level_number >= 6)
     time_label.text = "TEMPO %d:%02d" % [seconds / 60, seconds % 60]
     crown_label.text = "FASE %d  ·  COROAS %d/3" % [level_number, crowns] if level_mode else "INFINITO"
     energy_label.text = "ENERGIA %d/%d" % [energy, ENERGY_MAX]
