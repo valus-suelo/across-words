@@ -197,6 +197,10 @@ var word_bank: Array[Dictionary] = []
 var words_by_initial: Dictionary = {}
 var current_category: String = "GERAL"
 var fixed_branch_answers: Dictionary = {}
+var camera_pan_offset: Vector2 = Vector2.ZERO
+var camera_zoom_factor: float = 1.0
+var panning_board: bool = false
+var pan_last_screen: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
     get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
@@ -722,6 +726,8 @@ func _new_game() -> void:
     map_vision_moves = 0
     _layout_hud()
     typed_buffer = ""
+    camera_pan_offset = Vector2.ZERO
+    camera_zoom_factor = 1.0
     camera_target = Vector3(0, 25, 1.4)
     camera.position = camera_target
     game_over = false
@@ -747,6 +753,7 @@ func _new_game() -> void:
     _sync_visible_board(true)
     last_navigation_arrow = Vector2i.ZERO
     last_solved_word = 0
+    _focus_word(words[0])
     _refresh_board()
     _message("A palavra %s ja esta pronta. Use as setas para escolher a letra e o lado da proxima palavra!" % first_answer)
 
@@ -1155,7 +1162,7 @@ func _show_preview_choice() -> void:
     _assign_entry(_fill_locked_letters(typed))
     typed_buffer = entry.text
     drafts[key] = {"text": entry.text, "dir": preview_dir}
-    _focus_word(preview)
+    _focus_cell(_cells(words[preview_parent])[preview_anchor])
     _refresh_board()
     _message("Digite sem clicar. Setas paralelas mudam a letra; perpendiculares invertem o sentido.")
 
@@ -1307,6 +1314,7 @@ func _submit() -> void:
     points += 100 + mini(combo, 10) * 15
     _clear_preview(false)
     last_solved_word = words.size() - 1
+    _focus_word(words[last_solved_word])
     drafts.clear()  # Só CONFIRMAR descarta alternativas.
     typed_buffer = ""
     if level_mode:
@@ -1719,7 +1727,8 @@ func _process(delta: float) -> void:
             _show_result(false, "O tempo acabou!")
         _update_hud()
     # A câmera segue suavemente o centro da palavra selecionada.
-    camera.position = camera.position.lerp(camera_target, minf(1.0, delta * 6.0))
+    var desired_camera: Vector3 = camera_target + Vector3(camera_pan_offset.x, 0.0, camera_pan_offset.y)
+    camera.position = camera.position.lerp(desired_camera, minf(1.0, delta * 4.0))
     _sync_visible_board()
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
@@ -1837,23 +1846,60 @@ func _navigate_arrow(direction: Vector2i) -> void:
     else:
         _apply_direction(direction)
 
+func _clamp_camera_pan() -> void:
+    var min_x: float = INF
+    var max_x: float = -INF
+    var min_y: float = INF
+    var max_y: float = -INF
+    for word in words:
+        if word["state"] != "solved":
+            continue
+        for cell in _cells(word):
+            min_x = minf(min_x, float(cell.x) * GAP)
+            max_x = maxf(max_x, float(cell.x) * GAP)
+            min_y = minf(min_y, float(cell.y) * GAP)
+            max_y = maxf(max_y, float(cell.y) * GAP)
+    if min_x == INF:
+        return
+    var margin: float = GAP * 1.5
+    camera_pan_offset.x = clampf(camera_pan_offset.x, min_x - margin - camera_target.x, max_x + margin - camera_target.x)
+    camera_pan_offset.y = clampf(camera_pan_offset.y, min_y - margin - (camera_target.z - 1.4), max_y + margin - (camera_target.z - 1.4))
+
+func _pan_camera(screen_delta: Vector2) -> void:
+    var viewport_height: float = maxf(1.0, get_viewport().get_visible_rect().size.y)
+    var scale_factor: float = camera.size / viewport_height
+    camera_pan_offset -= screen_delta * scale_factor
+    _clamp_camera_pan()
+
+func _zoom_camera(zoom_in: bool) -> void:
+    camera_zoom_factor = clampf(camera_zoom_factor * (0.94 if zoom_in else 1.06), 0.85, 1.15)
+    camera.size = 18.0 * camera_zoom_factor
+    _sync_visible_board(true)
+
 func _unhandled_input(event: InputEvent) -> void:
     if game_over or (is_instance_valid(menu_overlay) and menu_overlay.visible):
         return
+    if event is InputEventMouseButton and event.pressed:
+        if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+            _zoom_camera(true)
+            return
+        if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+            _zoom_camera(false)
+            return
     if event is InputEventMouseButton:
         if event.button_index == MOUSE_BUTTON_LEFT:
             if event.pressed:
                 _start_pointer(event.position)
             else:
                 _stop_pointer()
-    elif event is InputEventMouseMotion and pointer_down:
+    elif event is InputEventMouseMotion and (pointer_down or panning_board):
         _move_pointer(event.position)
     elif event is InputEventScreenTouch:
         if event.pressed:
             _start_pointer(event.position)
         else:
             _stop_pointer()
-    elif event is InputEventScreenDrag and pointer_down:
+    elif event is InputEventScreenDrag and (pointer_down or panning_board):
         _move_pointer(event.position)
 
 func _start_pointer(screen_pos: Vector2) -> void:
@@ -1864,6 +1910,8 @@ func _start_pointer(screen_pos: Vector2) -> void:
     # Arrastar sobre espaco vazio nao deve alterar a palavra.
     pointer_down = false
     pointer_dragged = false
+    panning_board = true
+    pan_last_screen = screen_pos
     for i in range(words.size() - 1, -1, -1):
         if words[i]["state"] != "solved":
             continue
@@ -1871,18 +1919,25 @@ func _start_pointer(screen_pos: Vector2) -> void:
             continue
         if _cells(words[i]).has(pointer_cell):
             pointer_down = true
+            panning_board = false
             break
     # As setas desenhadas continuam clicaveis fora das letras.
     if not pointer_down and _try_tap_branch_arrow(screen_pos):
         return
 
 func _stop_pointer() -> void:
+    panning_board = false
     if pointer_down and not pointer_dragged:
         if not _try_tap_branch_arrow(pointer_start):
             _click_tile(pointer_cell)
     pointer_down = false
 
 func _move_pointer(screen_pos: Vector2) -> void:
+    if panning_board:
+        if screen_pos.distance_to(pointer_start) >= 18.0:
+            _pan_camera(screen_pos - pan_last_screen)
+        pan_last_screen = screen_pos
+        return
     if not pointer_down or game_over:
         return
     if screen_pos.distance_to(pointer_start) < 30.0 and not pointer_dragged:
@@ -1958,12 +2013,16 @@ func _apply_direction(direction: Vector2i) -> void:
     drafts[key] = {"text": entry.text.to_upper(), "dir": direction}
     _load_preview_choices()
 
+func _focus_cell(cell: Vector2i) -> void:
+    camera_pan_offset = Vector2.ZERO
+    camera_target = Vector3(float(cell.x) * GAP, 25.0, float(cell.y) * GAP + 1.4)
+
 func _focus_word(word: Dictionary) -> void:
     var cells: Array[Vector2i] = _cells(word)
     if cells.is_empty():
         return
     var midpoint: Vector2i = cells[cells.size() / 2]
-    camera_target = Vector3(float(midpoint.x) * GAP, 25.0, float(midpoint.y) * GAP + 1.4)
+    _focus_cell(midpoint)
 
 func _sync_visible_board(force: bool = false) -> void:
     var center := Vector2i(roundi(camera.position.x / GAP), roundi(camera.position.z / GAP))
