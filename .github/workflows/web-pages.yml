@@ -65,7 +65,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          "$GODOT_BIN" --headless --path . --editor --quit
+          # O editor pode encerrar com codigo zero mesmo quando ha erros de GDScript.
+          # Bloqueia publicacoes com scripts invalidos.
+          "$GODOT_BIN" --headless --path . --editor --quit 2>&1 | tee /tmp/godot-import.log
+          "$GODOT_BIN" --headless --path . --quit-after 30 2>&1 | tee /tmp/godot-smoke.log
+          if grep -Ei 'SCRIPT ERROR|Parse Error|Failed to load script|ERROR:.*(parse|script)' /tmp/godot-import.log /tmp/godot-smoke.log; then
+            echo "::error::Godot encontrou erro de script; publicacao bloqueada."
+            exit 1
+          fi
           mkdir -p build/web
           "$GODOT_BIN" --headless --path . --export-release "Web" build/web/index.html
           test -s build/web/index.html
