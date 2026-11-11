@@ -165,6 +165,7 @@ var level_mode: bool = false
 var exit_cell := Vector2i(0, -24)
 const LEVEL_SAFE_RADIUS := 35
 const CAMPAIGN_LEVELS := 10
+const LEVEL_HALO := 9
 
 func _level_half_size() -> int:
     return 5 + clampi(level_number, 1, CAMPAIGN_LEVELS) - 1
@@ -173,6 +174,12 @@ func _inside_level(cell: Vector2i) -> bool:
     if not level_mode:
         return true
     var radius: int = _level_half_size()
+    return absi(cell.x) <= radius and absi(cell.y) <= radius
+
+func _inside_level_halo(cell: Vector2i) -> bool:
+    if not level_mode:
+        return true
+    var radius: int = _level_half_size() + LEVEL_HALO
     return absi(cell.x) <= radius and absi(cell.y) <= radius
 
 # Uma tentativa não altera words, used nem o tabuleiro permanente.
@@ -958,6 +965,8 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
     if direction == Vector2i.ZERO or parent_dir.x * direction.x + parent_dir.y * direction.y != 0:
         return choices
     var crossing: Vector2i = parent_cells[anchor]
+    if not _inside_level(crossing):
+        return choices
     var parent_answer: String = parent["answer"]
     var occupied: Dictionary = _occupied_letters()
     # Impedimento por inimigo: não é permitido traçar uma palavra sobre ele.
@@ -981,7 +990,7 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
         var new_count := 0
         for k in range(cells.size()):
             var cell: Vector2i = cells[k]
-            if not _inside_level(cell) or cell == enemy_cell:
+            if not _inside_level_halo(cell) or cell == enemy_cell:
                 valid = false
                 break
             if occupied.has(cell):
@@ -1156,6 +1165,9 @@ func _select_anchor(index: int, anchor: int) -> void:
     if index < 0 or index >= words.size():
         return
     if anchor < 0 or anchor >= _cells(words[index]).size():
+        return
+    if not _inside_level(_cells(words[index])[anchor]):
+        _message("Esta letra está fora da área principal e não pode gerar outra palavra.")
         return
     if preview_parent == index and preview_anchor == anchor:
         return
@@ -1713,6 +1725,8 @@ func _refresh_board() -> void:
                     mat = _material_cached("exit", Color("#6ab79a"), true)
                 elif pickups.has(p):
                     mat = _material_cached("gold", GOLD, true) if pickups[p] in ["coin", "crown"] else _material_cached("blue", Color("#72a5ae"), true)
+        if level_mode and not _inside_level(p):
+            mat = _material_cached("outer_solved", Color("#514354")) if letters.has(p) else _material_cached("outer_zone", Color("#24202e"))
         tile.material_override = mat
         if letters.has(p):
             _draw_text(p, String(letters[p]), Color("#342632"), 0.64)
@@ -1869,6 +1883,14 @@ func _select_anchor_by_arrow(arrow: Vector2i) -> void:
 
     last_navigation_arrow = arrow
     var anchor_index: int = order[slot]
+    var checked: int = 0
+    while checked < count and not _inside_level(cells[anchor_index]):
+        slot = posmod(slot + step, count)
+        anchor_index = order[slot]
+        checked += 1
+    if not _inside_level(cells[anchor_index]):
+        _message("Nenhuma letra desta palavra está na área principal.")
+        return
     _select_anchor(parent_index, anchor_index)
     _message("Letra %s (%d/%d)" % [_anchor_letter(parent_index, anchor_index), slot + 1, count])
 
@@ -2025,7 +2047,7 @@ func _start_pointer(screen_pos: Vector2) -> void:
             continue
         if bool(words[i]["spawned"]) and not extra_branch_armed:
             continue
-        if _cells(words[i]).has(pointer_cell):
+        if _inside_level(pointer_cell) and _cells(words[i]).has(pointer_cell):
             pointer_down = true
             panning_board = false
             break
@@ -2146,7 +2168,7 @@ func _sync_visible_board(force: bool = false) -> void:
     for y in range(center.y - radius_y, center.y + radius_y + 1):
         for x in range(center.x - radius_x, center.x + radius_x + 1):
             var cell: Vector2i = Vector2i(x, y)
-            if _inside_level(cell):
+            if _inside_level_halo(cell):
                 needed[cell] = true
     for p in board.keys():
         if not needed.has(p):
@@ -2157,7 +2179,7 @@ func _sync_visible_board(force: bool = false) -> void:
             continue
         var tile := MeshInstance3D.new()
         tile.mesh = shared_tile_mesh
-        tile.material_override = _material_cached("base", BASE)
+        tile.material_override = _material_cached("outer_zone", Color("#24202e")) if level_mode and not _inside_level(p) else _material_cached("base", BASE)
         tile.position = Vector3(p.x * GAP, 0.0, p.y * GAP)
         add_child(tile)
         board[p] = tile
