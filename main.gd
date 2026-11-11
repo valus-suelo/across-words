@@ -199,6 +199,9 @@ var current_category: String = "GERAL"
 var fixed_branch_answers: Dictionary = {}
 var camera_pan_offset: Vector2 = Vector2.ZERO
 var camera_zoom_factor: float = 1.0
+var active_touches: Dictionary = {}
+var pinch_last_distance: float = 0.0
+var suppress_touch_until_release: bool = false
 var panning_board: bool = false
 var pan_last_screen: Vector2 = Vector2.ZERO
 
@@ -728,6 +731,9 @@ func _new_game() -> void:
     typed_buffer = ""
     camera_pan_offset = Vector2.ZERO
     camera_zoom_factor = 1.0
+    active_touches.clear()
+    pinch_last_distance = 0.0
+    suppress_touch_until_release = false
     camera_target = Vector3(0, 25, 1.4)
     camera.position = camera_target
     game_over = false
@@ -1883,9 +1889,18 @@ func _pan_camera(screen_delta: Vector2) -> void:
     _clamp_camera_pan()
 
 func _zoom_camera(zoom_in: bool) -> void:
-    camera_zoom_factor = clampf(camera_zoom_factor * (0.94 if zoom_in else 1.06), 0.85, 1.15)
+    _set_camera_zoom(camera_zoom_factor * (0.94 if zoom_in else 1.06))
+
+func _set_camera_zoom(factor: float) -> void:
+    camera_zoom_factor = clampf(factor, 0.85, 1.15)
     camera.size = 18.0 * camera_zoom_factor
     _sync_visible_board(true)
+
+func _pinch_distance() -> float:
+    var ids: Array = active_touches.keys()
+    if ids.size() < 2:
+        return 0.0
+    return Vector2(active_touches[ids[0]]).distance_to(Vector2(active_touches[ids[1]]))
 
 func _unhandled_input(event: InputEvent) -> void:
     if game_over or (is_instance_valid(menu_overlay) and menu_overlay.visible):
@@ -1907,11 +1922,36 @@ func _unhandled_input(event: InputEvent) -> void:
         _move_pointer(event.position)
     elif event is InputEventScreenTouch:
         if event.pressed:
-            _start_pointer(event.position)
+            active_touches[event.index] = event.position
+            if active_touches.size() >= 2:
+                suppress_touch_until_release = true
+                pointer_down = false
+                panning_board = false
+                pointer_dragged = true
+                pinch_last_distance = _pinch_distance()
+            elif not suppress_touch_until_release:
+                _start_pointer(event.position)
         else:
-            _stop_pointer()
-    elif event is InputEventScreenDrag and (pointer_down or panning_board):
-        _move_pointer(event.position)
+            active_touches.erase(event.index)
+            if active_touches.is_empty():
+                if not suppress_touch_until_release:
+                    _stop_pointer()
+                suppress_touch_until_release = false
+                pinch_last_distance = 0.0
+                pointer_down = false
+                panning_board = false
+            elif active_touches.size() == 1:
+                pinch_last_distance = 0.0
+    elif event is InputEventScreenDrag:
+        if active_touches.has(event.index):
+            active_touches[event.index] = event.position
+        if active_touches.size() >= 2:
+            var new_distance: float = _pinch_distance()
+            if pinch_last_distance > 1.0 and new_distance > 1.0:
+                _set_camera_zoom(camera_zoom_factor * pinch_last_distance / new_distance)
+            pinch_last_distance = new_distance
+        elif not suppress_touch_until_release and (pointer_down or panning_board):
+            _move_pointer(event.position)
 
 func _start_pointer(screen_pos: Vector2) -> void:
     pointer_start = screen_pos
