@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "words": [
     {
       "answer": "CASA",
@@ -2477,6 +2477,3528 @@
       "answer": "RELEVO",
       "clue": "Formas da superfície terrestre",
       "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ARARA",
+      "clue": "Ave tropical de plumagem colorida",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TUCANO",
+      "clue": "Ave de bico grande e colorido",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "JAGUAR",
+      "clue": "Felino selvagem das Americas",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PANTERA",
+      "clue": "Grande felino de pelagem escura",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "GUEPARDO",
+      "clue": "Felino terrestre muito veloz",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "LINCE",
+      "clue": "Felino de orelhas pontudas",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "HIENA",
+      "clue": "Mamifero carnivoro conhecido pelo riso",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GAZELA",
+      "clue": "Antilope africano de corrida veloz",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ANTILOPE",
+      "clue": "Mamifero herbivoro de chifres",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "BISONTE",
+      "clue": "Grande bovino selvagem",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "BUFALO",
+      "clue": "Bovino de grande porte",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ALCE",
+      "clue": "Cervideo de grandes galhadas",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "RENA",
+      "clue": "Cervideo associado a regioes frias",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LONTRA",
+      "clue": "Mamifero aquatico de corpo alongado",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "DONINHA",
+      "clue": "Pequeno mamifero carnivoro",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "FUINHA",
+      "clue": "Mamifero pequeno aparentado a marta",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "MARTA",
+      "clue": "Mamifero de pelo valioso",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CASTOR",
+      "clue": "Roedor que constroi barragens",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CUTIA",
+      "clue": "Roedor brasileiro de pelo castanho",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PACA",
+      "clue": "Roedor de manchas claras",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "QUATI",
+      "clue": "Mamifero de focinho comprido",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GAMBA",
+      "clue": "Mamifero marsupial de cheiro forte",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ORNITORRINCO",
+      "clue": "Mamifero que bota ovos",
+      "category": "ANIMAIS",
+      "difficulty": 3
+    },
+    {
+      "answer": "EQUIDNA",
+      "clue": "Mamifero espinhoso que bota ovos",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "COALA",
+      "clue": "Marsupial australiano que come eucalipto",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CANGURU",
+      "clue": "Marsupial que se locomove aos saltos",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "WOMBAT",
+      "clue": "Marsupial australiano escavador",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "AVESTRUZ",
+      "clue": "Ave grande incapaz de voar",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "EMA",
+      "clue": "Ave corredora da America do Sul",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PELICANO",
+      "clue": "Ave com bolsa sob o bico",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "FLAMINGO",
+      "clue": "Ave rosada de pernas longas",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "GARCA",
+      "clue": "Ave de pernas longas que pesca",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CISNE",
+      "clue": "Ave aquatica de pescoco longo",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GANSO",
+      "clue": "Ave aquatica parecida com pato",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CODORNA",
+      "clue": "Pequena ave criada por seus ovos",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "PAVAO",
+      "clue": "Ave cujo macho exibe cauda vistosa",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "BEIJAFLOR",
+      "clue": "Ave pequena que paira no ar",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ANDORINHA",
+      "clue": "Ave migratoria de voo agil",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "FALCAO",
+      "clue": "Ave de rapina muito veloz",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GAVIAO",
+      "clue": "Ave de rapina de garras fortes",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "URUBU",
+      "clue": "Ave que se alimenta de carcacas",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CONDOR",
+      "clue": "Ave andina de grande envergadura",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ABUTRE",
+      "clue": "Ave necrofaga de grande porte",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "SARDINHA",
+      "clue": "Peixe pequeno comum em cardumes",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ANCHOVA",
+      "clue": "Peixe marinho usado na culinaria",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ATUM",
+      "clue": "Peixe marinho de nado rapido",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "SALMAO",
+      "clue": "Peixe migrador de carne rosada",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TRUTA",
+      "clue": "Peixe de agua fria",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "BACALHAU",
+      "clue": "Peixe tradicionalmente vendido salgado",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ENGUIA",
+      "clue": "Peixe de corpo comprido",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ARRAIA",
+      "clue": "Peixe achatado de nadadeiras largas",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CAVALOMARINHO",
+      "clue": "Peixe cujo macho carrega os filhotes",
+      "category": "ANIMAIS",
+      "difficulty": 3
+    },
+    {
+      "answer": "OSTRA",
+      "clue": "Molusco que pode produzir perolas",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "MEXILHAO",
+      "clue": "Molusco de concha escura",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "LAGOSTA",
+      "clue": "Crustaceo marinho de antenas longas",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "SIRI",
+      "clue": "Crustaceo nadador parecido com caranguejo",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "OURICO",
+      "clue": "Animal com espinhos",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CASCATA",
+      "clue": "Pequena queda de agua",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "RIBEIRAO",
+      "clue": "Curso de agua menor que rio",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CORREGO",
+      "clue": "Pequeno curso de agua",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "NASCENTE",
+      "clue": "Lugar onde nasce um rio",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ESTUARIO",
+      "clue": "Encontro de rio com mar",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "DELTA",
+      "clue": "Foz de rio dividida em canais",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "LAGOA",
+      "clue": "Corpo de agua menor que lago",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "LAGUNA",
+      "clue": "Lagoa costeira ligada ao mar",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "PANTANO",
+      "clue": "Terreno alagado com vegetacao",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "BREJO",
+      "clue": "Area de solo encharcado",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MANGUE",
+      "clue": "Vegetacao costeira de solo lodoso",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "DUNA",
+      "clue": "Monte de areia moldado pelo vento",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FALESIA",
+      "clue": "Encosta costeira muito inclinada",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "PENHASCO",
+      "clue": "Parede rochosa alta e abrupta",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "DESFILADEIRO",
+      "clue": "Passagem estreita entre montanhas",
+      "category": "NATUREZA",
+      "difficulty": 3
+    },
+    {
+      "answer": "CANION",
+      "clue": "Vale profundo de paredes rochosas",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "PLANALTO",
+      "clue": "Relevo elevado de topo relativamente plano",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "DEPRESSAO",
+      "clue": "Area mais baixa que seu entorno",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MORRO",
+      "clue": "Pequena elevacao de terreno",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "SERRA",
+      "clue": "Conjunto de montanhas",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CORDILHEIRA",
+      "clue": "Grande cadeia de montanhas",
+      "category": "NATUREZA",
+      "difficulty": 3
+    },
+    {
+      "answer": "VULCAO",
+      "clue": "Montanha que expele lava",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CRATERA",
+      "clue": "Abertura circular de vulcao",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MAGMA",
+      "clue": "Rocha derretida sob a superficie",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "LAVA",
+      "clue": "Rocha derretida que chega a superficie",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "GEISER",
+      "clue": "Fonte termal que jorra agua quente",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "GEADA",
+      "clue": "Gelo que se forma sobre superficies frias",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CERRACAO",
+      "clue": "Neblina densa que reduz a visibilidade",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ORVALHO",
+      "clue": "Gotas de agua formadas pela condensacao",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "TEMPESTADE",
+      "clue": "Fenomeno de chuva e vento intensos",
+      "category": "NATUREZA",
+      "difficulty": 3
+    },
+    {
+      "answer": "FURACAO",
+      "clue": "Ciclone tropical muito intenso",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "TORNADO",
+      "clue": "Coluna de ar em rotacao violenta",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CICLONE",
+      "clue": "Sistema atmosferico de baixa pressao",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MONCAO",
+      "clue": "Vento sazonal que traz chuvas",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "VENTANIA",
+      "clue": "Vento forte e persistente",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "NEVASCA",
+      "clue": "Tempestade acompanhada de neve",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "AVALANCHE",
+      "clue": "Grande massa de neve que desliza",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "GLACIAR",
+      "clue": "Massa de gelo que se move lentamente",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ICEBERG",
+      "clue": "Bloco de gelo flutuante no oceano",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "GELEIRA",
+      "clue": "Grande massa de gelo terrestre",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CORAL",
+      "clue": "Animal marinho que forma recifes",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "RECIFE",
+      "clue": "Formacao submersa perto da superficie",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ISTMO",
+      "clue": "Faixa estreita que une terras",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CABO",
+      "clue": "Ponta de terra que avanca no mar",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "BAIA",
+      "clue": "Entrada do mar na costa",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ENSEADA",
+      "clue": "Pequena baia protegida",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "GOLFO",
+      "clue": "Grande entrada do mar no continente",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "OASIS",
+      "clue": "Local com agua em regiao desertica",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "SAVANA",
+      "clue": "Bioma tropical de arvores esparsas",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "TUNDRA",
+      "clue": "Bioma frio de vegetacao rasteira",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "TAIGA",
+      "clue": "Floresta de coniferas em regioes frias",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CERRADO",
+      "clue": "Bioma brasileiro de savana",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CAATINGA",
+      "clue": "Bioma brasileiro de clima semiarido",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "PAMPA",
+      "clue": "Bioma de campos do sul do Brasil",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ABAJUR",
+      "clue": "Luminaria de mesa",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LAMPADA",
+      "clue": "Dispositivo que produz iluminacao",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "INTERRUPTOR",
+      "clue": "Dispositivo que liga ou desliga circuito",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "TOMADA",
+      "clue": "Ponto de conexao de aparelhos eletricos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "EXTENSAO",
+      "clue": "Cabo que amplia o alcance da tomada",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "PILHA",
+      "clue": "Fonte portatil de energia eletrica",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CONTROLE",
+      "clue": "Dispositivo usado para comandar aparelhos",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "IMPRESSORA",
+      "clue": "Maquina que imprime documentos",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "SCANNER",
+      "clue": "Aparelho que digitaliza imagens",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ROTEADOR",
+      "clue": "Equipamento que distribui rede",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "MODEM",
+      "clue": "Aparelho que modula sinais de comunicacao",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ANTENA",
+      "clue": "Estrutura que transmite ou recebe ondas",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "MICROFONE",
+      "clue": "Dispositivo que capta sons",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ALTOFALANTE",
+      "clue": "Dispositivo que reproduz sons",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "TRIPE",
+      "clue": "Suporte de tres pernas",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LENTE",
+      "clue": "Elemento optico que desvia a luz",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "OCULOS",
+      "clue": "Acessorio usado diante dos olhos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "AGENDA",
+      "clue": "Caderno para compromissos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "APONTADOR",
+      "clue": "Objeto que afia a ponta do lapis",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "TRANSFERIDOR",
+      "clue": "Instrumento para medir angulos",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "ESQUADRO",
+      "clue": "Instrumento triangular de desenho",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "GRAMPEADOR",
+      "clue": "Aparelho que prende folhas com grampos",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "PERFURADOR",
+      "clue": "Objeto que faz furos em papel",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "CLIPS",
+      "clue": "Peca metalica que prende folhas",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ENVELOPE",
+      "clue": "Invólucro de papel para cartas",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "PASTA",
+      "clue": "Objeto para guardar documentos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CARTEIRA",
+      "clue": "Objeto para guardar dinheiro e cartoes",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "CHAVEIRO",
+      "clue": "Acessorio que reune chaves",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "DOBRADICA",
+      "clue": "Peca que permite girar portas",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "PORCA",
+      "clue": "Peca rosqueada que prende parafuso",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ARRUELA",
+      "clue": "Disco fino usado com parafusos",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "SERROTE",
+      "clue": "Ferramenta manual para serrar madeira",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "CHAVEFENDA",
+      "clue": "Ferramenta para girar parafusos de fenda",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "TRENA",
+      "clue": "Fita graduada para medir distancias",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "NIVEL",
+      "clue": "Instrumento que verifica alinhamento",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ESPATULA",
+      "clue": "Ferramenta de lamina achatada",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "PINCEL",
+      "clue": "Instrumento para aplicar tinta",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ROLO",
+      "clue": "Cilindro usado para espalhar tinta",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "FUNIL",
+      "clue": "Objeto que facilita despejar liquidos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PENEIRA",
+      "clue": "Utensilio para separar particulas",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "RALADOR",
+      "clue": "Utensilio para ralar alimentos",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ESCORREDOR",
+      "clue": "Utensilio para escorrer agua",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "ASSADEIRA",
+      "clue": "Recipiente usado para assar",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "TAMPA",
+      "clue": "Peca que cobre uma abertura",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CONCHA",
+      "clue": "Utensilio para servir sopas",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ESPUMADEIRA",
+      "clue": "Utensilio perfurado para retirar alimentos",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "CANECA",
+      "clue": "Recipiente para bebidas com alca",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TIGELA",
+      "clue": "Recipiente fundo para alimentos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GARRAFA",
+      "clue": "Recipiente de gargalo estreito",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "POTE",
+      "clue": "Recipiente pequeno com tampa",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CAIXA",
+      "clue": "Recipiente de formato geralmente retangular",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CESTO",
+      "clue": "Recipiente trancado ou vazado",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LIXEIRA",
+      "clue": "Recipiente para descarte de residuos",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "RODO",
+      "clue": "Utensilio para puxar agua do piso",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ESFREGAO",
+      "clue": "Utensilio para limpar superficies",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ESPONJA",
+      "clue": "Material poroso usado na limpeza",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "XAMPU",
+      "clue": "Produto para lavar os cabelos",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "COLCHAO",
+      "clue": "Superficie acolchoada para dormir",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "LENCOL",
+      "clue": "Tecido que cobre o colchao",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "POLTRONA",
+      "clue": "Cadeira larga e acolchoada",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "BANQUETA",
+      "clue": "Assento sem encosto ou com encosto baixo",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "PRATELEIRA",
+      "clue": "Superficie horizontal para apoiar objetos",
+      "category": "OBJETOS",
+      "difficulty": 3
+    },
+    {
+      "answer": "CABIDE",
+      "clue": "Suporte para pendurar roupas",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CABIDEIRO",
+      "clue": "Estrutura para pendurar casacos",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "SAPATEIRA",
+      "clue": "Movel para guardar calcados",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ISOTOPO",
+      "clue": "Atomo do mesmo elemento com neutrons diferentes",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ION",
+      "clue": "Atomo ou molecula com carga eletrica",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CATION",
+      "clue": "Ion de carga positiva",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ANION",
+      "clue": "Ion de carga negativa",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ELEMENTO",
+      "clue": "Substancia definida pelo numero de protons",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "COMPOSTO",
+      "clue": "Substancia formada por elementos quimicos",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MISTURA",
+      "clue": "Combinacao fisica de substancias",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "SOLUCAO",
+      "clue": "Mistura homogenea de substancias",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "SOLVENTE",
+      "clue": "Substancia que dissolve outra",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "SOLUTO",
+      "clue": "Substancia dissolvida em solvente",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "REACAO",
+      "clue": "Transformacao quimica entre substancias",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CATALISADOR",
+      "clue": "Substancia que acelera uma reacao",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "ENZIMA",
+      "clue": "Proteina que acelera reacoes biologicas",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "PROTEINA",
+      "clue": "Macromolecula feita de aminoacidos",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "LIPIDIO",
+      "clue": "Classe de moleculas que inclui gorduras",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CARBOIDRATO",
+      "clue": "Nutriente composto por carbono hidrogenio e oxigenio",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "GLICOSE",
+      "clue": "Acucar simples usado pelas celulas",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "FRUTOSE",
+      "clue": "Acucar encontrado em frutas",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "SACAROSE",
+      "clue": "Acucar comum de mesa",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CELULOSE",
+      "clue": "Polimero estrutural das plantas",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "AMIDO",
+      "clue": "Reserva energetica vegetal",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "RNA",
+      "clue": "Molecula envolvida na expressao genetica",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CROMOSSOMO",
+      "clue": "Estrutura que organiza o DNA",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "MUTACAO",
+      "clue": "Alteracao na sequencia genetica",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "EVOLUCAO",
+      "clue": "Mudanca de caracteristicas herdaveis",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "SELECAO",
+      "clue": "Processo que favorece certas caracteristicas",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "FOSSIL",
+      "clue": "Vestigio preservado de organismo antigo",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MEMBRANA",
+      "clue": "Estrutura que envolve a celula",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CITOPLASMA",
+      "clue": "Regiao celular fora do nucleo",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "MITOCONDRIA",
+      "clue": "Organela que produz energia celular",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "RIBOSSOMO",
+      "clue": "Estrutura que sintetiza proteinas",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CLOROPLASTO",
+      "clue": "Organela da fotossintese",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "FOTOSSINTESE",
+      "clue": "Processo que usa luz para produzir acucares",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "RESPIRACAO",
+      "clue": "Processo de obtencao de energia celular",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "FUNGO",
+      "clue": "Organismo como cogumelo ou levedura",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "PROTOZOARIO",
+      "clue": "Organismo unicelular eucarioto",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "ALGAS",
+      "clue": "Organismos aquaticos fotossintetizantes",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ECOLOGIA",
+      "clue": "Estudo das relacoes dos seres vivos",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "HABITAT",
+      "clue": "Ambiente onde vive uma especie",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "NICHO",
+      "clue": "Papel ecologico de uma especie",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ECOSSISTEMA",
+      "clue": "Conjunto de seres vivos e ambiente",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "BIODIVERSIDADE",
+      "clue": "Variedade de formas de vida",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "POPULACAO",
+      "clue": "Individuos de uma especie numa area",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "COMUNIDADE",
+      "clue": "Conjunto de populacoes de especies",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "BIOMA",
+      "clue": "Grande conjunto de ecossistemas",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CAPACITOR",
+      "clue": "Componente que armazena carga eletrica",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "INDUTOR",
+      "clue": "Componente que armazena energia magnetica",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "DIODO",
+      "clue": "Componente que conduz preferencialmente num sentido",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "TRANSISTOR",
+      "clue": "Componente semicondutor de controle",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "GERADOR",
+      "clue": "Maquina que converte energia em eletricidade",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "TRANSFORMADOR",
+      "clue": "Equipamento que altera niveis de tensao",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "FREQUENCIA",
+      "clue": "Numero de ciclos por segundo",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "AMPLITUDE",
+      "clue": "Valor maximo de oscilacao",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "PERIODO",
+      "clue": "Tempo de um ciclo completo",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ONDULACAO",
+      "clue": "Variacao repetida em forma de onda",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "INERCIA",
+      "clue": "Tendencia a manter o estado de movimento",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MASSA",
+      "clue": "Medida da inercia de um corpo",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "DENSIDADE",
+      "clue": "Massa por unidade de volume",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "PRESSAO",
+      "clue": "Forca por unidade de area",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "TEMPERATURA",
+      "clue": "Grandeza associada a agitacao termica",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "CALOR",
+      "clue": "Energia transferida por diferenca termica",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ENTROPIA",
+      "clue": "Grandeza associada a dispersao de energia",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "VOLUME",
+      "clue": "Espaco ocupado por um corpo",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "AREA",
+      "clue": "Medida de superficie",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "DIAMETRO",
+      "clue": "Segmento que passa pelo centro de circulo",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "RAIO",
+      "clue": "Distancia do centro a circunferencia",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "HIPOTENUSA",
+      "clue": "Maior lado de triangulo retangulo",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "CATETO",
+      "clue": "Lado de triangulo retangulo que forma angulo reto",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "VARIAVEL",
+      "clue": "Simbolo que representa valor mutavel",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "FUNCAO",
+      "clue": "Relacao entre entradas e saidas",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "DERIVADA",
+      "clue": "Taxa instantanea de variacao",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "INTEGRAL",
+      "clue": "Operacao que calcula acumulacoes",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MATRIZ",
+      "clue": "Tabela retangular de numeros",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "VETOR",
+      "clue": "Grandeza com modulo e direcao",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ESCALAR",
+      "clue": "Grandeza descrita apenas por valor",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "PROBABILIDADE",
+      "clue": "Medida da chance de um evento",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "ESTATISTICA",
+      "clue": "Estudo de dados e variabilidade",
+      "category": "CIENCIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "MEDIANA",
+      "clue": "Valor central de dados ordenados",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MODA",
+      "clue": "Valor mais frequente em conjunto",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MEDIA",
+      "clue": "Soma dos valores dividida pela quantidade",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "VARIANCIA",
+      "clue": "Medida da dispersao dos dados",
+      "category": "CIENCIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "DESVIO",
+      "clue": "Distancia em relacao a referencia",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "TERRITORIO",
+      "clue": "Area sob determinada jurisdicao",
+      "category": "GEOGRAFIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "MUNICIPIO",
+      "clue": "Unidade administrativa local",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "PROVINCIA",
+      "clue": "Divisao administrativa de pais",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "DISTRITO",
+      "clue": "Subdivisao administrativa",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "BAIRRO",
+      "clue": "Parte de uma cidade",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "METROPOLE",
+      "clue": "Cidade de grande influencia regional",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "URBANIZACAO",
+      "clue": "Crescimento de areas urbanas",
+      "category": "GEOGRAFIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "MIGRACAO",
+      "clue": "Deslocamento de pessoas entre regioes",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "IMIGRACAO",
+      "clue": "Entrada de pessoas em outro pais",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "EMIGRACAO",
+      "clue": "Saida de pessoas de seu pais",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CENSO",
+      "clue": "Levantamento de dados da populacao",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "DEMOGRAFIA",
+      "clue": "Estudo das populacoes",
+      "category": "GEOGRAFIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "CARTOGRAFIA",
+      "clue": "Ciencia de produzir mapas",
+      "category": "GEOGRAFIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "TOPOGRAFIA",
+      "clue": "Descricao do relevo de um terreno",
+      "category": "GEOGRAFIA",
+      "difficulty": 3
+    },
+    {
+      "answer": "ESCALA",
+      "clue": "Relacao entre distancia no mapa e real",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "LEGENDA",
+      "clue": "Explicacao dos simbolos do mapa",
+      "category": "GEOGRAFIA",
+      "difficulty": 2
+    },
+    {
+      "answer": "GPS",
+      "clue": "Sistema de posicionamento por satelites",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ORBITA",
+      "clue": "Trajetoria de corpo em torno de outro",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "POLO",
+      "clue": "Extremidade do eixo de rotacao terrestre",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FUSO",
+      "clue": "Faixa territorial de horario padrao",
+      "category": "GEOGRAFIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ALEGRIA",
+      "clue": "Sentimento de grande felicidade",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "TRISTEZA",
+      "clue": "Sentimento de pesar",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "SAUDADE",
+      "clue": "Sentimento pela ausencia de alguem",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "CORAGEM",
+      "clue": "Capacidade de enfrentar o medo",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "MEDO",
+      "clue": "Emocao diante de perigo",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "RAIVA",
+      "clue": "Sentimento intenso de irritacao",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "CALMA",
+      "clue": "Estado de tranquilidade",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "PACIENCIA",
+      "clue": "Capacidade de esperar sem irritacao",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "RESPEITO",
+      "clue": "Consideracao pelo outro",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "EMPATIA",
+      "clue": "Capacidade de compreender sentimentos alheios",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "AMIZADE",
+      "clue": "Relacao de afeto entre amigos",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "CONFIANCA",
+      "clue": "Seguranca depositada em alguem",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "HONESTIDADE",
+      "clue": "Qualidade de quem age com verdade",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "JUSTICA",
+      "clue": "Principio de dar a cada um o que e devido",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "LIBERDADE",
+      "clue": "Condicao de poder escolher",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "IGUALDADE",
+      "clue": "Condicao de ter os mesmos direitos",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "SOLIDARIEDADE",
+      "clue": "Apoio mutuo entre pessoas",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "GENEROSIDADE",
+      "clue": "Disposicao para ajudar ou compartilhar",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "GRATIDAO",
+      "clue": "Sentimento de reconhecimento por ajuda",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "ORGULHO",
+      "clue": "Satisfacao por conquista propria",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "VERGONHA",
+      "clue": "Constrangimento diante de situacao",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "SURPRESA",
+      "clue": "Reacao ao inesperado",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "CURIOSIDADE",
+      "clue": "Desejo de conhecer algo",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "CRIATIVIDADE",
+      "clue": "Capacidade de produzir ideias novas",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "IMAGINACAO",
+      "clue": "Faculdade de criar imagens mentais",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "MEMORIA",
+      "clue": "Capacidade de guardar lembrancas",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "ATENCAO",
+      "clue": "Concentracao em um estimulo",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "APRENDIZADO",
+      "clue": "Processo de adquirir conhecimento",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "CONHECIMENTO",
+      "clue": "Informacao e compreensao adquiridas",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "SABEDORIA",
+      "clue": "Uso ponderado do conhecimento",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "LINGUAGEM",
+      "clue": "Sistema de comunicacao por sinais",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "ALFABETO",
+      "clue": "Conjunto ordenado de letras",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "SILABA",
+      "clue": "Unidade sonora de uma palavra",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "VOGAL",
+      "clue": "Som produzido sem obstrucao do ar",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "CONSOANTE",
+      "clue": "Som da fala com alguma obstrucao",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "ACENTO",
+      "clue": "Sinal que marca tonicidade ou timbre",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "PONTUACAO",
+      "clue": "Sinais que organizam um texto",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "PARAGRAFO",
+      "clue": "Bloco de frases de um texto",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "CAPITULO",
+      "clue": "Divisao de livro",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "PREFACIO",
+      "clue": "Texto introdutorio de livro",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "EPILOGO",
+      "clue": "Trecho final de uma narrativa",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "PROLOGO",
+      "clue": "Introducao de obra narrativa",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "PERSONAGEM",
+      "clue": "Figura que participa de historia",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "NARRADOR",
+      "clue": "Voz que conta uma historia",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "ENREDO",
+      "clue": "Sequencia de acontecimentos de narrativa",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "CENARIO",
+      "clue": "Lugar onde ocorre uma historia",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "DIALOGO",
+      "clue": "Conversa entre personagens",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "METAFORA",
+      "clue": "Comparacao implicita entre ideias",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "RIMA",
+      "clue": "Repeticao de sons ao fim de versos",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ESTROFE",
+      "clue": "Grupo de versos de poema",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "VERSO",
+      "clue": "Linha de poema",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "SONETO",
+      "clue": "Poema tradicional de quatorze versos",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ROMANCE",
+      "clue": "Narrativa longa em prosa",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "CONTO",
+      "clue": "Narrativa breve de ficcao",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "CRONICA",
+      "clue": "Texto breve sobre o cotidiano",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "BIOGRAFIA",
+      "clue": "Relato da vida de uma pessoa",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "AUTOBIOGRAFIA",
+      "clue": "Relato da propria vida",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "DICIONARIO",
+      "clue": "Livro que explica palavras",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "ENCICLOPEDIA",
+      "clue": "Obra de consulta sobre varios assuntos",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "BIBLIOTECA",
+      "clue": "Lugar que reune livros para consulta",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "LIVRARIA",
+      "clue": "Loja que vende livros",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "MUSEU",
+      "clue": "Instituicao que preserva acervos",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "TEATRO",
+      "clue": "Arte de representar no palco",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "CINEMA",
+      "clue": "Arte de criar filmes",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "PINTURA",
+      "clue": "Arte de aplicar pigmentos",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "ESCULTURA",
+      "clue": "Arte de criar formas tridimensionais",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "FOTOGRAFIA",
+      "clue": "Arte de registrar imagens com luz",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "MELODIA",
+      "clue": "Sequencia de notas musicais",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "RITMO",
+      "clue": "Organizacao temporal dos sons",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "HARMONIA",
+      "clue": "Combinacao simultanea de notas",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "ACORDE",
+      "clue": "Conjunto de notas tocadas juntas",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ORQUESTRA",
+      "clue": "Conjunto de instrumentistas",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "MAESTRO",
+      "clue": "Pessoa que rege uma orquestra",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "PARTITURA",
+      "clue": "Notacao escrita de musica",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "VIOLINO",
+      "clue": "Instrumento de cordas tocado com arco",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "VIOLONCELO",
+      "clue": "Instrumento grave de cordas com arco",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "VIOLAO",
+      "clue": "Instrumento de cordas dedilhadas",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "GUITARRA",
+      "clue": "Instrumento de cordas eletrificado",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "PIANO",
+      "clue": "Instrumento de teclas e cordas",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "FLAUTA",
+      "clue": "Instrumento de sopro de tubo",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "CLARINETE",
+      "clue": "Instrumento de sopro com palheta",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "SAXOFONE",
+      "clue": "Instrumento de sopro metalico com palheta",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "TROMPETE",
+      "clue": "Instrumento de sopro de metal",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "TROMBONE",
+      "clue": "Instrumento de metal com vara deslizante",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "TUBA",
+      "clue": "Instrumento grave de sopro de metal",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "TAMBOR",
+      "clue": "Instrumento de percussao com membrana",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "PANDEIRO",
+      "clue": "Instrumento de percussao circular",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "AGOGO",
+      "clue": "Instrumento de percussao com campanas",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "BERIMBAU",
+      "clue": "Instrumento musical usado na capoeira",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "CAPOEIRA",
+      "clue": "Pratica brasileira de luta e musica",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "FUTEBOL",
+      "clue": "Esporte com bola e gols",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "VOLEIBOL",
+      "clue": "Esporte de bola sobre rede",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "BASQUETE",
+      "clue": "Esporte de arremessar bola na cesta",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "HANDEBOL",
+      "clue": "Esporte de bola jogado com as maos",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "NATACAO",
+      "clue": "Esporte praticado na agua",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "ATLETISMO",
+      "clue": "Conjunto de provas de corrida e salto",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "GINASTICA",
+      "clue": "Pratica de movimentos corporais",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "CICLISMO",
+      "clue": "Esporte de pedalar bicicletas",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "ESGRIMA",
+      "clue": "Esporte de combate com espadas",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "JUDO",
+      "clue": "Arte marcial japonesa de projecoes",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "CARATE",
+      "clue": "Arte marcial japonesa de golpes",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "TAEKWONDO",
+      "clue": "Arte marcial coreana de chutes",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "BOXE",
+      "clue": "Esporte de combate com punhos",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "DAMAS",
+      "clue": "Jogo de tabuleiro com pecas diagonais",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "DOMINO",
+      "clue": "Jogo de pecas com pontos",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "BARALHO",
+      "clue": "Conjunto de cartas de jogo",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "QUEBRACABECA",
+      "clue": "Jogo de montar imagem com pecas",
+      "category": "GERAL",
+      "difficulty": 3
+    },
+    {
+      "answer": "LABIRINTO",
+      "clue": "Rede de caminhos com saidas dificeis",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "ENIGMA",
+      "clue": "Questao de solucao misteriosa",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "CHARADA",
+      "clue": "Adivinhacao formulada como pergunta",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "ADIVINHA",
+      "clue": "Desafio de descobrir uma resposta",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "CASAS",
+      "clue": "Forma plural de casa",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LUAS",
+      "clue": "Forma plural de lua",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "RIOS",
+      "clue": "Forma plural de rio",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "GATOS",
+      "clue": "Forma plural de gato",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PATOS",
+      "clue": "Forma plural de pato",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ROSAS",
+      "clue": "Forma plural de rosa",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "VENTOS",
+      "clue": "Forma plural de vento",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "TERRAS",
+      "clue": "Forma plural de terra",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "PEDRAS",
+      "clue": "Forma plural de pedra",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "PORTAS",
+      "clue": "Forma plural de porta",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LIVROS",
+      "clue": "Forma plural de livro",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PONTES",
+      "clue": "Forma plural de ponte",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TEMPOS",
+      "clue": "Forma plural de tempo",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "AREIAS",
+      "clue": "Forma plural de areia",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "NOITES",
+      "clue": "Forma plural de noite",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FOLHAS",
+      "clue": "Forma plural de folha",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "RATOS",
+      "clue": "Forma plural de rato",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "BOLOS",
+      "clue": "Forma plural de bolo",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "MESAS",
+      "clue": "Forma plural de mesa",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "JANELAS",
+      "clue": "Forma plural de janela",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "CAMPOS",
+      "clue": "Forma plural de campo",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ESTRELAS",
+      "clue": "Forma plural de estrela",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "LAGOS",
+      "clue": "Forma plural de lago",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MATOS",
+      "clue": "Forma plural de mato",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "SAPOS",
+      "clue": "Forma plural de sapo",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "FAROS",
+      "clue": "Forma plural de faro",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "PENAS",
+      "clue": "Forma plural de pena",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PRAIAS",
+      "clue": "Forma plural de praia",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FONTES",
+      "clue": "Forma plural de fonte",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CARTAS",
+      "clue": "Forma plural de carta",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "TRIGOS",
+      "clue": "Forma plural de trigo",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "NORTES",
+      "clue": "Forma plural de norte",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "OESTES",
+      "clue": "Forma plural de oeste",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "LESTES",
+      "clue": "Forma plural de leste",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "COROAS",
+      "clue": "Forma plural de coroa",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "OUROS",
+      "clue": "Forma plural de ouro",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "REDES",
+      "clue": "Forma plural de rede",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "DOCES",
+      "clue": "Forma plural de doce",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "BARCOS",
+      "clue": "Forma plural de barco",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "NAVIOS",
+      "clue": "Forma plural de navio",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "TREVOS",
+      "clue": "Forma plural de trevo",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CINTOS",
+      "clue": "Forma plural de cinto",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "PULSOS",
+      "clue": "Forma plural de pulso",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CANTOS",
+      "clue": "Forma plural de canto",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "BANCOS",
+      "clue": "Forma plural de banco",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "BOLSAS",
+      "clue": "Forma plural de bolsa",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LINHAS",
+      "clue": "Forma plural de linha",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PONTOS",
+      "clue": "Forma plural de ponto",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TINTAS",
+      "clue": "Forma plural de tinta",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "FESTAS",
+      "clue": "Forma plural de festa",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "DANCAS",
+      "clue": "Forma plural de danca",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "MUSICAS",
+      "clue": "Forma plural de musica",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "PRATOS",
+      "clue": "Forma plural de prato",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GARFOS",
+      "clue": "Forma plural de garfo",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "FACAS",
+      "clue": "Forma plural de faca",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "AMIGOS",
+      "clue": "Forma plural de amigo",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "AGUAS",
+      "clue": "Forma plural de agua",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ASAS",
+      "clue": "Forma plural de asa",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ABELHAS",
+      "clue": "Forma plural de abelha",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ARTES",
+      "clue": "Forma plural de arte",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ANJOS",
+      "clue": "Forma plural de anjo",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ACERTOS",
+      "clue": "Forma plural de acerto",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "BOLAS",
+      "clue": "Forma plural de bola",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "BICOS",
+      "clue": "Forma plural de bico",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "BEBES",
+      "clue": "Forma plural de bebe",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "BRISAS",
+      "clue": "Forma plural de brisa",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CAMAS",
+      "clue": "Forma plural de cama",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "COPOS",
+      "clue": "Forma plural de copo",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CEUS",
+      "clue": "Forma plural de ceu",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CUBOS",
+      "clue": "Forma plural de cubo",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "DADOS",
+      "clue": "Forma plural de dado",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "DEDOS",
+      "clue": "Forma plural de dedo",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "DENTES",
+      "clue": "Forma plural de dente",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "DIAS",
+      "clue": "Forma plural de dia",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ECOS",
+      "clue": "Forma plural de eco",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ERVAS",
+      "clue": "Forma plural de erva",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "ESCOLAS",
+      "clue": "Forma plural de escola",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "ESTADOS",
+      "clue": "Forma plural de estado",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "FADAS",
+      "clue": "Forma plural de fada",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "FOGOS",
+      "clue": "Forma plural de fogo",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FRIOS",
+      "clue": "Forma plural de frio",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FITAS",
+      "clue": "Forma plural de fita",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GEMAS",
+      "clue": "Forma plural de gema",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "GELOS",
+      "clue": "Forma plural de gelo",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "GALOS",
+      "clue": "Forma plural de galo",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GOTAS",
+      "clue": "Forma plural de gota",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "HORAS",
+      "clue": "Forma plural de hora",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "HINOS",
+      "clue": "Forma plural de hino",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ILHAS",
+      "clue": "Forma plural de ilha",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "IMAS",
+      "clue": "Forma plural de ima",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "IDEIAS",
+      "clue": "Forma plural de ideia",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "IOIOS",
+      "clue": "Forma plural de ioio",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "JOGOS",
+      "clue": "Forma plural de jogo",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "JARRAS",
+      "clue": "Forma plural de jarra",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "JOIAS",
+      "clue": "Forma plural de joia",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "KIWIS",
+      "clue": "Forma plural de kiwi",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "LADOS",
+      "clue": "Forma plural de lado",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "LOBOS",
+      "clue": "Forma plural de lobo",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "MALAS",
+      "clue": "Forma plural de mala",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "MOEDAS",
+      "clue": "Forma plural de moeda",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "NOMES",
+      "clue": "Forma plural de nome",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "OVOS",
+      "clue": "Forma plural de ovo",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "OLHOS",
+      "clue": "Forma plural de olho",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ONDAS",
+      "clue": "Forma plural de onda",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "OSSOS",
+      "clue": "Forma plural de osso",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "PIPAS",
+      "clue": "Forma plural de pipa",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PEIXES",
+      "clue": "Forma plural de peixe",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "PES",
+      "clue": "Forma plural de pe",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "QUEIJOS",
+      "clue": "Forma plural de queijo",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "QUADROS",
+      "clue": "Forma plural de quadro",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "QUEDAS",
+      "clue": "Forma plural de queda",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "QUENTES",
+      "clue": "Forma plural de quente",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "RUAS",
+      "clue": "Forma plural de rua",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "REIS",
+      "clue": "Forma plural de rei",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "RODAS",
+      "clue": "Forma plural de roda",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "SALAS",
+      "clue": "Forma plural de sala",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "SELOS",
+      "clue": "Forma plural de selo",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "SINOS",
+      "clue": "Forma plural de sino",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "SUCOS",
+      "clue": "Forma plural de suco",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "TETOS",
+      "clue": "Forma plural de teto",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TATUS",
+      "clue": "Forma plural de tatu",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "TOCAS",
+      "clue": "Forma plural de toca",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "UVAS",
+      "clue": "Forma plural de uva",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "URSOS",
+      "clue": "Forma plural de urso",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "UNHAS",
+      "clue": "Forma plural de unha",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "VIDAS",
+      "clue": "Forma plural de vida",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "VACAS",
+      "clue": "Forma plural de vaca",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "VALES",
+      "clue": "Forma plural de vale",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "VELAS",
+      "clue": "Forma plural de vela",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "WIFIS",
+      "clue": "Forma plural de wifi",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "XALES",
+      "clue": "Forma plural de xale",
+      "category": "OBJETOS",
+      "difficulty": 1
+    },
+    {
+      "answer": "XICARAS",
+      "clue": "Forma plural de xicara",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "XAROPES",
+      "clue": "Forma plural de xarope",
+      "category": "OBJETOS",
+      "difficulty": 2
+    },
+    {
+      "answer": "YOGAS",
+      "clue": "Forma plural de yoga",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "YAKISOBAS",
+      "clue": "Forma plural de yakisoba",
+      "category": "GERAL",
+      "difficulty": 2
+    },
+    {
+      "answer": "ZEBRAS",
+      "clue": "Forma plural de zebra",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "ZEROS",
+      "clue": "Forma plural de zero",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ZONAS",
+      "clue": "Forma plural de zona",
+      "category": "GERAL",
+      "difficulty": 1
+    },
+    {
+      "answer": "ZINCOS",
+      "clue": "Forma plural de zinco",
+      "category": "CIENCIA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CACHORROS",
+      "clue": "Forma plural de cachorro",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "CAVALOS",
+      "clue": "Forma plural de cavalo",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ELEFANTES",
+      "clue": "Forma plural de elefante",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "GIRAFAS",
+      "clue": "Forma plural de girafa",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "TIGRES",
+      "clue": "Forma plural de tigre",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "MACACOS",
+      "clue": "Forma plural de macaco",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "GOLFINHOS",
+      "clue": "Forma plural de golfinho",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "BALEIAS",
+      "clue": "Forma plural de baleia",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "POLVOS",
+      "clue": "Forma plural de polvo",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LULAS",
+      "clue": "Forma plural de lula",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CARANGUEJOS",
+      "clue": "Forma plural de caranguejo",
+      "category": "ANIMAIS",
+      "difficulty": 3
+    },
+    {
+      "answer": "FORMIGAS",
+      "clue": "Forma plural de formiga",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "BORBOLETAS",
+      "clue": "Forma plural de borboleta",
+      "category": "ANIMAIS",
+      "difficulty": 3
+    },
+    {
+      "answer": "LAGARTAS",
+      "clue": "Forma plural de lagarta",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "MOSQUITOS",
+      "clue": "Forma plural de mosquito",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "MOSCAS",
+      "clue": "Forma plural de mosca",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GRILOS",
+      "clue": "Forma plural de grilo",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "CIGARRAS",
+      "clue": "Forma plural de cigarra",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "ARANHAS",
+      "clue": "Forma plural de aranha",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "COBRAS",
+      "clue": "Forma plural de cobra",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "LAGARTOS",
+      "clue": "Forma plural de lagarto",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "JACARES",
+      "clue": "Forma plural de jacare",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "TARTARUGAS",
+      "clue": "Forma plural de tartaruga",
+      "category": "ANIMAIS",
+      "difficulty": 3
+    },
+    {
+      "answer": "PAPAGAIOS",
+      "clue": "Forma plural de papagaio",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "CORUJAS",
+      "clue": "Forma plural de coruja",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "AGUIAS",
+      "clue": "Forma plural de aguia",
+      "category": "ANIMAIS",
+      "difficulty": 1
+    },
+    {
+      "answer": "GALINHAS",
+      "clue": "Forma plural de galinha",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "COELHOS",
+      "clue": "Forma plural de coelho",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "MORCEGOS",
+      "clue": "Forma plural de morcego",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "RAPOSAS",
+      "clue": "Forma plural de raposa",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "CAPIVARAS",
+      "clue": "Forma plural de capivara",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "TAMANDUAS",
+      "clue": "Forma plural de tamandua",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "PREGUICAS",
+      "clue": "Forma plural de preguica",
+      "category": "ANIMAIS",
+      "difficulty": 2
+    },
+    {
+      "answer": "HIPOPOTAMOS",
+      "clue": "Forma plural de hipopotamo",
+      "category": "ANIMAIS",
+      "difficulty": 3
+    },
+    {
+      "answer": "MONTANHAS",
+      "clue": "Forma plural de montanha",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "COLINAS",
+      "clue": "Forma plural de colina",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "PLANICIES",
+      "clue": "Forma plural de planicie",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "DESERTOS",
+      "clue": "Forma plural de deserto",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "FLORESTAS",
+      "clue": "Forma plural de floresta",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "BOSQUES",
+      "clue": "Forma plural de bosque",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "SEMENTES",
+      "clue": "Forma plural de semente",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "TRONCOS",
+      "clue": "Forma plural de tronco",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "GALHOS",
+      "clue": "Forma plural de galho",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CASCAS",
+      "clue": "Forma plural de casca",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "FRUTOS",
+      "clue": "Forma plural de fruto",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "BANANAS",
+      "clue": "Forma plural de banana",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MANGAS",
+      "clue": "Forma plural de manga",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MORANGOS",
+      "clue": "Forma plural de morango",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MELANCIAS",
+      "clue": "Forma plural de melancia",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "ABACAXIS",
+      "clue": "Forma plural de abacaxi",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "LARANJAS",
+      "clue": "Forma plural de laranja",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "MACAS",
+      "clue": "Forma plural de maca",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "PERAS",
+      "clue": "Forma plural de pera",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "COCOS",
+      "clue": "Forma plural de coco",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CEREJAS",
+      "clue": "Forma plural de cereja",
+      "category": "NATUREZA",
+      "difficulty": 2
+    },
+    {
+      "answer": "CAJUS",
+      "clue": "Forma plural de caju",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "MILHOS",
+      "clue": "Forma plural de milho",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "BAMBUS",
+      "clue": "Forma plural de bambu",
+      "category": "NATUREZA",
+      "difficulty": 1
+    },
+    {
+      "answer": "CACTOS",
+      "clue": "Forma plural de cacto",
+      "category": "NATUREZA",
       "difficulty": 1
     }
   ]
