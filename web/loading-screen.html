@@ -9,7 +9,9 @@
   #aw-loading .aw-track { height:9px; overflow:hidden; border-radius:20px; background:#594551; }
   #aw-loading .aw-bar { height:100%; width:0%; background:#f3b5c8; border-radius:20px; transition:width .18s ease; }
   #aw-loading .aw-caption { margin-top:14px; font-size:13px; color:#d5b9c6; }
-  #status-splash { display:none !important; }
+  #status-splash, #status-progress, #status-notice { display:none !important; }
+  #aw-retry { display:none; margin:18px auto 0; padding:10px 20px; border:1px solid #f3b5c8; border-radius:9px; background:#594551; color:#fff0f4; font:inherit; cursor:pointer; }
+  #aw-loading.aw-error #aw-retry { display:block; }
 </style>
 <div id="aw-loading" role="status" aria-live="polite">
   <div class="aw-panel">
@@ -17,6 +19,7 @@
     <div class="aw-subtitle">Explore palavras. Descubra caminhos.</div>
     <div class="aw-track"><div id="aw-progress" class="aw-bar"></div></div>
     <div id="aw-caption" class="aw-caption">Carregando o jogo...</div>
+    <button id="aw-retry" type="button" onclick="location.reload()">Tentar novamente</button>
   </div>
 </div>
 <script>
@@ -29,6 +32,9 @@
   const progress = document.getElementById('status-progress');
   const notice = document.getElementById('status-notice');
   let finished = false;
+  let failed = false;
+  const started = Date.now();
+  const timeoutMs = 90000;
   function dismiss() {
     if (finished) return;
     finished = true;
@@ -37,7 +43,7 @@
     window.setTimeout(() => overlay.remove(), 420);
   }
   function sync() {
-    if (finished) return;
+    if (finished || failed) return;
     if (progress) {
       const value = Number(progress.value);
       const max = Number(progress.max);
@@ -49,19 +55,25 @@
       caption.textContent = notice.textContent.trim();
     }
     // O status oficial fica oculto quando o jogo termina de iniciar.
-    if (status && getComputedStyle(status).display === 'none') dismiss();
+    if (status && getComputedStyle(status).display === 'none' && !document.getElementById('error')) dismiss();
   }
   // Observa a inicializacao mesmo se o status ja estiver oculto ao carregar.
   if (status) new MutationObserver(sync).observe(status, { attributes: true, attributeFilter: ['style', 'class'] });
   if (progress) new MutationObserver(sync).observe(progress, { attributes: true, attributeFilter: ['value', 'max', 'style'] });
   if (notice) new MutationObserver(sync).observe(notice, { attributes: true, childList: true, characterData: true, subtree: true });
   window.addEventListener('load', () => window.setTimeout(sync, 200), { once: true });
-  // Nunca deixa o jogador preso numa tela que cobre o jogo por tempo indefinido.
-  window.setTimeout(() => {
-    if (!finished) {
-      dismiss();
-      console.warn('Across-Words: loading overlay removed after timeout; check Godot console if game is not visible.');
+  // O limite de tempo mostra uma opcao de recuperacao, sem revelar a tela padrao.
+  window.setInterval(() => {
+    if (finished || failed) return;
+    const error = document.getElementById('error');
+    if (error && getComputedStyle(error).display !== 'none' && error.textContent.trim()) {
+      failed = true;
+      caption.textContent = 'Não foi possível iniciar o jogo.';
+    } else if (Date.now() - started >= timeoutMs) {
+      failed = true;
+      caption.textContent = 'O carregamento está demorando mais que o esperado.';
     }
-  }, 12000);
+    if (failed) overlay.classList.add('aw-error');
+  }, 1000);
 })();
 </script>
