@@ -764,7 +764,7 @@ func _plan_level() -> void:
                 var options: Array[Dictionary] = _possible_children(0, anchor, direction)
                 for option in options:
                     var cells: Array[Vector2i] = _cells(option)
-                    if cells.size() >= 5 and cells.size() <= 7:
+                    if cells.size() >= (7 if level_number == 1 else 8) and cells.size() <= (9 if level_number == 1 else 10):
                         possible.append({"word": option, "anchor": anchor, "direction": direction})
         if not possible.is_empty():
             var chosen_route: Dictionary = possible[rng.randi_range(0, possible.size() - 1)]
@@ -779,9 +779,11 @@ func _plan_level() -> void:
                 if not level_route.has(cell):
                     level_route.append(cell)
             exit_cell = route_cells.back()
-            # Todas as coroas estao no caminho obrigatorio da primeira palavra.
-            for i in range(1, 4):
-                _spawn_pickup(route_cells[i], "crown")
+            # Espalha as coroas ao longo da rota, sem tres casas consecutivas.
+            # Fase 1: indices 1, 3 e 5; fase 2: 1, 4 e 6.
+            var crown_positions: Array[int] = [1, 3, 5] if level_number == 1 else [1, 4, 6]
+            for crown_index in crown_positions:
+                _spawn_pickup(route_cells[crown_index], "crown")
             return
     _plan_advanced_level()
 
