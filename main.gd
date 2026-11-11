@@ -787,8 +787,32 @@ func _new_game() -> void:
 
 # Constrói uma rota possível sem revelar nem fixar as palavras no mapa.
 # A simulação é revertida; o jogador continua livre para escolher seus ramos.
+func _place_first_level_objectives() -> void:
+    # Tres coroas distintas em casas livres do quadrado 11x11.
+    # A saida fica na regiao de um canto, longe da palavra inicial.
+    var corners: Array[Vector2i] = [
+        Vector2i(-5, -5), Vector2i(-5, 5),
+        Vector2i(5, -5), Vector2i(5, 5)
+    ]
+    exit_cell = corners[rng.randi_range(0, corners.size() - 1)]
+    var occupied_start: Array[Vector2i] = _cells(words[0])
+    var available: Array[Vector2i] = []
+    for y in range(-5, 6):
+        for x in range(-5, 6):
+            var cell: Vector2i = Vector2i(x, y)
+            if cell == exit_cell or occupied_start.has(cell):
+                continue
+            available.append(cell)
+    available.shuffle()
+    for i in range(3):
+        _spawn_pickup(available[i], "crown")
+    level_route = occupied_start.duplicate()
+
 func _plan_level() -> void:
     level_route.clear()
+    if level_number == 1:
+        _place_first_level_objectives()
+        return
     if level_number <= 2:
         # Tutorial: uma unica ramificacao, com saida e coroas perto da origem.
         var first: Dictionary = words[0]
