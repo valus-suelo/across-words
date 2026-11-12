@@ -156,6 +156,18 @@ var menu_overlay: ColorRect
 var pause_overlay: ColorRect
 var pause_stats: Label
 var help_overlay: ColorRect
+var help_card_container: VBoxContainer
+var help_page_label: Label
+var help_index: int = 0
+var help_swipe_start: float = 0.0
+const HELP_PAGES := [
+    ["MODOS DE JOGO", "CAMPANHA: avance por 10 fases, formando palavras ate encontrar a saida proxima aos cantos. As 3 coroas de cada fase sao opcionais e aumentam sua pontuacao.\n\nINFINITO: forme palavras, crie cruzamentos e sobreviva pelo maior tempo possivel, acumulando pontos."],
+    ["COMO JOGAR", "Toque em uma letra de uma palavra resolvida e escolha a direcao para criar outra palavra. Leia a pista e digite a resposta no teclado.\n\nPalavras que cruzam outras ja resolvidas aumentam o combo: dois cruzamentos contam dois. Use moedas para liberar ramos extras."],
+    ["TEMPO", "CAMPANHA: o relogio conta para cima. Voce nao perde por demorar, mas cada segundo reduz a pontuacao final. O item de tempo desconta 12 segundos.\n\nINFINITO: o relogio conta para baixo; quando acaba, a partida termina."],
+    ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nColete itens de energia pelo tabuleiro para recuperar ate 3 pontos, respeitando o limite maximo de 10."],
+    ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por fase na campanha, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELOGIO: reduz o tempo na campanha.\nVISAO: amplia a area visivel.\nMOEDAS: permitem comprar ramos extras.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
+    ["DICAS", "O botao DICA, ao lado da definicao, permite trocar a palavra sugerida para a letra e direcao escolhidas.\n\nVoce tem 3 trocas por fase, renovadas ao avancar de nivel. O botao so fica disponivel quando ha mais de uma resposta valida."]
+]
 var mode_button: Button
 var typed_buffer: String = ""
 var camera_target: Vector3 = Vector3(0, 25, 1.4)
@@ -739,47 +751,75 @@ func _make_help_and_pause(layer: CanvasLayer) -> void:
     help_col.add_theme_constant_override("separation", 9)
     help_panel.add_child(help_col)
     help_col.add_child(_make_label("COMO JOGAR", 30))
-    var scroll := ScrollContainer.new()
-    scroll.custom_minimum_size = Vector2(300, 360)
-    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-    scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-    help_col.add_child(scroll)
-    var cards := VBoxContainer.new()
-    cards.custom_minimum_size.x = 286.0
-    cards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    cards.add_theme_constant_override("separation", 8)
-    scroll.add_child(cards)
-    _help_card(cards, "PALAVRAS E CRUZAMENTOS", "Selecione uma letra resolvida, escolha uma direcao e forme palavras. Cruzar varias palavras aumenta o combo.")
-    _help_card(cards, "CAMPANHA", "Encontre a saida perto dos cantos. Colete ate 3 coroas opcionais por fase. O tempo conta para cima e reduz a pontuacao final.")
-    _help_card(cards, "RECURSOS", "Energia: recupera raios. Relogio: reduz o tempo na campanha. Visao: amplia o mapa. Moedas: permitem comprar ramos extras.")
-    _help_card(cards, "INIMIGOS", "A partir da fase 7, inimigos surgem no mapa. Eles perseguem as palavras e podem destruir caminhos ou encerrar a partida.")
-    _help_card(cards, "DICAS E INFINITO", "Use DICA para trocar a palavra disponivel: 3 usos por fase. No modo infinito, o tempo e regressivo.")
+    var card_panel := PanelContainer.new()
+    card_panel.custom_minimum_size = Vector2(310, 410)
+    card_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    card_panel.add_theme_stylebox_override("panel", _panel_style(Color("#594453"), Color("#b38ba0")))
+    help_col.add_child(card_panel)
+    help_card_container = VBoxContainer.new()
+    help_card_container.add_theme_constant_override("separation", 20)
+    help_card_container.gui_input.connect(_help_swipe_input)
+    card_panel.add_child(help_card_container)
+    var navigation := HBoxContainer.new()
+    navigation.alignment = BoxContainer.ALIGNMENT_CENTER
+    navigation.add_theme_constant_override("separation", 18)
+    help_col.add_child(navigation)
+    var previous := Button.new()
+    previous.text = "<"
+    previous.custom_minimum_size = Vector2(58, 48)
+    previous.pressed.connect(func() -> void: _change_help_page(-1))
+    navigation.add_child(previous)
+    help_page_label = _make_label("1 / 6", 20)
+    navigation.add_child(help_page_label)
+    var next := Button.new()
+    next.text = ">"
+    next.custom_minimum_size = Vector2(58, 48)
+    next.pressed.connect(func() -> void: _change_help_page(1))
+    navigation.add_child(next)
     var close := Button.new()
     close.text = "VOLTAR"
     close.custom_minimum_size.y = 48
     close.pressed.connect(func() -> void: help_overlay.hide())
     help_col.add_child(close)
+    _render_help_page()
     help_overlay.hide()
 
-func _help_card(parent: VBoxContainer, heading: String, description: String) -> void:
-    var panel := PanelContainer.new()
-    panel.custom_minimum_size.x = 280.0
-    panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    panel.add_theme_stylebox_override("panel", _panel_style(Color("#594453"), Color("#9b7587")))
-    parent.add_child(panel)
-    var col := VBoxContainer.new()
-    panel.add_child(col)
-    var title_label := _make_label(heading, 17)
-    title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    col.add_child(title_label)
-    var description_label := _make_label(description, 15)
-    description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    description_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    col.add_child(description_label)
+func _render_help_page() -> void:
+    if not is_instance_valid(help_card_container):
+        return
+    for child in help_card_container.get_children():
+        child.queue_free()
+    var page: Array = HELP_PAGES[help_index]
+    var heading := _make_label(String(page[0]), 25)
+    heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    heading.mouse_filter = Control.MOUSE_FILTER_PASS
+    help_card_container.add_child(heading)
+    var body := _make_label(String(page[1]), 19)
+    body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    body.mouse_filter = Control.MOUSE_FILTER_PASS
+    help_card_container.add_child(body)
+    help_page_label.text = "%d / %d" % [help_index + 1, HELP_PAGES.size()]
+
+func _change_help_page(step: int) -> void:
+    help_index = posmod(help_index + step, HELP_PAGES.size())
+    _render_help_page()
+
+func _help_swipe_input(event: InputEvent) -> void:
+    if event is InputEventScreenTouch:
+        if event.pressed:
+            help_swipe_start = event.position.x
+        elif absf(event.position.x - help_swipe_start) > 45.0:
+            _change_help_page(-1 if event.position.x < help_swipe_start else 1)
+    elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+        if event.pressed:
+            help_swipe_start = event.position.x
+        elif absf(event.position.x - help_swipe_start) > 45.0:
+            _change_help_page(-1 if event.position.x < help_swipe_start else 1)
 
 func _show_help() -> void:
+    help_index = 0
+    _render_help_page()
     help_overlay.show()
 
 func _toggle_pause() -> void:
