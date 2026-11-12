@@ -923,7 +923,8 @@ func _plan_advanced_level() -> void:
             if candidates.is_empty():
                 break
             var choice: Dictionary = candidates[rng.randi_range(0, candidates.size() - 1)]
-            var selected: Dictionary = Dictionary(choice["word"]).duplicate(true)
+            var selected: Dictionary = choice["word"]
+            selected = selected.duplicate(true)
             var chosen_dir: Vector2i = choice["direction"]
             var pin_key: String = "%d:%d:%d:%d" % [parent_idx, int(choice["anchor"]), chosen_dir.x, chosen_dir.y]
             trial_pins[pin_key] = String(selected["answer"])
