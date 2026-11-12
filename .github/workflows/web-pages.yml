@@ -86,6 +86,14 @@ jobs:
           assert "</body>" in html, "Shell Web do Godot sem fechamento de body"
           page.write_text(html.replace("</body>", snippet + "\n</body>", 1), encoding="utf-8")
           PY
+          cp web/favicon.svg build/web/favicon.svg
+          python3 - <<'PY'
+          from pathlib import Path
+          page = Path("build/web/index.html")
+          html = page.read_text(encoding="utf-8")
+          html = html.replace("</head>", '<link rel="icon" type="image/svg+xml" href="favicon.svg">\n</head>', 1)
+          page.write_text(html, encoding="utf-8")
+          PY
           touch build/web/.nojekyll
           ls -lah build/web/
       - name: Preparar GitHub Pages
