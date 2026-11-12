@@ -388,10 +388,10 @@ func _layout_hud() -> void:
     hud_bottom.anchor_bottom = 1.0
     hud_bottom.offset_left = -keyboard_width * 0.5
     hud_bottom.offset_right = keyboard_width * 0.5
-    hud_bottom.offset_top = -365.0 if wide else -405.0
+    hud_bottom.offset_top = -310.0 if wide else -330.0
     hud_bottom.offset_bottom = 0.0
 
-    var key_height: float = 57.0 if wide else 60.0
+    var key_height: float = 48.0 if wide else 49.0
     var key_font: int = 20 if wide else 21
     for key_row in hud_keyboard.get_children():
         for key_button in key_row.get_children():
@@ -459,7 +459,9 @@ func _make_ui() -> void:
     clue_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     clue_row.add_child(clue_label)
     next_clue_button = Button.new()
-    next_clue_button.text = "💡 3"
+    next_clue_button.text = "DICA 3"
+    next_clue_button.focus_mode = Control.FOCUS_NONE
+    next_clue_button.custom_minimum_size.x = 80.0
     next_clue_button.tooltip_text = "Trocar pista (3 por fase)"
     next_clue_button.pressed.connect(_next_preview_clue)
     clue_row.add_child(next_clue_button)
@@ -522,19 +524,19 @@ func _make_ui() -> void:
     var confirm := Button.new()
     confirm.text = "CONFIRMAR"
     confirm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    confirm.custom_minimum_size.y = 46
+    confirm.custom_minimum_size.y = 42
     confirm.add_theme_font_size_override("font_size", 22)
     confirm.pressed.connect(_submit)
     actions.add_child(confirm)
     var buy := Button.new()
     buy.text = "+ RAMO (3)"
-    buy.custom_minimum_size = Vector2(148, 46)
+    buy.custom_minimum_size = Vector2(132, 42)
     buy.add_theme_font_size_override("font_size", 18)
     buy.pressed.connect(_buy_path)
     actions.add_child(buy)
     message_label = _make_label("", 17)
     message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    message_label.custom_minimum_size.y = 26
+    message_label.custom_minimum_size.y = 20
     column.add_child(message_label)
     # Teclado integrado à HUD: sempre visível durante a partida.
     var keyboard := VBoxContainer.new()
@@ -1347,8 +1349,6 @@ func _load_preview_choices() -> void:
                 break
     elif not preview_choices.is_empty():
         fixed_branch_answers[branch_key] = String(preview_choices[0]["answer"])
-    if level_mode and level_number <= 4 and preview_choices.size() > 1:
-        preview_choices.resize(1)
     preview_choice_index = 0
     # Se a lista mudar ao inverter o sentido, a resposta digitada NÃO muda.
     if preview_choices.is_empty():
@@ -1918,7 +1918,7 @@ func _update_hud() -> void:
     direction_right.visible = false
     next_clue_button.visible = true
     next_clue_button.disabled = preview_choices.size() <= 1 or hints_remaining <= 0 or game_over
-    next_clue_button.text = "💡 %d" % hints_remaining
+    next_clue_button.text = "DICA %d" % hints_remaining
     var shown_seconds: int = maxi(0, int(elapsed)) if level_mode else seconds
     time_label.text = "TEMPO %d:%02d" % [shown_seconds / 60, shown_seconds % 60]
     crown_label.text = "FASE %d  ·  COROAS %d/3" % [level_number, crowns] if level_mode else "INFINITO"
