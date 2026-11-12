@@ -780,7 +780,7 @@ func _toggle_pause() -> void:
     if pause_overlay.visible:
         _close_pause()
         return
-    pause_stats.text = "Modo: %s\\nFase: %d\\nPontos: %d  |  Moedas: %d\\nPalavras: %d  |  Cruzamentos: %d\\nCoroas: %d/3  |  Energia: %d/%d\\nTempo: %d:%02d  |  Dicas: %d\\nFases concluidas: %d" % ["Campanha" if level_mode else "Infinito", level_number, points, coins, _solved_count(), combo, crowns, energy, ENERGY_MAX, int(elapsed) / 60, int(elapsed) % 60, hints_remaining, completed_levels.size()]
+    pause_stats.text = "Modo: %s\nFase: %d\nPontos: %d  |  Moedas: %d\nPalavras: %d  |  Cruzamentos: %d\nCoroas: %d/3  |  Energia: %d/%d\nTempo: %d:%02d  |  Dicas: %d\nFases concluidas: %d" % ["Campanha" if level_mode else "Infinito", level_number, points, coins, _solved_count(), combo, crowns, energy, ENERGY_MAX, int(elapsed) / 60, int(elapsed) % 60, hints_remaining, completed_levels.size()]
     pause_overlay.show()
     if is_instance_valid(entry):
         entry.release_focus()
