@@ -673,7 +673,38 @@ func _make_ui() -> void:
     hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     menu_col.add_child(hint)
+    # Rodape do menu: autoria a esquerda e contatos a direita.
+    var footer := HBoxContainer.new()
+    footer.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+    footer.offset_left = 18.0
+    footer.offset_right = -18.0
+    footer.offset_top = -58.0
+    footer.offset_bottom = -12.0
+    footer.add_theme_constant_override("separation", 8)
+    menu_overlay.add_child(footer)
+    var author := _make_label("criado por valus_suelo", 15)
+    author.add_theme_color_override("font_color", Color("#d9b8c9"))
+    author.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    author.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    footer.add_child(author)
+    _menu_social_button(footer, "@", "Gmail", "mailto:joao.valansuelo.abreu@gmail.com")
+    _menu_social_button(footer, "X", "Twitter / X", "https://x.com/valus_suelo")
+    _menu_social_button(footer, "◎", "Instagram", "https://www.instagram.com/valus_suelo/")
     _make_help_and_pause(menu_layer)
+
+func _menu_social_button(parent: HBoxContainer, symbol: String, service: String, url: String) -> void:
+    var button := Button.new()
+    button.text = symbol
+    button.tooltip_text = service
+    button.custom_minimum_size = Vector2(42, 42)
+    button.focus_mode = Control.FOCUS_NONE
+    button.add_theme_font_size_override("font_size", 21)
+    button.add_theme_color_override("font_color", Color("#f6e1e8"))
+    button.add_theme_stylebox_override("normal", _panel_style(Color("#604957"), Color("#ad8193")))
+    button.add_theme_stylebox_override("hover", _panel_style(Color("#8a6577"), Color("#e7b6c9")))
+    button.add_theme_stylebox_override("pressed", _panel_style(Color("#b88b9f"), Color("#f1cbd7")))
+    button.pressed.connect(func() -> void: OS.shell_open(url))
+    parent.add_child(button)
 
 func _add_keyboard_row(parent: VBoxContainer, letters: String, with_erase: bool = false) -> void:
     var keys := HBoxContainer.new()
