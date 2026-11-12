@@ -33,8 +33,6 @@
   const notice = document.getElementById('status-notice');
   let finished = false;
   let failed = false;
-  const started = Date.now();
-  const timeoutMs = 90000;
   function dismiss() {
     if (finished) return;
     finished = true;
@@ -43,7 +41,7 @@
     window.setTimeout(() => overlay.remove(), 420);
   }
   function sync() {
-    if (finished || failed) return;
+    if (finished) return;
     if (progress) {
       const value = Number(progress.value);
       const max = Number(progress.max);
@@ -54,26 +52,27 @@
     if (notice && notice.textContent.trim() && getComputedStyle(notice).display !== 'none') {
       caption.textContent = notice.textContent.trim();
     }
-    // O status oficial fica oculto quando o jogo termina de iniciar.
-    if (status && getComputedStyle(status).display === 'none' && !document.getElementById('error')) dismiss();
+    // O Godot mantém o elemento #error no DOM mesmo sem erro.
+    // Só impedir a conclusão se houver uma mensagem de erro realmente visível.
+    const error = document.getElementById('error');
+    const hasError = !!(error && error.textContent.trim() && getComputedStyle(error).display !== 'none');
+    if (hasError) {
+      failed = true;
+      caption.textContent = 'Não foi possível iniciar o jogo.';
+      overlay.classList.add('aw-error');
+      return;
+    }
+    const canvas = document.getElementById('canvas') || document.querySelector('canvas');
+    const canvasReady = !!(canvas && getComputedStyle(canvas).display !== 'none' && canvas.width > 0 && canvas.height > 0);
+    if (status && getComputedStyle(status).display === 'none' && canvasReady) dismiss();
   }
   // Observa a inicializacao mesmo se o status ja estiver oculto ao carregar.
   if (status) new MutationObserver(sync).observe(status, { attributes: true, attributeFilter: ['style', 'class'] });
   if (progress) new MutationObserver(sync).observe(progress, { attributes: true, attributeFilter: ['value', 'max', 'style'] });
   if (notice) new MutationObserver(sync).observe(notice, { attributes: true, childList: true, characterData: true, subtree: true });
   window.addEventListener('load', () => window.setTimeout(sync, 200), { once: true });
-  // O limite de tempo mostra uma opcao de recuperacao, sem revelar a tela padrao.
-  window.setInterval(() => {
-    if (finished || failed) return;
-    const error = document.getElementById('error');
-    if (error && getComputedStyle(error).display !== 'none' && error.textContent.trim()) {
-      failed = true;
-      caption.textContent = 'Não foi possível iniciar o jogo.';
-    } else if (Date.now() - started >= timeoutMs) {
-      failed = true;
-      caption.textContent = 'O carregamento está demorando mais que o esperado.';
-    }
-    if (failed) overlay.classList.add('aw-error');
-  }, 1000);
+  // Sem prazo artificial: acompanha a conclusao real, inclusive em redes lentas.
+  // O polling complementa o observer para mudancas feitas diretamente no canvas.
+  window.setInterval(sync, 350);
 })();
 </script>
