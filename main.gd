@@ -8,6 +8,8 @@ const WORD_TIME := 38.0
 const STORY_MAP_TIME := 300.0
 const INFINITE_MAP_TIME := 360.0
 const ENERGY_MAX := 10
+const ENERGY_PER_LEVEL := 2
+const ENERGY_FINISH_BONUS := 25
 const REGEN_SECONDS := 20.0
 const BG := Color("#2a222d")
 const BASE := Color("#594551")
@@ -164,7 +166,7 @@ const HELP_PAGES := [
     ["MODOS DE JOGO", "CAMPANHA: avance por 10 fases, formando palavras ate encontrar a saida proxima aos cantos. As 3 coroas de cada fase sao opcionais e aumentam sua pontuacao.\n\nINFINITO: forme palavras, crie cruzamentos e sobreviva pelo maior tempo possivel, acumulando pontos."],
     ["COMO JOGAR", "Toque em uma letra de uma palavra resolvida e escolha a direcao para criar outra palavra. Leia a pista e digite a resposta no teclado.\n\nPalavras que cruzam outras ja resolvidas aumentam o combo: dois cruzamentos contam dois. Use moedas para liberar ramos extras."],
     ["TEMPO", "CAMPANHA: o relogio conta para cima. Voce nao perde por demorar, mas cada segundo reduz a pontuacao final. O item de tempo desconta 12 segundos.\n\nINFINITO: o relogio conta para baixo; quando acaba, a partida termina."],
-    ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nColete itens de energia pelo tabuleiro para recuperar ate 3 pontos, respeitando o limite maximo de 10."],
+    ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nNa campanha, o limite cresce 2 por fase (10 a 28). Cada energia restante no portal vale 25 pontos extras. Colete itens para recuperar ate 3 pontos. No infinito, o limite e 10."],
     ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por fase na campanha, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELOGIO: reduz o tempo na campanha.\nVISAO: amplia a area visivel.\nMOEDAS: permitem comprar ramos extras.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
     ["DICAS", "O botao DICA, ao lado da definicao, permite trocar a palavra sugerida para a letra e direcao escolhidas.\n\nNa campanha, voce tem 3 trocas por fase, renovadas ao avancar de nivel. No modo infinito, colete itens de dica para recuperar usos (ate 3). O botao exige alternativas validas."]
 ]
@@ -860,7 +862,7 @@ func _toggle_pause() -> void:
     if pause_overlay.visible:
         _close_pause()
         return
-    pause_stats.text = "Modo: %s\nFase: %d\nPontos: %d  |  Moedas: %d\nPalavras: %d  |  Cruzamentos: %d\nCoroas: %d/3  |  Energia: %d/%d\nTempo: %d:%02d  |  Dicas: %d\nFases concluidas: %d" % ["Campanha" if level_mode else "Infinito", level_number, points, coins, _solved_count(), combo, crowns, energy, ENERGY_MAX, int(elapsed) / 60, int(elapsed) % 60, hints_remaining, completed_levels.size()]
+    pause_stats.text = "Modo: %s\nFase: %d\nPontos: %d  |  Moedas: %d\nPalavras: %d  |  Cruzamentos: %d\nCoroas: %d/3  |  Energia: %d/%d\nTempo: %d:%02d  |  Dicas: %d\nFases concluidas: %d" % ["Campanha" if level_mode else "Infinito", level_number, points, coins, _solved_count(), combo, crowns, energy, _energy_capacity(), int(elapsed) / 60, int(elapsed) % 60, hints_remaining, completed_levels.size()]
     pause_overlay.show()
     if is_instance_valid(entry):
         entry.release_focus()
@@ -901,18 +903,24 @@ func _run_summary() -> String:
             summary += "\nFase %d: %d/3 coroas · %d pontos" % [record["level"], record["crowns"], record["points"]]
     return summary
 
+func _energy_capacity() -> int:
+    return ENERGY_MAX + (level_number - 1) * ENERGY_PER_LEVEL if level_mode else ENERGY_MAX
+
+func _energy_finish_bonus() -> int:
+    return energy * ENERGY_FINISH_BONUS
+
 func _show_result(victory: bool, reason: String) -> void:
     if game_over and result_overlay.visible:
         return
     game_over = true
     if victory and level_mode:
         var time_penalty: int = int(elapsed) * (2 + level_number)
-        points = maxi(0, points - time_penalty)
+        points = maxi(0, points + _energy_finish_bonus() - time_penalty)
         completed_levels.append({"level": level_number, "crowns": mini(crowns, 3), "points": points})
     result_title.text = "FASE CONCLUÍDA!" if victory else "GAME OVER"
     result_title.add_theme_color_override("font_color", Color("#e5bd74") if victory else Color("#df7587"))
     if level_mode:
-        result_stats.text = "%s\n\nCoroas opcionais: %d/3 · Bônus: %d pontos\nTempo: %d:%02d · Penalidade de tempo: %d pontos\n\n%s\n\nPalavras nesta fase: %d" % [reason, crowns, crowns * 500, int(elapsed) / 60, int(elapsed) % 60, int(elapsed) * (2 + level_number), _run_summary(), _solved_count()]
+        result_stats.text = "%s\n\nCoroas opcionais: %d/3 · Bônus: %d pontos\nEnergia restante: %d/%d · Bônus: %d pontos\nTempo: %d:%02d · Penalidade de tempo: %d pontos\n\n%s\n\nPalavras nesta fase: %d" % [reason, crowns, crowns * 500, energy, _energy_capacity(), _energy_finish_bonus(), int(elapsed) / 60, int(elapsed) % 60, int(elapsed) * (2 + level_number), _run_summary(), _solved_count()]
     else:
         result_stats.text = "%s\n\nPontuação: %d\nPalavras: %d  ·  Combo: %d" % [reason, points, _solved_count(), combo]
     result_action.text = ("RECOMEÇAR CAMPANHA" if level_number >= CAMPAIGN_LEVELS else "PRÓXIMO NÍVEL") if victory and level_mode else ("NOVA PARTIDA" if not victory else "CONTINUAR")
@@ -959,7 +967,7 @@ func _new_game() -> void:
     points = 0
     coins = 0
     crowns = 0
-    energy = ENERGY_MAX
+    energy = _energy_capacity()
     combo = 0
     hints_remaining = HINTS_PER_LEVEL
     regen = 0.0
@@ -1788,7 +1796,7 @@ func _collect_pickups() -> void:
                     crowns = mini(3, crowns + 1)
                 points += 500
             "energy":
-                energy = mini(ENERGY_MAX, energy + 3)
+                energy = mini(_energy_capacity(), energy + 3)
             "time":
                 if level_mode:
                     elapsed = maxf(0.0, elapsed - 12.0)
@@ -2125,7 +2133,7 @@ func _update_hud() -> void:
     var shown_seconds: int = maxi(0, int(elapsed)) if level_mode else seconds
     time_label.text = "TEMPO %d:%02d" % [shown_seconds / 60, shown_seconds % 60]
     crown_label.text = "FASE %d  ·  COROAS %d/3" % [level_number, crowns] if level_mode else "INFINITO"
-    energy_label.text = "ENERGIA %d/%d" % [energy, ENERGY_MAX]
+    energy_label.text = "ENERGIA %d/%d" % [energy, _energy_capacity()]
     score_label.text = "PONTOS %d  |  MOEDAS %d  |  COMBO %d%s" % [points, coins, combo, "  |  VISAO %d" % map_vision_moves if map_vision_moves > 0 else ""]
 
 func _message(value: String) -> void:
