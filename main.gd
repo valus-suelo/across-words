@@ -153,6 +153,9 @@ var last_expire_update: int = -1
 var map_vision_moves: int = 0
 var path_time: float = STORY_MAP_TIME
 var menu_overlay: ColorRect
+var pause_overlay: ColorRect
+var pause_stats: Label
+var help_overlay: ColorRect
 var mode_button: Button
 var typed_buffer: String = ""
 var camera_target: Vector3 = Vector3(0, 25, 1.4)
@@ -559,7 +562,7 @@ func _make_ui() -> void:
     mode_button.text = "MENU"
     mode_button.focus_mode = Control.FOCUS_NONE
     mode_button.custom_minimum_size = Vector2(92, 34)
-    mode_button.pressed.connect(_show_main_menu)
+    mode_button.pressed.connect(_toggle_pause)
     header_buttons.add_child(mode_button)
     var restart := Button.new()
     restart.text = "REINICIAR"
@@ -648,11 +651,17 @@ func _make_ui() -> void:
     infinite.custom_minimum_size.y = 80
     infinite.pressed.connect(func() -> void: _start_mode(false))
     menu_col.add_child(infinite)
-    var hint := _make_label("Um relógio por mapa. O tempo não reinicia ao resolver palavras.", 18)
+    var how_button := Button.new()
+    how_button.text = "COMO JOGAR"
+    how_button.custom_minimum_size.y = 52
+    how_button.pressed.connect(_show_help)
+    menu_col.add_child(how_button)
+    var hint := _make_label("Campanha: encontre a saída. Infinito: sobreviva ao relógio.", 18)
     hud_menu_hint = hint
     hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     menu_col.add_child(hint)
+    _make_help_and_pause(menu_layer)
 
 func _add_keyboard_row(parent: VBoxContainer, letters: String, with_erase: bool = false) -> void:
     var keys := HBoxContainer.new()
@@ -682,10 +691,115 @@ func _add_keyboard_row(parent: VBoxContainer, letters: String, with_erase: bool 
         erase_button.pressed.connect(_erase_character)
         keys.add_child(erase_button)
 
+func _make_help_and_pause(layer: CanvasLayer) -> void:
+    pause_overlay = ColorRect.new()
+    pause_overlay.color = Color(0.10, 0.07, 0.12, 0.95)
+    pause_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    pause_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+    layer.add_child(pause_overlay)
+    var center := CenterContainer.new()
+    center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    pause_overlay.add_child(center)
+    var panel := PanelContainer.new()
+    panel.custom_minimum_size.x = 310
+    panel.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#ad8193")))
+    center.add_child(panel)
+    var content := VBoxContainer.new()
+    content.add_theme_constant_override("separation", 15)
+    panel.add_child(content)
+    content.add_child(_make_label("JOGO PAUSADO", 30))
+    pause_stats = _make_label("", 19)
+    pause_stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    content.add_child(pause_stats)
+    var resume := Button.new()
+    resume.text = "CONTINUAR"
+    resume.custom_minimum_size.y = 52
+    resume.pressed.connect(_close_pause)
+    content.add_child(resume)
+    var back := Button.new()
+    back.text = "VOLTAR AO MENU INICIAL"
+    back.custom_minimum_size.y = 52
+    back.pressed.connect(_pause_to_main_menu)
+    content.add_child(back)
+    pause_overlay.hide()
+
+    help_overlay = ColorRect.new()
+    help_overlay.color = Color("#201924")
+    help_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    help_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+    layer.add_child(help_overlay)
+    var help_center := CenterContainer.new()
+    help_center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    help_overlay.add_child(help_center)
+    var help_panel := PanelContainer.new()
+    help_panel.custom_minimum_size.x = 300
+    help_panel.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#ad8193")))
+    help_center.add_child(help_panel)
+    var help_col := VBoxContainer.new()
+    help_col.add_theme_constant_override("separation", 9)
+    help_panel.add_child(help_col)
+    help_col.add_child(_make_label("COMO JOGAR", 30))
+    var scroll := ScrollContainer.new()
+    scroll.custom_minimum_size = Vector2(300, 360)
+    scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    help_col.add_child(scroll)
+    var cards := VBoxContainer.new()
+    cards.add_theme_constant_override("separation", 8)
+    scroll.add_child(cards)
+    _help_card(cards, "PALAVRAS E CRUZAMENTOS", "Selecione uma letra resolvida, escolha uma direcao e forme palavras. Cruzar varias palavras aumenta o combo.")
+    _help_card(cards, "CAMPANHA", "Encontre a saida perto dos cantos. Colete ate 3 coroas opcionais por fase. O tempo conta para cima e reduz a pontuacao final.")
+    _help_card(cards, "RECURSOS", "Energia: recupera raios. Relogio: reduz o tempo na campanha. Visao: amplia o mapa. Moedas: permitem comprar ramos extras.")
+    _help_card(cards, "INIMIGOS", "A partir da fase 7, inimigos surgem no mapa. Eles perseguem as palavras e podem destruir caminhos ou encerrar a partida.")
+    _help_card(cards, "DICAS E INFINITO", "Use DICA para trocar a palavra disponivel: 3 usos por fase. No modo infinito, o tempo e regressivo.")
+    var close := Button.new()
+    close.text = "VOLTAR"
+    close.custom_minimum_size.y = 48
+    close.pressed.connect(func() -> void: help_overlay.hide())
+    help_col.add_child(close)
+    help_overlay.hide()
+
+func _help_card(parent: VBoxContainer, heading: String, description: String) -> void:
+    var panel := PanelContainer.new()
+    panel.add_theme_stylebox_override("panel", _panel_style(Color("#594453"), Color("#9b7587")))
+    parent.add_child(panel)
+    var col := VBoxContainer.new()
+    panel.add_child(col)
+    var title_label := _make_label(heading, 17)
+    title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    col.add_child(title_label)
+    var description_label := _make_label(description, 15)
+    description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    col.add_child(description_label)
+
+func _show_help() -> void:
+    help_overlay.show()
+
+func _toggle_pause() -> void:
+    if game_over or menu_overlay.visible:
+        return
+    if pause_overlay.visible:
+        _close_pause()
+        return
+    pause_stats.text = "Modo: %s\\nFase: %d\\nPontos: %d  |  Moedas: %d\\nPalavras: %d  |  Cruzamentos: %d\\nCoroas: %d/3  |  Energia: %d/%d\\nTempo: %d:%02d  |  Dicas: %d\\nFases concluidas: %d" % ["Campanha" if level_mode else "Infinito", level_number, points, coins, _solved_count(), combo, crowns, energy, ENERGY_MAX, int(elapsed) / 60, int(elapsed) % 60, hints_remaining, completed_levels.size()]
+    pause_overlay.show()
+    if is_instance_valid(entry):
+        entry.release_focus()
+
+func _close_pause() -> void:
+    pause_overlay.hide()
+
+func _pause_to_main_menu() -> void:
+    pause_overlay.hide()
+    _show_main_menu()
+
 func _show_main_menu() -> void:
     game_over = true
     if is_instance_valid(result_overlay):
         result_overlay.hide()
+    if is_instance_valid(pause_overlay):
+        pause_overlay.hide()
+    if is_instance_valid(help_overlay):
+        help_overlay.hide()
     if is_instance_valid(menu_overlay):
         menu_overlay.show()
     if is_instance_valid(entry):
@@ -1962,6 +2076,10 @@ func _solved_count() -> int:
     return result
 
 func _process(delta: float) -> void:
+    if is_instance_valid(pause_overlay) and pause_overlay.visible:
+        return
+    if game_over or (is_instance_valid(menu_overlay) and menu_overlay.visible):
+        return
     elapsed += delta
     if hud_gesture_fade:
         hud_restore_delay = 0.45
@@ -2069,7 +2187,7 @@ func _select_anchor_by_arrow(arrow: Vector2i) -> void:
     _message("Letra %s (%d/%d)" % [_anchor_letter(parent_index, anchor_index), slot + 1, count])
 
 func _input(event: InputEvent) -> void:
-    if game_over or (is_instance_valid(menu_overlay) and menu_overlay.visible):
+    if game_over or (is_instance_valid(menu_overlay) and menu_overlay.visible) or (is_instance_valid(pause_overlay) and pause_overlay.visible):
         return
     var key_event := event as InputEventKey
     if key_event == null:
@@ -2156,7 +2274,7 @@ func _pinch_distance() -> float:
     return Vector2(active_touches[ids[0]]).distance_to(Vector2(active_touches[ids[1]]))
 
 func _unhandled_input(event: InputEvent) -> void:
-    if game_over or (is_instance_valid(menu_overlay) and menu_overlay.visible):
+    if game_over or (is_instance_valid(menu_overlay) and menu_overlay.visible) or (is_instance_valid(pause_overlay) and pause_overlay.visible):
         return
     if event is InputEventMouseButton and event.pressed:
         if event.button_index == MOUSE_BUTTON_WHEEL_UP:
