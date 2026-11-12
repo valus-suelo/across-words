@@ -282,7 +282,12 @@ func _word_difficulty_allowed(item: Dictionary) -> bool:
     if not level_mode:
         return true
     var allowed: int = 1 if level_number <= 2 else (2 if level_number <= 5 else 3)
-    return int(item.get("difficulty", 1)) <= allowed
+    var difficulty: int = int(item.get("difficulty", 1))
+    if level_number >= 9:
+        return difficulty >= 2 and difficulty <= allowed
+    if level_number >= 7:
+        return difficulty <= allowed
+    return difficulty <= allowed
 
 func _choose_start_word() -> Dictionary:
     var pool: Array[Dictionary] = []
@@ -291,6 +296,8 @@ func _choose_start_word() -> Dictionary:
         if length < 4 or length > 8 or not _word_difficulty_allowed(item):
             continue
         if level_mode and level_number <= 2 and int(item["difficulty"]) != 1:
+            continue
+        if level_mode and level_number >= 7 and int(item["difficulty"]) < 2:
             continue
         pool.append(item)
     if pool.is_empty():
@@ -782,6 +789,7 @@ func _new_game() -> void:
     used[first_answer] = true
     if level_mode:
         _plan_level()
+        _place_campaign_objectives()
     if not level_mode:
         _spawn_pickup(Vector2i(4, -2), "coin")
         _spawn_pickup(Vector2i(-4, 3), "energy")
@@ -831,6 +839,62 @@ func _place_first_level_objectives() -> void:
     for i in range(3):
         _spawn_pickup(available[i], "crown")
     level_route = occupied_start.duplicate()
+
+# Objetivos independentes do planejador de rotas: presentes em todas as fases.
+func _place_campaign_objectives() -> void:
+    # Remove coroas de uma simulacao anterior; nao interfere com outros itens.
+    for cell in pickups.keys():
+        if pickups[cell] == "crown":
+            pickups.erase(cell)
+    var radius: int = _level_half_size()
+    var start_cells: Array[Vector2i] = _cells(words[0])
+    var corners: Array[Vector2i] = [
+        Vector2i(-radius, -radius), Vector2i(radius, -radius),
+        Vector2i(-radius, radius), Vector2i(radius, radius)
+    ]
+    corners.shuffle()
+    var corner: Vector2i = corners[0]
+    var exit_options: Array[Vector2i] = []
+    var inset: int = 1 if level_number <= 3 else 2
+    for dy in range(inset + 1):
+        for dx in range(inset + 1):
+            var candidate: Vector2i = corner + Vector2i(-signi(corner.x) * dx, -signi(corner.y) * dy)
+            if not start_cells.has(candidate):
+                exit_options.append(candidate)
+    exit_cell = exit_options[rng.randi_range(0, exit_options.size() - 1)]
+    # Cada coroa ocupa uma regiao diferente e nao sobrepoe saida/origem.
+    var regions: Array[Vector2i] = corners.slice(1)
+    var occupied: Dictionary = {exit_cell: true}
+    for cell in start_cells:
+        occupied[cell] = true
+    for region in regions:
+        var candidates: Array[Vector2i] = []
+        for y in range(-radius, radius + 1):
+            for x in range(-radius, radius + 1):
+                var cell: Vector2i = Vector2i(x, y)
+                if occupied.has(cell):
+                    continue
+                if signi(x) != signi(region.x) or signi(y) != signi(region.y):
+                    continue
+                if absi(x) + absi(y) < 3 + level_number:
+                    continue
+                candidates.append(cell)
+        if candidates.is_empty():
+            continue
+        var chosen: Vector2i = candidates[rng.randi_range(0, candidates.size() - 1)]
+        _spawn_pickup(chosen, "crown")
+        occupied[chosen] = true
+    # Reserva para o caso de alguma regiao nao ter candidatos.
+    var fallback: Array[Vector2i] = []
+    for y in range(-radius, radius + 1):
+        for x in range(-radius, radius + 1):
+            var cell: Vector2i = Vector2i(x, y)
+            if not occupied.has(cell):
+                fallback.append(cell)
+    fallback.shuffle()
+    while pickups.size() < 3 and not fallback.is_empty():
+        var chosen: Vector2i = fallback.pop_back()
+        _spawn_pickup(chosen, "crown")
 
 func _place_level_resources() -> void:
     # Distribui recursos em casas diferentes das coroas, da saida e da origem.
