@@ -685,6 +685,7 @@ func _make_ui() -> void:
     var author := _make_label("criado por valus_suelo", 15)
     author.add_theme_color_override("font_color", Color("#d9b8c9"))
     author.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    author.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
     author.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
     footer.add_child(author)
     _menu_social_button(footer, "@", "Gmail", "mailto:joao.valansuelo.abreu@gmail.com")
