@@ -787,12 +787,9 @@ func _new_game() -> void:
         _spawn_pickup(Vector2i(-4, 3), "energy")
         _spawn_pickup(Vector2i(-5, -3), "vision")
     else:
-        if level_number >= 4:
-            _spawn_pickup(Vector2i(-3, 2), "energy")
-        if level_number >= 5:
-            _spawn_pickup(Vector2i(3, -3), "time")
-        if level_number >= 6:
-            _spawn_pickup(Vector2i(-4, -3), "vision")
+        _place_level_resources()
+        if level_number >= 7:
+            _spawn_enemy()
     if not level_mode:
         _spawn_pickup(Vector2i(3, 4), "crown")
     # A palavra inicial ja aparece resolvida nos dois modos.
@@ -835,12 +832,38 @@ func _place_first_level_objectives() -> void:
         _spawn_pickup(available[i], "crown")
     level_route = occupied_start.duplicate()
 
+func _place_level_resources() -> void:
+    # Distribui recursos em casas diferentes das coroas, da saida e da origem.
+    var options: Array[Vector2i] = []
+    for y in range(-_level_half_size(), _level_half_size() + 1):
+        for x in range(-_level_half_size(), _level_half_size() + 1):
+            var cell: Vector2i = Vector2i(x, y)
+            if pickups.has(cell) or cell == exit_cell or _cells(words[0]).has(cell):
+                continue
+            if absi(x) + absi(y) < 3 + level_number:
+                continue
+            options.append(cell)
+    options.shuffle()
+    var kinds: Array[String] = []
+    if level_number >= 3:
+        kinds.append("energy")
+    if level_number >= 5:
+        kinds.append("time")
+    if level_number >= 6:
+        kinds.append("vision")
+    if level_number >= 9:
+        kinds.append("energy")
+    for kind in kinds:
+        if options.is_empty():
+            break
+        _spawn_pickup(options.pop_back(), kind)
+
 func _plan_level() -> void:
     level_route.clear()
     if level_number == 1:
         _place_first_level_objectives()
         return
-    if level_number <= 2:
+    if level_number == 2:
         # Tutorial: uma unica ramificacao, com saida e coroas perto da origem.
         var first: Dictionary = words[0]
         var possible: Array[Dictionary] = []
@@ -879,6 +902,7 @@ func _plan_advanced_level() -> void:
     var best_route: Array[Vector2i] = []
     var best_exit: Vector2i = Vector2i(0, -6)
     var best_distance: int = -1
+    var best_pins: Dictionary = {}
     var target_steps: int = mini(maxi(2, level_number), 10)
     for attempt in range(28):
         words.resize(1)
@@ -886,6 +910,7 @@ func _plan_advanced_level() -> void:
         words[0]["state"] = "solved"
         var route: Array[Vector2i] = _cells(words[0])
         var parent_idx: int = 0
+        var trial_pins: Dictionary = {}
         for depth in range(target_steps):
             var parent: Dictionary = words[parent_idx]
             var candidates: Array[Dictionary] = []
@@ -893,10 +918,15 @@ func _plan_advanced_level() -> void:
             var directions: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if Vector2i(parent["dir"]).x != 0 else [Vector2i(-1, 0), Vector2i(1, 0)]
             for anchor in range(parent_cells.size()):
                 for direction in directions:
-                    candidates.append_array(_possible_children(parent_idx, anchor, direction))
+                    for option in _possible_children(parent_idx, anchor, direction):
+                        candidates.append({"word": option, "anchor": anchor, "direction": direction})
             if candidates.is_empty():
                 break
-            var selected: Dictionary = candidates[rng.randi_range(0, candidates.size() - 1)].duplicate(true)
+            var choice: Dictionary = candidates[rng.randi_range(0, candidates.size() - 1)]
+            var selected: Dictionary = Dictionary(choice["word"]).duplicate(true)
+            var chosen_dir: Vector2i = choice["direction"]
+            var pin_key: String = "%d:%d:%d:%d" % [parent_idx, int(choice["anchor"]), chosen_dir.x, chosen_dir.y]
+            trial_pins[pin_key] = String(selected["answer"])
             selected["state"] = "solved"
             parent["spawned"] = true
             words[parent_idx] = parent
@@ -911,20 +941,24 @@ func _plan_advanced_level() -> void:
                 if start_cells.has(cell):
                     continue
                 var distance: int = absi(cell.x) + absi(cell.y)
-                if distance > best_distance:
+                if _inside_level(cell) and distance > best_distance:
                     best_distance = distance
                     best_exit = cell
                     best_route = route.duplicate()
+                    best_pins = trial_pins.duplicate()
         if best_distance >= 4 + level_number * 3:
             break
     words.resize(1)
     words[0] = first_word
+    fixed_branch_answers.merge(best_pins, true)
     exit_cell = best_exit
     level_route = best_route
     if level_route.is_empty():
         level_route = _cells(first_word)
     if not _inside_level(exit_cell):
-        exit_cell = level_route.back()
+        for cell in level_route:
+            if _inside_level(cell) and not _cells(first_word).has(cell):
+                exit_cell = cell
     # As coroas ficam em casas alcançáveis pela rota planejada.
     var candidates: Array[Vector2i] = []
     var initial_cells: Array[Vector2i] = _cells(first_word)
@@ -940,7 +974,7 @@ func _plan_advanced_level() -> void:
         for cell in _cells(first_word):
             if cell != exit_cell and not candidates.has(cell):
                 candidates.append(cell)
-    for i in range(3):
+    for i in range(mini(3, candidates.size())):
         _spawn_pickup(candidates[i], "crown")
 
 func _cells(word: Dictionary) -> Array[Vector2i]:
@@ -1439,7 +1473,7 @@ func _submit() -> void:
     if game_over:
         _refresh_board()
         return
-    if (not level_mode and points >= 400 or level_mode and level_number >= 7 and points >= (550 if level_number <= 8 else 350)) and enemy_cell.x == -100:
+    if not level_mode and points >= 400 and enemy_cell.x == -100:
         _spawn_enemy()
     chosen = -1
     _assign_entry("")
@@ -1513,6 +1547,14 @@ func _spawn_enemy() -> void:
         return
     var target: Vector2i = targets[rng.randi_range(0, targets.size() - 1)]
     enemy_cell = target + Vector2i(4, 4)
+    if level_mode:
+        var radius: int = _level_half_size()
+        var candidates: Array[Vector2i] = [Vector2i(-radius, -radius), Vector2i(radius, -radius), Vector2i(-radius, radius), Vector2i(radius, radius)]
+        candidates.shuffle()
+        for candidate in candidates:
+            if candidate != exit_cell and not pickups.has(candidate) and not targets.has(candidate):
+                enemy_cell = candidate
+                break
     if level_mode:
         enemy_cell.x = clampi(enemy_cell.x, -_level_half_size(), _level_half_size())
         enemy_cell.y = clampi(enemy_cell.y, -_level_half_size(), _level_half_size())
