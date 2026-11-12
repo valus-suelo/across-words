@@ -118,6 +118,8 @@ var coins: int = 0
 var crowns: int = 0
 var energy: int = ENERGY_MAX
 var combo: int = 0
+const HINTS_PER_LEVEL := 3
+var hints_remaining: int = HINTS_PER_LEVEL
 var regen: float = 0.0
 var elapsed: float = 0.0
 var enemy_cell := Vector2i(-100, -100)
@@ -452,7 +454,15 @@ func _make_ui() -> void:
     clue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     clue_label.custom_minimum_size.y = 45
     clue_label.add_theme_color_override("font_color", Color("#fff1d8"))
-    clue_panel.add_child(clue_label)
+    var clue_row := HBoxContainer.new()
+    clue_panel.add_child(clue_row)
+    clue_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    clue_row.add_child(clue_label)
+    next_clue_button = Button.new()
+    next_clue_button.text = "💡 3"
+    next_clue_button.tooltip_text = "Trocar pista (3 por fase)"
+    next_clue_button.pressed.connect(_next_preview_clue)
+    clue_row.add_child(next_clue_button)
 
     var bottom := PanelContainer.new()
     hud_bottom = bottom
@@ -506,11 +516,6 @@ func _make_ui() -> void:
         selected_info.text = "ORIGEM: %s  ·  LETRA %d/%d" % [source_name, preview_anchor + 1, source_name.length()]
     direction_left.visible = false
     direction_right.visible = false
-    next_clue_button = Button.new()
-    next_clue_button.text = "OUTRA PISTA"
-    next_clue_button.custom_minimum_size.y = 35
-    next_clue_button.pressed.connect(_next_preview_clue)
-    direction_row.add_child(next_clue_button)
     var actions := HBoxContainer.new()
     actions.add_theme_constant_override("separation", 12)
     column.add_child(actions)
@@ -705,11 +710,13 @@ func _show_result(victory: bool, reason: String) -> void:
         return
     game_over = true
     if victory and level_mode:
+        var time_penalty: int = int(elapsed) * (2 + level_number)
+        points = maxi(0, points - time_penalty)
         completed_levels.append({"level": level_number, "crowns": mini(crowns, 3), "points": points})
     result_title.text = "FASE CONCLUÍDA!" if victory else "GAME OVER"
     result_title.add_theme_color_override("font_color", Color("#e5bd74") if victory else Color("#df7587"))
     if level_mode:
-        result_stats.text = "%s\n\nCoroas opcionais: %d/3 · Bônus: %d pontos\n\n%s\n\nPalavras nesta fase: %d" % [reason, crowns, crowns * 500, _run_summary(), _solved_count()]
+        result_stats.text = "%s\n\nCoroas opcionais: %d/3 · Bônus: %d pontos\nTempo: %d:%02d · Penalidade de tempo: %d pontos\n\n%s\n\nPalavras nesta fase: %d" % [reason, crowns, crowns * 500, int(elapsed) / 60, int(elapsed) % 60, int(elapsed) * (2 + level_number), _run_summary(), _solved_count()]
     else:
         result_stats.text = "%s\n\nPontuação: %d\nPalavras: %d  ·  Combo: %d" % [reason, points, _solved_count(), combo]
     result_action.text = ("RECOMEÇAR CAMPANHA" if level_number >= CAMPAIGN_LEVELS else "PRÓXIMO NÍVEL") if victory and level_mode else ("NOVA PARTIDA" if not victory else "CONTINUAR")
@@ -758,6 +765,7 @@ func _new_game() -> void:
     crowns = 0
     energy = ENERGY_MAX
     combo = 0
+    hints_remaining = HINTS_PER_LEVEL
     regen = 0.0
     elapsed = 0.0
     path_time = STORY_MAP_TIME if level_mode else INFINITE_MAP_TIME
@@ -1369,8 +1377,12 @@ func _show_preview_choice() -> void:
     _message("Digite sem clicar. Setas paralelas mudam a letra; perpendiculares invertem o sentido.")
 
 func _next_preview_clue() -> void:
-    if preview_choices.is_empty() or game_over or (level_mode and level_number <= 5):
+    if preview_choices.size() <= 1 or game_over:
         return
+    if hints_remaining <= 0:
+        _message("Suas 3 trocas de pista acabaram nesta fase.")
+        return
+    hints_remaining -= 1
     _save_preview_draft()
     preview_choice_index = (preview_choice_index + 1) % preview_choices.size()
     _show_preview_choice()
@@ -1481,7 +1493,7 @@ func _submit() -> void:
             if option["answer"] == word["answer"]:
                 still_valid = true
                 break
-        if not still_valid or path_time <= 0.0:
+        if not still_valid or (not level_mode and path_time <= 0.0):
             _message("Caminho indisponível. Escolha outra letra ou direção.")
             return
         var parent: Dictionary = words[preview_parent]
@@ -1511,9 +1523,21 @@ func _submit() -> void:
         if map_vision_moves == 0:
             _layout_hud()
     energy -= 1
-    combo += 1
-    # Tempo é global do mapa: resolver palavras NÃO reinicia o relógio.
-    points += 100 + mini(combo, 10) * 15
+    # Conta palavras resolvidas distintas que cruzam esta palavra, nao letras ou acertos seguidos.
+    var crossed_words: int = 0
+    var new_cells: Array[Vector2i] = _cells(word)
+    for i in range(words.size()):
+        if i == last_solved_word or words[i]["state"] != "solved":
+            continue
+        var overlaps: bool = false
+        for cell in _cells(words[i]):
+            if new_cells.has(cell):
+                overlaps = true
+                break
+        if overlaps:
+            crossed_words += 1
+    combo += crossed_words
+    points += 100 + crossed_words * 75 + mini(combo, 20) * 10
     _clear_preview(false)
     _focus_word(words[last_solved_word])
     drafts.clear()  # Só CONFIRMAR descarta alternativas.
@@ -1525,7 +1549,7 @@ func _submit() -> void:
         if dist > LEVEL_SAFE_RADIUS:
             var penalty: int = (dist - LEVEL_SAFE_RADIUS) * 15
             points = maxi(0, points - penalty)
-            path_time = maxf(5.0, path_time - 3.0)
+            elapsed += 3.0
         if solved_cells.has(exit_cell):
             _collect_pickups()
             _show_result(true, "Você encontrou a saída da fase %d!" % level_number)
@@ -1571,7 +1595,10 @@ func _collect_pickups() -> void:
             "energy":
                 energy = mini(ENERGY_MAX, energy + 3)
             "time":
-                path_time += 12.0
+                if level_mode:
+                    elapsed = maxf(0.0, elapsed - 12.0)
+                else:
+                    path_time += 12.0
             "vision":
                 map_vision_moves = MAP_VISION_MOVES + 1
                 _message("Visão ampliada por %d palavras!" % MAP_VISION_MOVES)
@@ -1889,8 +1916,11 @@ func _update_hud() -> void:
         selected_info.text = "ESCOLHA UMA LETRA PARA RAMIFICAR"
     direction_left.visible = false
     direction_right.visible = false
-    next_clue_button.visible = preview_choices.size() > 1 and (not level_mode or level_number >= 6)
-    time_label.text = "TEMPO %d:%02d" % [seconds / 60, seconds % 60]
+    next_clue_button.visible = true
+    next_clue_button.disabled = preview_choices.size() <= 1 or hints_remaining <= 0 or game_over
+    next_clue_button.text = "💡 %d" % hints_remaining
+    var shown_seconds: int = maxi(0, int(elapsed)) if level_mode else seconds
+    time_label.text = "TEMPO %d:%02d" % [shown_seconds / 60, shown_seconds % 60]
     crown_label.text = "FASE %d  ·  COROAS %d/3" % [level_number, crowns] if level_mode else "INFINITO"
     energy_label.text = "ENERGIA %d/%d" % [energy, ENERGY_MAX]
     score_label.text = "PONTOS %d  |  MOEDAS %d  |  COMBO %d%s" % [points, coins, combo, "  |  VISAO %d" % map_vision_moves if map_vision_moves > 0 else ""]
@@ -1953,9 +1983,10 @@ func _process(delta: float) -> void:
         # Energia e um recurso de sobrevivencia, sem regeneracao passiva.
         if energy <= 0:
             _show_result(false, "Sua energia acabou!")
-        path_time = maxf(0.0, path_time - delta)
-        if path_time <= 0.0:
-            _show_result(false, "O tempo acabou!")
+        if not level_mode:
+            path_time = maxf(0.0, path_time - delta)
+            if path_time <= 0.0:
+                _show_result(false, "O tempo acabou!")
         _update_hud()
     # A câmera segue suavemente o centro da palavra selecionada.
     var desired_camera: Vector3 = camera_target + Vector3(camera_pan_offset.x, 0.0, camera_pan_offset.y)
