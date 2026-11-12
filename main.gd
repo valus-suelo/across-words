@@ -166,7 +166,7 @@ const HELP_PAGES := [
     ["TEMPO", "CAMPANHA: o relogio conta para cima. Voce nao perde por demorar, mas cada segundo reduz a pontuacao final. O item de tempo desconta 12 segundos.\n\nINFINITO: o relogio conta para baixo; quando acaba, a partida termina."],
     ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nColete itens de energia pelo tabuleiro para recuperar ate 3 pontos, respeitando o limite maximo de 10."],
     ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por fase na campanha, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELOGIO: reduz o tempo na campanha.\nVISAO: amplia a area visivel.\nMOEDAS: permitem comprar ramos extras.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
-    ["DICAS", "O botao DICA, ao lado da definicao, permite trocar a palavra sugerida para a letra e direcao escolhidas.\n\nVoce tem 3 trocas por fase, renovadas ao avancar de nivel. O botao so fica disponivel quando ha mais de uma resposta valida."]
+    ["DICAS", "O botao DICA, ao lado da definicao, permite trocar a palavra sugerida para a letra e direcao escolhidas.\n\nNa campanha, voce tem 3 trocas por fase, renovadas ao avancar de nivel. No modo infinito, colete itens de dica para recuperar usos (ate 3). O botao exige alternativas validas."]
 ]
 var mode_button: Button
 var typed_buffer: String = ""
@@ -966,6 +966,7 @@ func _new_game() -> void:
         _spawn_pickup(Vector2i(4, -2), "coin")
         _spawn_pickup(Vector2i(-4, 3), "energy")
         _spawn_pickup(Vector2i(-5, -3), "vision")
+        _spawn_pickup(Vector2i(5, 3), "hint")
     else:
         _place_level_resources()
         if level_number >= 7:
@@ -1761,6 +1762,9 @@ func _collect_pickups() -> void:
                     elapsed = maxf(0.0, elapsed - 12.0)
                 else:
                     path_time += 12.0
+            "hint":
+                hints_remaining = mini(HINTS_PER_LEVEL, hints_remaining + 1)
+                _message("Dica extra coletada! %d/%d disponíveis." % [hints_remaining, HINTS_PER_LEVEL])
             "vision":
                 map_vision_moves = MAP_VISION_MOVES + 1
                 _message("Visão ampliada por %d palavras!" % MAP_VISION_MOVES)
@@ -1772,14 +1776,19 @@ func _collect_pickups() -> void:
         var center: Vector2i = around[around.size() / 2]
         for attempt in range(20):
             var p := center + Vector2i(rng.randi_range(-6, 6), rng.randi_range(-6, 6))
-            if not solved_cells.has(p) and not pickups.has(p):
+            if (not level_mode or _inside_level(p)) and p != exit_cell and not solved_cells.has(p) and not pickups.has(p):
                 var kinds: Array[String] = ["coin", "energy", "time", "vision"]
                 if not level_mode:
                     kinds.append("crown")
+                    kinds.append("hint")
                 _spawn_pickup(p, kinds[rng.randi_range(0, kinds.size() - 1)])
                 break
 
 func _spawn_pickup(p: Vector2i, kind: String) -> void:
+    if level_mode and not _inside_level(p):
+        return
+    if level_mode and p == exit_cell:
+        return
     pickups[p] = kind
 
 func _buy_path() -> void:
