@@ -741,9 +741,13 @@ func _make_help_and_pause(layer: CanvasLayer) -> void:
     help_col.add_child(_make_label("COMO JOGAR", 30))
     var scroll := ScrollContainer.new()
     scroll.custom_minimum_size = Vector2(300, 360)
+    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+    scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
     help_col.add_child(scroll)
     var cards := VBoxContainer.new()
+    cards.custom_minimum_size.x = 286.0
+    cards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     cards.add_theme_constant_override("separation", 8)
     scroll.add_child(cards)
     _help_card(cards, "PALAVRAS E CRUZAMENTOS", "Selecione uma letra resolvida, escolha uma direcao e forme palavras. Cruzar varias palavras aumenta o combo.")
@@ -760,15 +764,19 @@ func _make_help_and_pause(layer: CanvasLayer) -> void:
 
 func _help_card(parent: VBoxContainer, heading: String, description: String) -> void:
     var panel := PanelContainer.new()
+    panel.custom_minimum_size.x = 280.0
+    panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     panel.add_theme_stylebox_override("panel", _panel_style(Color("#594453"), Color("#9b7587")))
     parent.add_child(panel)
     var col := VBoxContainer.new()
     panel.add_child(col)
     var title_label := _make_label(heading, 17)
     title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     col.add_child(title_label)
     var description_label := _make_label(description, 15)
     description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    description_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     col.add_child(description_label)
 
 func _show_help() -> void:
