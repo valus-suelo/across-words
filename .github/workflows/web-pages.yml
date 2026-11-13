@@ -116,7 +116,7 @@ jobs:
           };
           </script>
           """.replace("MEASUREMENT", mid)
-          page.write_text(html.replace("</head>", snippet + "\\n</head>", 1), encoding="utf-8")
+          page.write_text(html.replace("</head>", snippet + "\n</head>", 1), encoding="utf-8")
           PY
           else
             echo "GA4 desativado: configure a variável GA_MEASUREMENT_ID (formato G-XXXXXXXXXX)."
