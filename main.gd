@@ -871,6 +871,7 @@ func _close_pause() -> void:
     pause_overlay.hide()
 
 func _pause_to_main_menu() -> void:
+    _analytics_event("game_abandon", {"level": level_number, "elapsed_seconds": int(elapsed), "score": points})
     pause_overlay.hide()
     _show_main_menu()
 
@@ -887,6 +888,16 @@ func _show_main_menu() -> void:
     if is_instance_valid(entry):
         entry.release_focus()
 
+func _analytics_event(event_name: String, properties: Dictionary = {}) -> void:
+    if not OS.has_feature("web"):
+        return
+    # Dados agregados do jogo; nunca envia palavras digitadas ou dados pessoais.
+    var payload: Dictionary = properties.duplicate()
+    payload["game_mode"] = "campaign" if level_mode else "infinite"
+    var name_json: String = JSON.stringify(event_name)
+    var data_json: String = JSON.stringify(payload)
+    JavaScriptBridge.eval("if (typeof window.awTrack === 'function') window.awTrack(" + name_json + ", " + data_json + ");", true)
+
 func _start_mode(story: bool) -> void:
     level_mode = story
     level_number = 1
@@ -894,6 +905,7 @@ func _start_mode(story: bool) -> void:
     completed_levels.clear()
     _new_game()
     menu_overlay.hide()
+    _analytics_event("game_start", {"level": level_number})
     _message("HISTÓRIA: encontre a saída!" if story else "INFINITO: sobreviva e acumule pontos!")
 
 func _run_summary() -> String:
@@ -917,6 +929,7 @@ func _show_result(victory: bool, reason: String) -> void:
         var time_penalty: int = int(elapsed) * (2 + level_number)
         points = maxi(0, points + _energy_finish_bonus() - time_penalty)
         completed_levels.append({"level": level_number, "crowns": mini(crowns, 3), "points": points})
+    _analytics_event("level_complete" if victory and level_mode else "game_end", {"level": level_number, "score": points, "elapsed_seconds": int(elapsed), "crowns": crowns, "energy_remaining": energy, "words_solved": _solved_count(), "victory": victory})
     result_title.text = "FASE CONCLUÍDA!" if victory else "GAME OVER"
     result_title.add_theme_color_override("font_color", Color("#e5bd74") if victory else Color("#df7587"))
     if level_mode:
@@ -939,6 +952,7 @@ func _result_continue() -> void:
         run_points = 0
         completed_levels.clear()
     _new_game()
+    _analytics_event("game_start" if not level_mode else "level_start", {"level": level_number})
 
 func _new_game() -> void:
     for node in visual_nodes:
@@ -1586,6 +1600,7 @@ func _next_preview_clue() -> void:
         _message("Suas 3 trocas de pista acabaram nesta fase.")
         return
     hints_remaining -= 1
+    _analytics_event("hint_used", {"level": level_number, "hints_remaining": hints_remaining})
     _save_preview_draft()
     preview_choice_index = (preview_choice_index + 1) % preview_choices.size()
     _show_preview_choice()
@@ -1740,6 +1755,7 @@ func _submit() -> void:
         if overlaps:
             crossed_words += 1
     combo += crossed_words
+    _analytics_event("word_solved", {"level": level_number, "crossings": crossed_words, "word_length": String(word["answer"]).length()})
     points += 100 + crossed_words * 75 + mini(combo, 20) * 10
     _clear_preview(false)
     _focus_word(words[last_solved_word])
