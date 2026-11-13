@@ -94,6 +94,33 @@ jobs:
           html = html.replace("</head>", '<link rel="icon" type="image/svg+xml" href="favicon.svg">\n</head>', 1)
           page.write_text(html, encoding="utf-8")
           PY
+          # GA4 opcional: configurar GA_MEASUREMENT_ID em Settings > Secrets and variables > Actions > Variables.
+          GA_MEASUREMENT_ID="${{ vars.GA_MEASUREMENT_ID }}"
+          if [[ "$GA_MEASUREMENT_ID" =~ ^G-[A-Z0-9]+$ ]]; then
+            GA_MEASUREMENT_ID="$GA_MEASUREMENT_ID" python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import json
+          mid = os.environ["GA_MEASUREMENT_ID"]
+          page = Path("build/web/index.html")
+          html = page.read_text(encoding="utf-8")
+          snippet = """
+          <script async src="https://www.googletagmanager.com/gtag/js?id=MEASUREMENT"></script>
+          <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'MEASUREMENT');
+          window.awTrack = function(name, data) {
+            if (typeof gtag === 'function') gtag('event', name, data || {});
+          };
+          </script>
+          """.replace("MEASUREMENT", mid)
+          page.write_text(html.replace("</head>", snippet + "\\n</head>", 1), encoding="utf-8")
+          PY
+          else
+            echo "GA4 desativado: configure a variável GA_MEASUREMENT_ID (formato G-XXXXXXXXXX)."
+          fi
           touch build/web/.nojekyll
           ls -lah build/web/
       - name: Preparar GitHub Pages
