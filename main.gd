@@ -2040,6 +2040,9 @@ func _flash_display_color(data: Dictionary) -> Color:
     return base_color.lerp(flash_color, strength)
 
 func _flash_word(cells: Array[Vector2i], flash_color: Color) -> void:
+    # Um tabuleiro so pode exibir um pulso por vez. Evita que casas
+    # compartilhadas herdem o inicio ou a cor de um flash anterior.
+    flash_cells.clear()
     var started_at: float = elapsed
     for p in cells:
         flash_cells[p] = {
@@ -2127,6 +2130,10 @@ func _refresh_board() -> void:
         var pidx: int = int(parts[0])
         var anchor: int = int(parts[1])
         if pidx < 0 or pidx >= words.size() or anchor < 0 or anchor >= _cells(words[pidx]).size():
+            continue
+        # Rascunhos antigos ficam salvos para restauracao, mas apenas a
+        # ancora atualmente selecionada pode aparecer no tabuleiro.
+        if pidx != preview_parent or anchor != preview_anchor:
             continue
         var d: Vector2i = drafts[key].get("dir", Vector2i.ZERO)
         if d == Vector2i.ZERO:
@@ -2680,6 +2687,18 @@ func _move_pointer(screen_pos: Vector2) -> void:
         if hovered_cell == pointer_cell:
             continue
         pointer_cell = hovered_cell
+        # Ao atravessar uma das casas laterais da ancora, troca a direcao
+        # durante o proprio arrasto, sem exigir um toque separado.
+        if preview_parent >= 0 and preview_parent < words.size() and preview_anchor >= 0:
+            var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
+            if preview_anchor < parent_cells.size():
+                var anchor_cell: Vector2i = parent_cells[preview_anchor]
+                var side_offset: Vector2i = hovered_cell - anchor_cell
+                var parent_axis: Vector2i = Vector2i(words[preview_parent]["dir"])
+                var perpendicular: bool = (parent_axis.x != 0 and side_offset.x == 0 and absi(side_offset.y) == 1) or (parent_axis.y != 0 and side_offset.y == 0 and absi(side_offset.x) == 1)
+                if perpendicular:
+                    _apply_direction(side_offset)
+                    continue
         if _is_solved_cell(hovered_cell):
             _click_tile(hovered_cell)
     gesture_cursor = screen_pos
