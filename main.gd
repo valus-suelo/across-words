@@ -13,12 +13,20 @@ const ENERGY_MAX := 10
 const ENERGY_PER_LEVEL := 2
 const ENERGY_FINISH_BONUS := 25
 const REGEN_SECONDS := 20.0
+# Paleta medida diretamente da imagem de referencia enviada pelo criador.
 const BG := Color("#111522")
-const BASE := Color("#353c53")
-const ACTIVE := Color("#b19bc7")
-const SELECTED := Color("#f1dfe9")
-const SOLVED := Color("#85749c")
-const CURRENT_LETTER := Color("#fff2aa")
+const BASE := Color("#4f5772")
+const OUTER_TILE := Color("#2e3342")
+const ACTIVE := Color("#999988")
+const SELECTED := Color("#ffffe3")
+const SOLVED := Color("#af9bcc")
+const CURRENT_LETTER := Color("#ffffe3")
+const SIDE_EMPTY := Color("#30374d")
+const SIDE_SOLVED := Color("#75658f")
+const SIDE_ACTIVE := Color("#aaa48d")
+const SIDE_PREVIEW := Color("#656557")
+const SIDE_EXIT := Color("#2d6b24")
+const TILE_LETTER := Color("#424242")
 const MAP_VISION_MOVES := 4
 const GOLD := Color("#f4d787")
 const RED := Color("#e97d9c")
@@ -181,7 +189,8 @@ var mode_button: Button
 var typed_buffer: String = ""
 var camera_target: Vector3 = Vector3(0, 25, CAMERA_BACK_OFFSET)
 var visible_origin: Vector2i = Vector2i(999999, 999999)
-var shared_tile_mesh: BoxMesh
+var shared_tile_mesh: ArrayMesh
+var shared_skirt_mesh: ArrayMesh
 var pointer_start: Vector2 = Vector2.ZERO
 var pointer_cell: Vector2i = Vector2i.ZERO
 var pointer_down: bool = false
@@ -334,7 +343,8 @@ func _material_cached(name: String, color: Color, glow: bool = false) -> Standar
         return material_cache[name]
     var mat := StandardMaterial3D.new()
     mat.albedo_color = color
-    mat.roughness = 0.84
+    mat.roughness = 0.75
+    mat.cull_mode = BaseMaterial3D.CULL_DISABLED
     if glow:
         mat.emission_enabled = true
         mat.emission = color
@@ -349,12 +359,12 @@ func _make_world() -> void:
     env.background_color = BG
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     env.ambient_light_color = Color.WHITE
-    env.ambient_light_energy = 0.9
+    env.ambient_light_energy = 0.68
     environment.environment = env
     add_child(environment)
     var light := DirectionalLight3D.new()
     light.rotation_degrees = Vector3(-55, 25, 15)
-    light.light_energy = 1.05
+    light.light_energy = 1.12
     # Relevo aparente por iluminacao direcional; evita o custo de sombras dinamicas no celular.
     add_child(light)
     camera = Camera3D.new()
@@ -364,9 +374,62 @@ func _make_world() -> void:
     camera.rotation_degrees = Vector3(-69.0, 0, 0)
     camera.current = true
     add_child(camera)
-    shared_tile_mesh = BoxMesh.new()
-    shared_tile_mesh.size = Vector3(0.94, 0.42, 0.94)
-    # Os blocos visíveis são criados após a interface estar pronta.
+    # As malhas sao reutilizadas por todas as celulas (sem centenas de recursos unicos).
+    shared_tile_mesh = _make_rounded_tile_mesh(0.94, 0.94, 0.24, 0.16)
+    shared_skirt_mesh = _make_rounded_tile_mesh(0.90, 0.90, 0.30, 0.15)
+    # O topo usa a cor do estado; a base inferior tem uma tinta mais escura.
+
+# Retangulo com quatro cantos de raio real e pequena borda chanfrada.
+# A malha e geometria 3D de verdade, e nao uma textura que simula arredondamento.
+func _rounded_outline(half_w: float, half_d: float, radius: float) -> Array[Vector2]:
+    var points: Array[Vector2] = []
+    var corners: Array[Vector2] = [
+        Vector2(half_w - radius, -half_d + radius),
+        Vector2(half_w - radius, half_d - radius),
+        Vector2(-half_w + radius, half_d - radius),
+        Vector2(-half_w + radius, -half_d + radius)
+    ]
+    for corner in range(4):
+        for segment in range(6):
+            var angle: float = -PI * 0.5 + float(corner) * PI * 0.5 + float(segment) * PI / 10.0
+            points.append(corners[corner] + Vector2(cos(angle), sin(angle)) * radius)
+    return points
+
+func _mesh_triangle(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, normal: Vector3) -> void:
+    st.set_normal(normal)
+    st.add_vertex(a)
+    st.set_normal(normal)
+    st.add_vertex(b)
+    st.set_normal(normal)
+    st.add_vertex(c)
+
+func _make_rounded_tile_mesh(width: float, depth: float, height: float, radius: float) -> ArrayMesh:
+    var st := SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var outer: Array[Vector2] = _rounded_outline(width * 0.5, depth * 0.5, radius)
+    var inset: float = 0.035
+    var inner: Array[Vector2] = _rounded_outline(width * 0.5 - inset, depth * 0.5 - inset, radius - inset)
+    var top_y: float = height * 0.5
+    var edge_y: float = top_y - 0.045
+    var bottom_y: float = -height * 0.5
+    for i in range(outer.size()):
+        var j: int = (i + 1) % outer.size()
+        var a: Vector2 = outer[i]
+        var b: Vector2 = outer[j]
+        var ia: Vector2 = inner[i]
+        var ib: Vector2 = inner[j]
+        # Face superior plana, com vertices em contorno arredondado.
+        _mesh_triangle(st, Vector3(0.0, top_y, 0.0), Vector3(ib.x, top_y, ib.y), Vector3(ia.x, top_y, ia.y), Vector3.UP)
+        var tangent: Vector2 = b - a
+        var side_normal := Vector3(tangent.y, 0.0, -tangent.x).normalized()
+        var bevel_normal := (Vector3.UP + side_normal * 0.50).normalized()
+        # Filete chanfrado que recebe luz diferente do topo e cria um reflexo suave.
+        _mesh_triangle(st, Vector3(ia.x, top_y, ia.y), Vector3(ib.x, top_y, ib.y), Vector3(a.x, edge_y, a.y), bevel_normal)
+        _mesh_triangle(st, Vector3(a.x, edge_y, a.y), Vector3(ib.x, top_y, ib.y), Vector3(b.x, edge_y, b.y), bevel_normal)
+        # Paredes verticais arredondadas.
+        _mesh_triangle(st, Vector3(a.x, edge_y, a.y), Vector3(b.x, edge_y, b.y), Vector3(a.x, bottom_y, a.y), side_normal)
+        _mesh_triangle(st, Vector3(a.x, bottom_y, a.y), Vector3(b.x, edge_y, b.y), Vector3(b.x, bottom_y, b.y), side_normal)
+    return st.commit()
 
 func _panel_style(fill: Color, edge: Color) -> StyleBoxFlat:
     var style := StyleBoxFlat.new()
@@ -1924,13 +1987,14 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
     label.font_size = font_size
     label.pixel_size = 0.006
     label.modulate = color
+    label.outline_size = 0
     label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     label.no_depth_test = true
     # Letra e um filho do proprio bloco: acompanha a elevacao 3D.
     if board.has(p):
         var tile: MeshInstance3D = board[p]
         tile.add_child(label)
-        label.position = Vector3(0.0, maxf(0.27, height - 0.18), 0.0)
+        label.position = Vector3(0.0, 0.19, 0.0)
     else:
         label.position = Vector3(p.x * GAP, height, p.y * GAP)
         add_child(label)
@@ -2618,8 +2682,16 @@ func _sync_visible_board(force: bool = false) -> void:
             continue
         var tile := MeshInstance3D.new()
         tile.mesh = shared_tile_mesh
-        tile.material_override = _material_cached("outer_zone", Color("#171b2a")) if level_mode and not _inside_level(p) else _material_cached("base", BASE)
+        tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        tile.material_override = _material_cached("outer_zone", OUTER_TILE) if level_mode and not _inside_level(p) else _material_cached("base", BASE)
         tile.position = Vector3(p.x * GAP, 0.0, p.y * GAP)
+        var skirt := MeshInstance3D.new()
+        skirt.name = "Skirt"
+        skirt.mesh = shared_skirt_mesh
+        skirt.position.y = -0.18
+        skirt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        skirt.material_override = _material_cached("side_empty", SIDE_EMPTY)
+        tile.add_child(skirt)
         add_child(tile)
         board[p] = tile
     _refresh_board()
