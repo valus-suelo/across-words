@@ -181,7 +181,7 @@ var help_index: int = 0
 var help_swipe_start: float = 0.0
 const HELP_PAGES := [
     ["MODOS DE JOGO", "CAMPANHA: avance por 10 fases, formando palavras ate encontrar a saida proxima aos cantos. As 3 coroas de cada fase sao opcionais e aumentam sua pontuacao.\n\nINFINITO: forme palavras, crie cruzamentos e sobreviva pelo maior tempo possivel, acumulando pontos."],
-    ["COMO JOGAR", "Toque em uma letra de uma palavra resolvida e escolha a direcao para criar outra palavra. Leia a pista e digite a resposta no teclado.\n\nPalavras que cruzam outras ja resolvidas aumentam o combo: dois cruzamentos contam dois. Qualquer letra de uma palavra resolvida pode originar novos cruzamentos."],
+    ["COMO JOGAR", "Toque em qualquer letra ja resolvida. A palavra de origem fica lilas, a letra escolhida ilumina em creme e o outro lado aparece como um bloco oliva. Toque no bloco do lado desejado e digite a nova palavra.\n\nOs blocos sobem em ondas. Cada letra digitada ganha destaque, acertos piscam em verde e erros em vermelho. No portal verde, uma onda encerra a fase. As setas do teclado tambem funcionam."],
     ["TEMPO", "CAMPANHA: o relogio conta para cima. Voce nao perde por demorar, mas cada segundo reduz a pontuacao final. O item de tempo desconta 12 segundos.\n\nINFINITO: o relogio conta para baixo; quando acaba, a partida termina."],
     ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nNa campanha, o limite cresce 2 por fase (10 a 28). Cada energia restante no portal vale 25 pontos extras. Colete itens para recuperar ate 3 pontos. No infinito, o limite e 10."],
     ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por fase na campanha, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELOGIO: reduz o tempo na campanha.\nVISAO: amplia a area visivel.\nMOEDAS: aumentam a pontuacao.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
@@ -1112,7 +1112,7 @@ func _new_game() -> void:
         camera.size = level_intro_start_size
         camera.position = Vector3(0.0, 25.0, 0.0)
     _refresh_board()
-    _message("A palavra %s ja esta pronta. Use as setas para escolher a letra e o lado da proxima palavra!" % first_answer)
+    _message("A palavra %s ja esta pronta. Toque em uma letra e escolha o lado pelos blocos vizinhos!" % first_answer)
 
 # Constrói uma rota possível sem revelar nem fixar as palavras no mapa.
 # A simulação é revertida; o jogador continua livre para escolher seus ramos.
@@ -1694,7 +1694,7 @@ func _update_letter_slots() -> void:
         var panel := PanelContainer.new()
         panel.custom_minimum_size = Vector2(31, 43)
         var color: Color = Color("#b19bc7") if i < typed.length() else Color("#353c53")
-        panel.add_theme_stylebox_override("panel", _panel_style(color, Color("#7886ad")))
+        panel.add_theme_stylebox_override("panel", _panel_style(color, Color("#af9bcc")))
         panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
         var letter := _make_label(typed.substr(i, 1) if i < typed.length() else "", 23)
         letter.add_theme_color_override("font_color", Color("#181c2c") if i < typed.length() else Color("#e9eafa"))
@@ -1849,7 +1849,7 @@ func _submit() -> void:
             break
     _refresh_board()
     if not game_over:
-        _message("Confirmada! Use setas paralelas à palavra para escolher uma letra, ou clique nela.")
+        _message("Confirmada! Toque em qualquer letra resolvida para abrir um novo caminho.")
     _check_end()
 
 func _collect_pickups() -> void:
@@ -2216,7 +2216,7 @@ func _refresh_board() -> void:
         skirt.material_override = _material_cached("skirt_" + skirt_color.to_html(), skirt_color)
         tile_target_heights[p] = target_height
         if letters.has(p):
-            _draw_text(p, String(letters[p]), TILE_LETTER, 0.64)
+            _draw_text(p, String(letters[p]), TILE_LETTER if not level_mode or _inside_level(p) else Color("#e0d4ed"), 0.64)
         elif level_mode and p == exit_cell:
             pass  # O portal e identificado pelo verde, sem seta sobreposta.
         elif pickups.has(p):
