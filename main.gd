@@ -2118,6 +2118,7 @@ func _refresh_board() -> void:
     visual_nodes.clear()
     tile_state.clear()
     var letters: Dictionary = {}
+    var solved_cells: Dictionary = {}
     for word in words:
         if word["state"] == "destroyed" or word["state"] == "expired":
             continue
@@ -2127,6 +2128,7 @@ func _refresh_board() -> void:
             var p: Vector2i = cells[i]
             if word["state"] == "solved":
                 tile_state[p] = "solved"
+                solved_cells[p] = true
                 letters[p] = answer[i]
             elif not tile_state.has(p):
                 tile_state[p] = "active"
@@ -2270,7 +2272,9 @@ func _refresh_board() -> void:
         if level_mode and not _inside_level(p):
             # Letras de palavras concluidas mantem a aparencia final verde/solvida.
             # O dourado escuro e reservado aos trechos ainda em digitacao.
-            if kind in ["solved", "branch_source"]:
+            if solved_cells.has(p):
+                # A cor final depende de a casa pertencer a uma palavra
+                # concluida, nao do destaque temporario de foco/cruzamento.
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
                 target_height = 0.03 if kind == "branch_source" else 0.015
