@@ -1612,11 +1612,11 @@ func _update_letter_slots() -> void:
     for i in range(count):
         var panel := PanelContainer.new()
         panel.custom_minimum_size = Vector2(31, 43)
-        var color: Color = Color("#c58c9b") if i < typed.length() else Color("#604653")
-        panel.add_theme_stylebox_override("panel", _panel_style(color, Color("#b99aa9")))
+        var color: Color = Color("#b19bc7") if i < typed.length() else Color("#353c53")
+        panel.add_theme_stylebox_override("panel", _panel_style(color, Color("#7886ad")))
         panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
         var letter := _make_label(typed.substr(i, 1) if i < typed.length() else "", 23)
-        letter.add_theme_color_override("font_color", Color("#32252f") if i < typed.length() else Color("#e9eafa"))
+        letter.add_theme_color_override("font_color", Color("#181c2c") if i < typed.length() else Color("#e9eafa"))
         letter.mouse_filter = Control.MOUSE_FILTER_IGNORE
         panel.add_child(letter)
         letter_slots.add_child(panel)
