@@ -2029,15 +2029,20 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
 # O flash mistura a cor de acerto/erro com a cor original e desaparece suavemente.
 const WORD_FLASH_DURATION := 0.40
 
-func _flash_display_color(data: Dictionary) -> Color:
-    # Cada piscada guarda seu proprio inicio. Todas as casas da mesma palavra
-    # recebem o mesmo instante, sem reiniciar flashes anteriores.
+func _flash_strength(data: Dictionary) -> float:
     var started_at: float = float(data.get("started_at", elapsed))
     var progress: float = clampf((elapsed - started_at) / WORD_FLASH_DURATION, 0.0, 1.0)
-    var strength: float = 0.94 * pow(1.0 - progress, 1.75)
+    return 0.94 * pow(1.0 - progress, 1.75)
+
+func _flash_display_color(data: Dictionary) -> Color:
     var base_color: Color = data.get("base", BASE)
     var flash_color: Color = data.get("color", base_color)
-    return base_color.lerp(flash_color, strength)
+    return base_color.lerp(flash_color, _flash_strength(data))
+
+func _flash_display_skirt_color(data: Dictionary) -> Color:
+    var base_color: Color = data.get("base_skirt", SIDE_EMPTY)
+    var flash_color: Color = data.get("color", base_color).darkened(0.32)
+    return base_color.lerp(flash_color, _flash_strength(data))
 
 func _flash_word(cells: Array[Vector2i], flash_color: Color) -> void:
     # Primeiro restaura o tabuleiro sem efeitos. Assim a cor-base e
@@ -2053,9 +2058,16 @@ func _flash_word(cells: Array[Vector2i], flash_color: Color) -> void:
             var material: Material = tile.get_surface_override_material(0)
             if material is StandardMaterial3D:
                 base_color = (material as StandardMaterial3D).albedo_color
+        var base_skirt: Color = SIDE_EMPTY
+        if board.has(p):
+            var skirt_node: MeshInstance3D = (board[p] as MeshInstance3D).get_node("Skirt") as MeshInstance3D
+            var skirt_material: Material = skirt_node.material_override
+            if skirt_material is StandardMaterial3D:
+                base_skirt = (skirt_material as StandardMaterial3D).albedo_color
         flash_cells[p] = {
             "color": flash_color,
             "base": base_color,
+            "base_skirt": base_skirt,
             "started_at": started_at,
             "until": started_at + WORD_FLASH_DURATION
         }
@@ -2298,6 +2310,7 @@ func _refresh_board() -> void:
                 flash_data["base"] = top_color
                 flash_cells[p] = flash_data
             top_color = _flash_display_color(flash_data)
+            skirt_color = _flash_display_skirt_color(flash_data)
         var mat_name: String = top_color.to_html()
         tile.set_surface_override_material(0, _material_cached("tile_top_" + mat_name, top_color))
         tile.set_surface_override_material(1, _material_cached("tile_edge_" + mat_name, top_color.darkened(0.22)))
