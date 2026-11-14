@@ -2500,7 +2500,7 @@ func _clamp_camera_pan() -> void:
             min_x = minf(min_x, float(cell.x) * GAP)
             max_x = maxf(max_x, float(cell.x) * GAP)
             min_y = minf(min_y, float(cell.y) * ROW_GAP)
-            max_y = maxf(max_y, float(cell.y) * GAP)
+            max_y = maxf(max_y, float(cell.y) * ROW_GAP)
     if min_x == INF:
         return
     var margin: float = ROW_GAP * 1.5
@@ -2701,7 +2701,7 @@ func _apply_direction(direction: Vector2i) -> void:
 
 func _focus_cell(cell: Vector2i) -> void:
     camera_pan_offset = Vector2.ZERO
-    camera_target = Vector3(float(cell.x) * GAP, 25.0, float(cell.y) * GAP + CAMERA_BACK_OFFSET)
+    camera_target = Vector3(float(cell.x) * GAP, 25.0, float(cell.y) * ROW_GAP + CAMERA_BACK_OFFSET)
 
 func _focus_word(word: Dictionary) -> void:
     var cells: Array[Vector2i] = _cells(word)
