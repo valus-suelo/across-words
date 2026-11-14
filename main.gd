@@ -11,15 +11,15 @@ const ENERGY_MAX := 10
 const ENERGY_PER_LEVEL := 2
 const ENERGY_FINISH_BONUS := 25
 const REGEN_SECONDS := 20.0
-const BG := Color("#2a222d")
-const BASE := Color("#594551")
-const ACTIVE := Color("#a4778d")
-const SELECTED := Color("#e4aeb3")
-const SOLVED := Color("#876a79")
-const CURRENT_LETTER := Color("#ffe2a1")
+const BG := Color("#111522")
+const BASE := Color("#353c53")
+const ACTIVE := Color("#b19bc7")
+const SELECTED := Color("#f1dfe9")
+const SOLVED := Color("#85749c")
+const CURRENT_LETTER := Color("#fff2aa")
 const MAP_VISION_MOVES := 4
-const GOLD := Color("#e6b96d")
-const RED := Color("#df667b")
+const GOLD := Color("#f4d787")
+const RED := Color("#e97d9c")
 
 const DICTIONARY := [
     ["CASA", "Lugar onde moramos"], ["SOL", "Estrela que ilumina a Terra"],
@@ -379,7 +379,7 @@ func _make_label(text_value: String, size: int = 23) -> Label:
     label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
     label.add_theme_font_size_override("font_size", size)
-    label.add_theme_color_override("font_color", Color("#f9dfe0"))
+    label.add_theme_color_override("font_color", Color("#e9eafa"))
     return label
 
 func _layout_hud() -> void:
@@ -545,12 +545,6 @@ func _make_ui() -> void:
     confirm.add_theme_font_size_override("font_size", 22)
     confirm.pressed.connect(_submit)
     actions.add_child(confirm)
-    var buy := Button.new()
-    buy.text = "+ RAMO (3)"
-    buy.custom_minimum_size = Vector2(132, 42)
-    buy.add_theme_font_size_override("font_size", 18)
-    buy.pressed.connect(_buy_path)
-    actions.add_child(buy)
     message_label = _make_label("", 17)
     message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     message_label.custom_minimum_size.y = 20
@@ -601,7 +595,7 @@ func _make_ui() -> void:
     result_overlay.add_child(result_center)
     var result_panel := PanelContainer.new()
     result_panel.custom_minimum_size = Vector2(560, 390)
-    result_panel.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#ad8193")))
+    result_panel.add_theme_stylebox_override("panel", _panel_style(Color("#252b40"), Color("#7886ad")))
     result_center.add_child(result_panel)
     var result_column := VBoxContainer.new()
     result_column.add_theme_constant_override("separation", 22)
@@ -630,7 +624,7 @@ func _make_ui() -> void:
     menu_layer.layer = 20
     add_child(menu_layer)
     menu_overlay = ColorRect.new()
-    menu_overlay.color = Color("#201924")
+    menu_overlay.color = Color("#111522")
     menu_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     menu_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
     menu_layer.add_child(menu_overlay)
@@ -640,7 +634,7 @@ func _make_ui() -> void:
     var menu_panel := PanelContainer.new()
     hud_menu_panel = menu_panel
     menu_panel.custom_minimum_size = Vector2(590, 540)
-    menu_panel.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#ad8193")))
+    menu_panel.add_theme_stylebox_override("panel", _panel_style(Color("#252b40"), Color("#7886ad")))
     menu_center.add_child(menu_panel)
     var menu_col := VBoxContainer.new()
     menu_col.add_theme_constant_override("separation", 22)
@@ -685,7 +679,7 @@ func _make_ui() -> void:
     footer.add_theme_constant_override("separation", 8)
     menu_overlay.add_child(footer)
     var author := _make_label("criado por valus_suelo", 15)
-    author.add_theme_color_override("font_color", Color("#d9b8c9"))
+    author.add_theme_color_override("font_color", Color("#bfc8e8"))
     author.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     author.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
     author.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -702,10 +696,10 @@ func _menu_social_button(parent: HBoxContainer, symbol: String, service: String,
     button.custom_minimum_size = Vector2(42, 42)
     button.focus_mode = Control.FOCUS_NONE
     button.add_theme_font_size_override("font_size", 21)
-    button.add_theme_color_override("font_color", Color("#f6e1e8"))
-    button.add_theme_stylebox_override("normal", _panel_style(Color("#604957"), Color("#ad8193")))
-    button.add_theme_stylebox_override("hover", _panel_style(Color("#8a6577"), Color("#e7b6c9")))
-    button.add_theme_stylebox_override("pressed", _panel_style(Color("#b88b9f"), Color("#f1cbd7")))
+    button.add_theme_color_override("font_color", Color("#f0ecff"))
+    button.add_theme_stylebox_override("normal", _panel_style(Color("#343b55"), Color("#7886ad")))
+    button.add_theme_stylebox_override("hover", _panel_style(Color("#4c587a"), Color("#a6b8e4")))
+    button.add_theme_stylebox_override("pressed", _panel_style(Color("#6b79a1"), Color("#d6c8e8")))
     button.pressed.connect(func() -> void: OS.shell_open(url))
     parent.add_child(button)
 
@@ -722,9 +716,9 @@ func _add_keyboard_row(parent: VBoxContainer, letters: String, with_erase: bool 
         key_button.custom_minimum_size.y = 52
         key_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
         key_button.add_theme_font_size_override("font_size", 22)
-        key_button.add_theme_stylebox_override("normal", _panel_style(Color("#604957"), Color("#8d6b7b")))
-        key_button.add_theme_stylebox_override("hover", _panel_style(Color("#8a6577"), Color("#d7afbb")))
-        key_button.add_theme_stylebox_override("pressed", _panel_style(Color("#b88b9f"), Color("#f1cbd7")))
+        key_button.add_theme_stylebox_override("normal", _panel_style(Color("#343b55"), Color("#667496")))
+        key_button.add_theme_stylebox_override("hover", _panel_style(Color("#4c587a"), Color("#a8b8df")))
+        key_button.add_theme_stylebox_override("pressed", _panel_style(Color("#6b79a1"), Color("#d6c8e8")))
         key_button.pressed.connect(_type_character.bind(character))
         keys.add_child(key_button)
     if with_erase:
@@ -748,7 +742,7 @@ func _make_help_and_pause(layer: CanvasLayer) -> void:
     pause_overlay.add_child(center)
     var panel := PanelContainer.new()
     panel.custom_minimum_size.x = 310
-    panel.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#ad8193")))
+    panel.add_theme_stylebox_override("panel", _panel_style(Color("#252b40"), Color("#7886ad")))
     center.add_child(panel)
     var content := VBoxContainer.new()
     content.add_theme_constant_override("separation", 15)
@@ -770,7 +764,7 @@ func _make_help_and_pause(layer: CanvasLayer) -> void:
     pause_overlay.hide()
 
     help_overlay = ColorRect.new()
-    help_overlay.color = Color("#201924")
+    help_overlay.color = Color("#111522")
     help_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     help_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
     layer.add_child(help_overlay)
@@ -779,7 +773,7 @@ func _make_help_and_pause(layer: CanvasLayer) -> void:
     help_overlay.add_child(help_center)
     var help_panel := PanelContainer.new()
     help_panel.custom_minimum_size.x = 300
-    help_panel.add_theme_stylebox_override("panel", _panel_style(Color("#382b39"), Color("#ad8193")))
+    help_panel.add_theme_stylebox_override("panel", _panel_style(Color("#252b40"), Color("#7886ad")))
     help_center.add_child(help_panel)
     var help_col := VBoxContainer.new()
     help_col.add_theme_constant_override("separation", 9)
@@ -931,7 +925,7 @@ func _show_result(victory: bool, reason: String) -> void:
         completed_levels.append({"level": level_number, "crowns": mini(crowns, 3), "points": points})
     _analytics_event("level_complete" if victory and level_mode else "game_end", {"level": level_number, "score": points, "elapsed_seconds": int(elapsed), "crowns": crowns, "energy_remaining": energy, "words_solved": _solved_count(), "victory": victory})
     result_title.text = "FASE CONCLUÍDA!" if victory else "GAME OVER"
-    result_title.add_theme_color_override("font_color", Color("#e5bd74") if victory else Color("#df7587"))
+    result_title.add_theme_color_override("font_color", Color("#f4d787") if victory else Color("#e97d9c"))
     if level_mode:
         result_stats.text = "%s\n\nCoroas opcionais: %d/3 · Bônus: %d pontos\nEnergia restante: %d/%d · Bônus: %d pontos\nTempo: %d:%02d · Penalidade de tempo: %d pontos\n\n%s\n\nPalavras nesta fase: %d" % [reason, crowns, crowns * 500, energy, _energy_capacity(), _energy_finish_bonus(), int(elapsed) / 60, int(elapsed) % 60, int(elapsed) * (2 + level_number), _run_summary(), _solved_count()]
     else:
@@ -1302,8 +1296,6 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
     var parent: Dictionary = words[index]
     if parent["state"] != "solved":
         return choices
-    if bool(parent["spawned"]) and not extra_branch_armed:
-        return choices
     var parent_cells: Array[Vector2i] = _cells(parent)
     if anchor < 0 or anchor >= parent_cells.size():
         return choices
@@ -1626,7 +1618,7 @@ func _update_letter_slots() -> void:
         panel.add_theme_stylebox_override("panel", _panel_style(color, Color("#b99aa9")))
         panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
         var letter := _make_label(typed.substr(i, 1) if i < typed.length() else "", 23)
-        letter.add_theme_color_override("font_color", Color("#32252f") if i < typed.length() else Color("#f9dfe0"))
+        letter.add_theme_color_override("font_color", Color("#32252f") if i < typed.length() else Color("#e9eafa"))
         letter.mouse_filter = Control.MOUSE_FILTER_IGNORE
         panel.add_child(letter)
         letter_slots.add_child(panel)
@@ -1655,7 +1647,6 @@ func _click_tile(p: Vector2i) -> void:
     for i in range(words.size() - 1, -1, -1):
         if not eligible.has(i):
             eligible.append(i)
-    var blocked_hit: bool = false
     for i in eligible:
         var word: Dictionary = words[i]
         if word["state"] != "solved":
@@ -1663,14 +1654,8 @@ func _click_tile(p: Vector2i) -> void:
         var anchor: int = _cells(word).find(p)
         if anchor < 0:
             continue
-        if bool(word["spawned"]) and not extra_branch_armed:
-            blocked_hit = true
-            continue
         last_navigation_arrow = Vector2i.ZERO
         _select_anchor(i, anchor)
-        return
-    if blocked_hit:
-        _message("Esta palavra ja foi usada. Selecione uma letra iluminada da palavra atual.")
         return
     for i in range(words.size() - 1, -1, -1):
         if words[i]["state"] == "active" and _cells(words[i]).has(p):
@@ -1715,15 +1700,8 @@ func _submit() -> void:
             _message("Caminho indisponível. Escolha outra letra ou direção.")
             return
         var parent: Dictionary = words[preview_parent]
-        if bool(parent["spawned"]):
-            if not extra_branch_armed or coins < 3:
-                _message("Para reutilizar esta palavra, ative um ramo extra (◆3).")
-                return
-            coins -= 3
-            extra_branch_armed = false
-        else:
-            parent["spawned"] = true
-            words[preview_parent] = parent
+        parent["spawned"] = true
+        words[preview_parent] = parent
         word["state"] = "solved"
         words.append(word)
         last_solved_word = words.size() - 1
@@ -1963,8 +1941,8 @@ func _draw_branch_arrows() -> void:
         arrow.text = ("^" if side.y < 0 else "v") if horizontal else ("<" if side.x < 0 else ">")
         arrow.font_size = 72 if active else 65
         arrow.pixel_size = 0.005
-        arrow.modulate = Color("#fff0b8") if active else Color("#7e6577")
-        arrow.outline_modulate = Color("#392b3a")
+        arrow.modulate = Color("#fff2aa") if active else Color("#a2a8c9")
+        arrow.outline_modulate = Color("#20263a")
         arrow.outline_size = 8
         arrow.billboard = BaseMaterial3D.BILLBOARD_ENABLED
         arrow.no_depth_test = true
@@ -2068,7 +2046,7 @@ func _refresh_board() -> void:
     var highlighted_parent: int = preview_parent if preview_parent >= 0 else last_solved_word
     if highlighted_parent >= 0 and highlighted_parent < words.size():
         var source_word: Dictionary = words[highlighted_parent]
-        if source_word["state"] == "solved" and (not bool(source_word["spawned"]) or extra_branch_armed):
+        if source_word["state"] == "solved":
             for source_cell in _cells(source_word):
                 if board.has(source_cell):
                     tile_state[source_cell] = "branch_source"
@@ -2094,20 +2072,20 @@ func _refresh_board() -> void:
             "selected":
                 mat = _material_cached("selected", SELECTED, true)
             "draft":
-                mat = _material_cached("draft", Color("#846777"))
+                mat = _material_cached("draft", Color("#706988"))
             "focus":
                 mat = _material_cached("focus", CURRENT_LETTER, true)
             "anchor_focus":
-                mat = _material_cached("anchor_focus", Color("#f2c79d"), true)
+                mat = _material_cached("anchor_focus", Color("#f5e3a8"), true)
             "branch_source":
-                mat = _material_cached("branch_source", Color("#f3d46a"), true)
+                mat = _material_cached("branch_source", Color("#fff1a3"), true)
             _:
                 if level_mode and p == exit_cell:
-                    mat = _material_cached("exit", Color("#6ab79a"), true)
+                    mat = _material_cached("exit", Color("#6ddbc4"), true)
                 elif pickups.has(p):
                     mat = _material_cached("gold", GOLD, true) if pickups[p] in ["coin", "crown"] else _material_cached("blue", Color("#72a5ae"), true)
         if level_mode and not _inside_level(p):
-            mat = _material_cached("outer_solved", Color("#514354")) if letters.has(p) else _material_cached("outer_zone", Color("#24202e"))
+            mat = _material_cached("outer_solved", Color("#514354")) if letters.has(p) else _material_cached("outer_zone", Color("#171b2a"))
         tile.material_override = mat
         if letters.has(p):
             _draw_text(p, String(letters[p]), Color("#342632"), 0.64)
@@ -2122,7 +2100,7 @@ func _refresh_board() -> void:
                 "time": symbol = "T"
                 "crown": symbol = "C"
                 "vision": symbol = "V"
-            _draw_text(p, symbol, Color("#fff0dc"), 0.50, 64)
+            _draw_text(p, symbol, Color("#f3f0ff"), 0.50, 64)
     _draw_branch_arrows()
     _update_hud()
 
@@ -2452,8 +2430,6 @@ func _start_pointer(screen_pos: Vector2) -> void:
     for i in range(words.size() - 1, -1, -1):
         if words[i]["state"] != "solved":
             continue
-        if bool(words[i]["spawned"]) and not extra_branch_armed:
-            continue
         if _inside_level(pointer_cell) and _cells(words[i]).has(pointer_cell):
             pointer_down = true
             panning_board = false
@@ -2493,8 +2469,6 @@ func _move_pointer(screen_pos: Vector2) -> void:
                 drag_sources.append(i)
         for i in drag_sources:
             if words[i]["state"] != "solved":
-                continue
-            if bool(words[i]["spawned"]) and not extra_branch_armed:
                 continue
             var anchor: int = _cells(words[i]).find(pointer_cell)
             if anchor >= 0:
@@ -2589,7 +2563,7 @@ func _sync_visible_board(force: bool = false) -> void:
             continue
         var tile := MeshInstance3D.new()
         tile.mesh = shared_tile_mesh
-        tile.material_override = _material_cached("outer_zone", Color("#24202e")) if level_mode and not _inside_level(p) else _material_cached("base", BASE)
+        tile.material_override = _material_cached("outer_zone", Color("#171b2a")) if level_mode and not _inside_level(p) else _material_cached("base", BASE)
         tile.position = Vector3(p.x * GAP, 0.0, p.y * GAP)
         add_child(tile)
         board[p] = tile
