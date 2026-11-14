@@ -3,7 +3,8 @@ extends Node3D
 # Across-Words v0.10 — Godot 4.7, resposta única sincronizada entre teclado, slots e tabuleiro.
 const VISIBLE_RADIUS_X := 9
 const VISIBLE_RADIUS_Y := 15
-const GAP := 1.02
+const GAP := 1.02 # passo entre colunas
+const ROW_GAP := 1.12 # linhas um pouco mais afastadas para compensar a perspectiva
 # Pequena inclinacao para mostrar as laterais dos blocos, preservando a leitura do tabuleiro.
 const CAMERA_BACK_OFFSET := 9.60
 const WORD_TIME := 38.0
@@ -193,6 +194,7 @@ var camera_target: Vector3 = Vector3(0, 25, CAMERA_BACK_OFFSET)
 var visible_origin: Vector2i = Vector2i(999999, 999999)
 var shared_tile_mesh: ArrayMesh
 var shared_skirt_mesh: ArrayMesh
+var game_font: FontVariation
 var pointer_start: Vector2 = Vector2.ZERO
 var pointer_cell: Vector2i = Vector2i.ZERO
 var pointer_down: bool = false
@@ -268,6 +270,10 @@ const HUD_GESTURE_ALPHA := 0.10
 func _ready() -> void:
     get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
     rng.randomize()
+    var chunky_font := FontVariation.new()
+    chunky_font.base_font = ThemeDB.fallback_font
+    chunky_font.variation_embolden = 1.0
+    game_font = chunky_font
     _load_word_bank()
     _make_world()
     _make_ui()
@@ -364,6 +370,15 @@ func _make_world() -> void:
     env.ambient_light_energy = 0.68
     environment.environment = env
     add_child(environment)
+    # Superficie continua: os botoes ficam encaixados nela, como teclas de um teclado.
+    var keyboard_deck := MeshInstance3D.new()
+    var deck_mesh := BoxMesh.new()
+    deck_mesh.size = Vector3(10000.0, 0.18, 10000.0)
+    keyboard_deck.mesh = deck_mesh
+    keyboard_deck.position = Vector3(0.0, -0.40, 0.0)
+    keyboard_deck.material_override = _material_cached("keyboard_deck", Color("#252b3d"))
+    keyboard_deck.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    add_child(keyboard_deck)
     var light := DirectionalLight3D.new()
     light.rotation_degrees = Vector3(-55, 25, 15)
     light.light_energy = 1.12
@@ -377,8 +392,8 @@ func _make_world() -> void:
     camera.current = true
     add_child(camera)
     # As malhas sao reutilizadas por todas as celulas (sem centenas de recursos unicos).
-    shared_tile_mesh = _make_rounded_tile_mesh(0.94, 0.94, 0.24, 0.16)
-    shared_skirt_mesh = _make_rounded_tile_mesh(0.90, 0.90, 0.30, 0.15)
+    shared_tile_mesh = _make_rounded_tile_mesh(0.94, 1.00, 0.20, 0.105)
+    shared_skirt_mesh = _make_rounded_tile_mesh(0.88, 0.94, 0.28, 0.085)
     # O topo usa a cor do estado; a base inferior tem uma tinta mais escura.
 
 # Retangulo com quatro cantos de raio real e pequena borda chanfrada.
@@ -406,13 +421,16 @@ func _mesh_triangle(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, normal:
     st.add_vertex(c)
 
 func _make_rounded_tile_mesh(width: float, depth: float, height: float, radius: float) -> ArrayMesh:
-    var st := SurfaceTool.new()
-    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    # Duas superficies: topo limpo e laterais mais escuras, como uma tecla moldada.
+    var top_st := SurfaceTool.new()
+    var side_st := SurfaceTool.new()
+    top_st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    side_st.begin(Mesh.PRIMITIVE_TRIANGLES)
     var outer: Array[Vector2] = _rounded_outline(width * 0.5, depth * 0.5, radius)
-    var inset: float = 0.035
+    var inset: float = 0.025
     var inner: Array[Vector2] = _rounded_outline(width * 0.5 - inset, depth * 0.5 - inset, radius - inset)
     var top_y: float = height * 0.5
-    var edge_y: float = top_y - 0.045
+    var edge_y: float = top_y - 0.03
     var bottom_y: float = -height * 0.5
     for i in range(outer.size()):
         var j: int = (i + 1) % outer.size()
@@ -420,18 +438,18 @@ func _make_rounded_tile_mesh(width: float, depth: float, height: float, radius: 
         var b: Vector2 = outer[j]
         var ia: Vector2 = inner[i]
         var ib: Vector2 = inner[j]
-        # Face superior plana, com vertices em contorno arredondado.
-        _mesh_triangle(st, Vector3(0.0, top_y, 0.0), Vector3(ib.x, top_y, ib.y), Vector3(ia.x, top_y, ia.y), Vector3.UP)
+        _mesh_triangle(top_st, Vector3(0.0, top_y, 0.0), Vector3(ib.x, top_y, ib.y), Vector3(ia.x, top_y, ia.y), Vector3.UP)
         var tangent: Vector2 = b - a
         var side_normal := Vector3(tangent.y, 0.0, -tangent.x).normalized()
         var bevel_normal := (Vector3.UP + side_normal * 0.50).normalized()
-        # Filete chanfrado que recebe luz diferente do topo e cria um reflexo suave.
-        _mesh_triangle(st, Vector3(ia.x, top_y, ia.y), Vector3(ib.x, top_y, ib.y), Vector3(a.x, edge_y, a.y), bevel_normal)
-        _mesh_triangle(st, Vector3(a.x, edge_y, a.y), Vector3(ib.x, top_y, ib.y), Vector3(b.x, edge_y, b.y), bevel_normal)
-        # Paredes verticais arredondadas.
-        _mesh_triangle(st, Vector3(a.x, edge_y, a.y), Vector3(b.x, edge_y, b.y), Vector3(a.x, bottom_y, a.y), side_normal)
-        _mesh_triangle(st, Vector3(a.x, bottom_y, a.y), Vector3(b.x, edge_y, b.y), Vector3(b.x, bottom_y, b.y), side_normal)
-    return st.commit()
+        _mesh_triangle(top_st, Vector3(ia.x, top_y, ia.y), Vector3(ib.x, top_y, ib.y), Vector3(a.x, edge_y, a.y), bevel_normal)
+        _mesh_triangle(top_st, Vector3(a.x, edge_y, a.y), Vector3(ib.x, top_y, ib.y), Vector3(b.x, edge_y, b.y), bevel_normal)
+        _mesh_triangle(side_st, Vector3(a.x, edge_y, a.y), Vector3(b.x, edge_y, b.y), Vector3(a.x, bottom_y, a.y), side_normal)
+        _mesh_triangle(side_st, Vector3(a.x, bottom_y, a.y), Vector3(b.x, edge_y, b.y), Vector3(b.x, bottom_y, b.y), side_normal)
+    var mesh := ArrayMesh.new()
+    top_st.commit(mesh)
+    side_st.commit(mesh)
+    return mesh
 
 func _panel_style(fill: Color, edge: Color) -> StyleBoxFlat:
     var style := StyleBoxFlat.new()
@@ -511,6 +529,10 @@ func _make_ui() -> void:
     ui = Control.new()
     ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    var game_theme := Theme.new()
+    game_theme.default_font = game_font
+    game_theme.default_font_size = 20
+    ui.theme = game_theme
     layer.add_child(ui)
 
     var top := PanelContainer.new()
@@ -1108,7 +1130,7 @@ func _new_game() -> void:
     _focus_word(words[0])
     if level_mode:
         level_intro_remaining = LEVEL_INTRO_SECONDS
-        level_intro_start_size = maxf(18.0, float(_level_half_size() * 2 + 4) * GAP * 1.65)
+        level_intro_start_size = maxf(18.0, float(_level_half_size() * 2 + 4) * ROW_GAP * 1.65)
         camera.size = level_intro_start_size
         camera.position = Vector3(0.0, 25.0, 0.0)
     _refresh_board()
@@ -1643,7 +1665,7 @@ func _load_preview_choices() -> void:
         var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
         if preview_anchor >= 0 and preview_anchor < anchor_cells.size():
             var selected_cell: Vector2i = anchor_cells[preview_anchor]
-            camera_target = Vector3(float(selected_cell.x) * GAP, 25.0, float(selected_cell.y) * GAP + CAMERA_BACK_OFFSET)
+            camera_target = Vector3(float(selected_cell.x) * GAP, 25.0, float(selected_cell.y) * ROW_GAP + CAMERA_BACK_OFFSET)
         _refresh_board()
         _message("Nenhuma candidata conhecida nesse sentido. O rascunho continua editável.")
         return
@@ -1982,11 +2004,12 @@ func _enemy_turn() -> void:
 
 func _update_enemy_visual() -> void:
     if is_instance_valid(enemy_node):
-        enemy_node.position = Vector3(enemy_cell.x * GAP, 0.72, enemy_cell.y * GAP)
+        enemy_node.position = Vector3(enemy_cell.x * GAP, 0.72, enemy_cell.y * ROW_GAP)
 
 func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_size: int = 78) -> void:
     var label := Label3D.new()
     label.text = caption
+    label.font = game_font
     label.font_size = font_size
     label.pixel_size = 0.006
     label.modulate = color
@@ -1997,9 +2020,9 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
     if board.has(p):
         var tile: MeshInstance3D = board[p]
         tile.add_child(label)
-        label.position = Vector3(0.0, 0.19, 0.0)
+        label.position = Vector3(0.0, 0.16, 0.0)
     else:
-        label.position = Vector3(p.x * GAP, height, p.y * GAP)
+        label.position = Vector3(p.x * GAP, height, p.y * ROW_GAP)
         add_child(label)
     visual_nodes.append(label)
 
@@ -2024,8 +2047,8 @@ func _finish_at_portal() -> void:
         var tile: MeshInstance3D = board[p]
         var start_y: float = tile.position.y
         var lag: float = float(distance) * 0.07
-        var press: float = 0.24 if distance == 0 else 0.05
-        var rise: float = 0.09 if distance == 0 else 0.17
+        var press: float = 0.12 if distance == 0 else 0.035
+        var rise: float = 0.035 if distance == 0 else 0.05
         animation.tween_property(tile, "position:y", start_y - press, 0.13).set_delay(lag).set_trans(Tween.TRANS_SINE)
         animation.tween_property(tile, "position:y", start_y + rise, 0.20).set_delay(lag + 0.13).set_trans(Tween.TRANS_SINE)
         animation.tween_property(tile, "position:y", start_y, 0.22).set_delay(lag + 0.33).set_trans(Tween.TRANS_SINE)
@@ -2053,8 +2076,8 @@ func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
         sides.append(Vector2i(-1, 0))
         sides.append(Vector2i(1, 0))
     for side in sides:
-        var world_pos := Vector3((float(anchor.x) + float(side.x) * 0.43) * GAP, 0.93, (float(anchor.y) + float(side.y) * 0.43) * GAP)
-        if camera.unproject_position(Vector3((float(anchor.x) + float(side.x)) * GAP, 0.5, (float(anchor.y) + float(side.y)) * GAP)).distance_to(screen_pos) < 38.0:
+        var world_pos := Vector3((float(anchor.x) + float(side.x) * 0.43) * GAP, 0.93, (float(anchor.y) + float(side.y) * 0.43) * ROW_GAP)
+        if camera.unproject_position(Vector3((float(anchor.x) + float(side.x)) * GAP, 0.5, (float(anchor.y) + float(side.y)) * ROW_GAP)).distance_to(screen_pos) < 38.0:
             _apply_direction(side)
             return true
     return false
@@ -2170,48 +2193,49 @@ func _refresh_board() -> void:
             "solved":
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
-                target_height = 0.20
+                target_height = 0.025
             "branch_source":
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
-                target_height = 0.29
+                target_height = 0.045
             "active":
                 top_color = ACTIVE
                 skirt_color = SIDE_PREVIEW
-                target_height = 0.15
+                target_height = 0.0
             "preview":
                 top_color = Color("#e8e4cf")
                 skirt_color = SIDE_ACTIVE
-                target_height = 0.27
+                target_height = 0.04
             "draft", "selected":
                 top_color = SELECTED
                 skirt_color = SIDE_ACTIVE
-                target_height = 0.44
+                target_height = 0.075
             "focus", "anchor_focus":
                 top_color = CURRENT_LETTER
                 skirt_color = SIDE_ACTIVE
-                target_height = 0.56
+                target_height = 0.11
             "side_option":
                 top_color = Color("#999988")
                 skirt_color = SIDE_PREVIEW
-                target_height = 0.16
+                target_height = 0.0
         if pickups.has(p) and kind == "base":
             top_color = GOLD if pickups[p] in ["coin", "crown"] else Color("#79bac8")
             skirt_color = Color("#a58b50") if pickups[p] in ["coin", "crown"] else Color("#436d7c")
-            target_height = 0.13
+            target_height = 0.025
         if level_mode and not _inside_level(p):
             top_color = Color("#665d7b") if letters.has(p) else OUTER_TILE
             skirt_color = Color("#393347") if letters.has(p) else Color("#242936")
-            target_height = 0.08 if letters.has(p) else -0.02
+            target_height = 0.015 if letters.has(p) else -0.015
         # O portal conserva o verde tanto vazio quanto cruzado por uma palavra.
         if level_mode and p == exit_cell:
             top_color = Color("#56aa35")
             skirt_color = SIDE_EXIT
-            target_height = 0.38 if letters.has(p) else -0.12
+            target_height = 0.015 if letters.has(p) else -0.15
         elif flash_cells.has(p) and elapsed < float(flash_cells[p]["until"]):
             top_color = flash_cells[p]["color"]
         var mat_name: String = top_color.to_html()
-        tile.material_override = _material_cached("tile_" + mat_name, top_color)
+        tile.set_surface_override_material(0, _material_cached("tile_top_" + mat_name, top_color))
+        tile.set_surface_override_material(1, _material_cached("tile_edge_" + mat_name, top_color.darkened(0.22)))
         var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
         skirt.material_override = _material_cached("skirt_" + skirt_color.to_html(), skirt_color)
         tile_target_heights[p] = target_height
@@ -2339,9 +2363,9 @@ func _process(delta: float) -> void:
         if wave_age < 0.0:
             continue
         if wave_age < 0.36 and kind in ["selected", "draft", "preview", "side_option", "branch_source", "anchor_focus", "focus"]:
-            goal += sin(wave_age / 0.36 * PI) * 0.18
+            goal += sin(wave_age / 0.36 * PI) * 0.055
         if start_cells.has(p) or (level_mode and p == exit_cell):
-            goal += sin(elapsed * 2.0 + float(p.x) * 0.22 + float(p.y) * 0.19) * 0.045
+            goal += sin(elapsed * 2.0 + float(p.x) * 0.22 + float(p.y) * 0.19) * 0.012
         tile.position.y = move_toward(tile.position.y, goal, delta * 3.6)
     if is_instance_valid(enemy_node):
         enemy_node.position.y = 0.7 + sin(elapsed * 3.0) * 0.10
@@ -2362,7 +2386,7 @@ func _screen_to_cell(screen_pos: Vector2) -> Vector2i:
     if hit == null:
         return Vector2i(-1000, -1000)
     var point: Vector3 = hit
-    return Vector2i(roundi(point.x / GAP), roundi(point.z / GAP))
+    return Vector2i(roundi(point.x / GAP), roundi(point.z / ROW_GAP))
 
 # Navegação espacial determinística. Não usa a lista de palavras candidatas.
 # O eixo e os índices são calculados pela posição real da casa, sem usar o
@@ -2475,11 +2499,11 @@ func _clamp_camera_pan() -> void:
         for cell in _cells(word):
             min_x = minf(min_x, float(cell.x) * GAP)
             max_x = maxf(max_x, float(cell.x) * GAP)
-            min_y = minf(min_y, float(cell.y) * GAP)
+            min_y = minf(min_y, float(cell.y) * ROW_GAP)
             max_y = maxf(max_y, float(cell.y) * GAP)
     if min_x == INF:
         return
-    var margin: float = GAP * 1.5
+    var margin: float = ROW_GAP * 1.5
     camera_pan_offset.x = clampf(camera_pan_offset.x, min_x - margin - camera_target.x, max_x + margin - camera_target.x)
     camera_pan_offset.y = clampf(camera_pan_offset.y, min_y - margin - (camera_target.z - CAMERA_BACK_OFFSET), max_y + margin - (camera_target.z - CAMERA_BACK_OFFSET))
 
@@ -2698,7 +2722,7 @@ func _sync_visible_board(force: bool = false) -> void:
     var view_size: Vector2 = get_viewport().get_visible_rect().size
     var aspect: float = view_size.x / maxf(1.0, view_size.y)
     var radius_x: int = maxi(VISIBLE_RADIUS_X, ceili(camera.size * aspect / (2.0 * GAP)) + 4)
-    var radius_y: int = maxi(VISIBLE_RADIUS_Y, ceili(camera.size / (2.0 * GAP)) + 4)
+    var radius_y: int = maxi(VISIBLE_RADIUS_Y, ceili(camera.size / (2.0 * ROW_GAP)) + 4)
     for y in range(center.y - radius_y, center.y + radius_y + 1):
         for x in range(center.x - radius_x, center.x + radius_x + 1):
             var cell: Vector2i = Vector2i(x, y)
@@ -2715,12 +2739,13 @@ func _sync_visible_board(force: bool = false) -> void:
         var tile := MeshInstance3D.new()
         tile.mesh = shared_tile_mesh
         tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-        tile.material_override = _material_cached("outer_zone", OUTER_TILE) if level_mode and not _inside_level(p) else _material_cached("base", BASE)
-        tile.position = Vector3(p.x * GAP, 0.0, p.y * GAP)
+        tile.set_surface_override_material(0, _material_cached("tile_base", BASE))
+        tile.set_surface_override_material(1, _material_cached("tile_base_side", BASE.darkened(0.20)))
+        tile.position = Vector3(p.x * GAP, 0.0, p.y * ROW_GAP)
         var skirt := MeshInstance3D.new()
         skirt.name = "Skirt"
         skirt.mesh = shared_skirt_mesh
-        skirt.position.y = -0.18
+        skirt.position.y = -0.16
         skirt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
         skirt.material_override = _material_cached("side_empty", SIDE_EMPTY)
         tile.add_child(skirt)
