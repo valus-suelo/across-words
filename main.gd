@@ -2025,10 +2025,21 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
         add_child(label)
     visual_nodes.append(label)
 
-# O brilho e armazenado por casa, para sobreviver aos redesenhos do tabuleiro.
+# O flash mistura a cor de acerto/erro com a cor original e desaparece suavemente.
+const WORD_FLASH_DURATION := 0.40
+
+func _flash_display_color(data: Dictionary) -> Color:
+    var started: float = float(data.get("started", elapsed))
+    var progress: float = clampf((elapsed - started) / WORD_FLASH_DURATION, 0.0, 1.0)
+    # Queda rapida, mas continua: evita o efeito de ligar/desligar a cor.
+    var strength: float = 0.94 * pow(1.0 - progress, 1.75)
+    var base_color: Color = data.get("base", BASE)
+    var flash_color: Color = data.get("color", base_color)
+    return base_color.lerp(flash_color, strength)
+
 func _flash_word(cells: Array[Vector2i], flash_color: Color) -> void:
     for p in cells:
-        flash_cells[p] = {"color": flash_color, "until": elapsed + 0.34}
+        flash_cells[p] = {"color": flash_color, "started": elapsed, "until": elapsed + WORD_FLASH_DURATION}
     _refresh_board()
 
 # A saida se comporta como um botao: afunda, libera uma onda e abre o resultado.
@@ -2242,8 +2253,12 @@ func _refresh_board() -> void:
             top_color = Color("#56aa35")
             skirt_color = SIDE_EXIT
             target_height = 0.015 if letters.has(p) else -0.16
-        elif flash_cells.has(p) and elapsed < float(flash_cells[p]["until"]):
-            top_color = flash_cells[p]["color"]
+        if flash_cells.has(p):
+            var flash_data: Dictionary = flash_cells[p]
+            if not flash_data.has("base"):
+                flash_data["base"] = top_color
+                flash_cells[p] = flash_data
+            top_color = _flash_display_color(flash_data)
         var mat_name: String = top_color.to_html()
         tile.set_surface_override_material(0, _material_cached("tile_top_" + mat_name, top_color))
         tile.set_surface_override_material(1, _material_cached("tile_edge_" + mat_name, top_color.darkened(0.22)))
@@ -2384,8 +2399,18 @@ func _process(delta: float) -> void:
     if not flash_cells.is_empty():
         var done: Array[Vector2i] = []
         for cell in flash_cells.keys():
-            if elapsed >= float(flash_cells[cell]["until"]):
+            var flash_data: Dictionary = flash_cells[cell]
+            if elapsed >= float(flash_data["until"]):
                 done.append(cell)
+                continue
+            if not board.has(cell) or not flash_data.has("base"):
+                continue
+            # Atualiza somente os materiais das teclas em flash; nao recria
+            # o tabuleiro nem os textos a cada frame.
+            var shown_color: Color = _flash_display_color(flash_data)
+            var tile: MeshInstance3D = board[cell]
+            tile.set_surface_override_material(0, _material_cached("tile_top_" + shown_color.to_html(), shown_color))
+            tile.set_surface_override_material(1, _material_cached("tile_edge_" + shown_color.to_html(), shown_color.darkened(0.22)))
         if not done.is_empty():
             for cell in done:
                 flash_cells.erase(cell)
