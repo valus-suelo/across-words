@@ -2459,10 +2459,16 @@ func _process(delta: float) -> void:
                 continue
             # Atualiza somente os materiais das teclas em flash; nao recria
             # o tabuleiro nem os textos a cada frame.
+            # As duas camadas precisam ser atualizadas no mesmo frame e
+            # com a mesma intensidade; caso contrario a saia fica presa na
+            # cor inicial do flash ate a animacao terminar.
             var shown_color: Color = _flash_display_color(flash_data)
+            var shown_skirt_color: Color = _flash_display_skirt_color(flash_data)
             var tile: MeshInstance3D = board[cell]
             tile.set_surface_override_material(0, _material_cached("tile_top_" + shown_color.to_html(), shown_color))
             tile.set_surface_override_material(1, _material_cached("tile_edge_" + shown_color.to_html(), shown_color.darkened(0.22)))
+            var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
+            skirt.material_override = _material_cached("skirt_" + shown_skirt_color.to_html(), shown_skirt_color)
         if not done.is_empty():
             for cell in done:
                 flash_cells.erase(cell)
