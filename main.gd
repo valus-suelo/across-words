@@ -2000,27 +2000,6 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
         add_child(label)
     visual_nodes.append(label)
 
-func _draw_branch_arrows() -> void:
-    if preview_parent < 0 or preview_parent >= words.size() or preview_anchor < 0:
-        return
-    var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
-    if preview_anchor >= parent_cells.size():
-        return
-    var anchor: Vector2i = parent_cells[preview_anchor]
-    var horizontal: bool = Vector2i(words[preview_parent]["dir"]).x != 0
-    var sides: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if horizontal else [Vector2i(-1, 0), Vector2i(1, 0)]
-    for side in sides:
-        var marker := MeshInstance3D.new()
-        var mesh := BoxMesh.new()
-        mesh.size = Vector3(0.68, 0.18, 0.68)
-        marker.mesh = mesh
-        marker.material_override = _material_cached("direction_active" if side == preview_dir else "direction_idle", Color("#fff1bb") if side == preview_dir else Color("#8791ad"), true)
-        marker.position = Vector3((float(anchor.x) + float(side.x)) * GAP, 0.32, (float(anchor.y) + float(side.y)) * GAP)
-        add_child(marker)
-        visual_nodes.append(marker)
-        var tween := create_tween()
-        tween.tween_property(marker, "position:y", 0.67 if side == preview_dir else 0.34, 0.22).set_trans(Tween.TRANS_SINE)
-
 func _flash_word(cells: Array[Vector2i], flash_color: Color) -> void:
     for p in cells:
         if not board.has(p):
@@ -2111,7 +2090,7 @@ func _refresh_board() -> void:
         for i in range(cells.size()):
             var p: Vector2i = cells[i]
             if tile_state.get(p, "") != "solved":
-                tile_state[p] = "selected"
+                tile_state[p] = "selected" if i < typed.length() else "preview"
                 if i < typed.length():
                     letters[p] = typed[i]
     # Realce da proxima letra a digitar, diretamente no tabuleiro.
@@ -2133,7 +2112,7 @@ func _refresh_board() -> void:
         var source_word: Dictionary = words[highlighted_parent]
         if source_word["state"] == "solved":
             for source_cell in _cells(source_word):
-                if board.has(source_cell):
+                if board.has(source_cell) and tile_state.get(source_cell, "") == "solved":
                     tile_state[source_cell] = "branch_source"
     # A letra de cruzamento da palavra antiga permanece iluminada,
     # mesmo quando a proxima letra da palavra nova esta em outra casa.
@@ -2145,57 +2124,76 @@ func _refresh_board() -> void:
                 tile_state[crossing_cell] = "anchor_focus"
     if board.has(focus_cell):
         tile_state[focus_cell] = "focus"
+    # O lado nao escolhido mostra um UNICO bloco oliva. O lado selecionado
+    # e representado pelos blocos da palavra proposta (sem setas flutuantes).
+    if preview_parent >= 0 and preview_parent < words.size() and preview_anchor >= 0:
+        var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
+        if preview_anchor < anchor_cells.size():
+            var axis: Vector2i = Vector2i(words[preview_parent]["dir"])
+            var opposite: Vector2i = -preview_dir
+            if opposite == Vector2i.ZERO:
+                opposite = Vector2i(0, 1) if axis.x != 0 else Vector2i(1, 0)
+            var side_cell: Vector2i = anchor_cells[preview_anchor] + opposite
+            if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
+                if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
+                    tile_state[side_cell] = "side_option"
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
         var kind: String = tile_state.get(p, "base")
-        var mat: StandardMaterial3D = _material_cached("base", BASE)
-        match kind:
-            "solved":
-                mat = _material_cached("solved", SOLVED)
-            "active":
-                mat = _material_cached("active", ACTIVE, true)
-            "selected":
-                mat = _material_cached("selected", Color("#fff5c7"), true)
-            "draft":
-                mat = _material_cached("draft", Color("#706988"))
-            "focus":
-                mat = _material_cached("focus", CURRENT_LETTER, true)
-            "anchor_focus":
-                mat = _material_cached("anchor_focus", Color("#f5e3a8"), true)
-            "branch_source":
-                mat = _material_cached("branch_source", Color("#b9a6d5"), true)
-            _:
-                if level_mode and p == exit_cell:
-                    mat = _material_cached("exit", Color("#6ddbc4"), true)
-                elif pickups.has(p):
-                    mat = _material_cached("gold", GOLD, true) if pickups[p] in ["coin", "crown"] else _material_cached("blue", Color("#73c7da"), true)
-        if level_mode and not _inside_level(p):
-            mat = _material_cached("outer_solved", Color("#655f80")) if letters.has(p) else _material_cached("outer_zone", Color("#171b2a"))
-        # O portal continua verde mesmo quando uma palavra passa sobre ele.
-        if level_mode and p == exit_cell:
-            mat = _material_cached("exit_occupied" if letters.has(p) else "exit", Color("#77e59b") if letters.has(p) else Color("#4bb972"), true)
-        tile.material_override = mat
+        var top_color: Color = BASE
+        var skirt_color: Color = SIDE_EMPTY
         var target_height: float = 0.0
         match kind:
             "solved":
-                target_height = 0.17
-            "active":
-                target_height = 0.17
-            "selected", "draft":
-                target_height = 0.43
-            "focus", "anchor_focus":
-                target_height = 0.56
+                top_color = SOLVED
+                skirt_color = SIDE_SOLVED
+                target_height = 0.20
             "branch_source":
-                target_height = 0.28
+                top_color = SOLVED
+                skirt_color = SIDE_SOLVED
+                target_height = 0.29
+            "active":
+                top_color = ACTIVE
+                skirt_color = SIDE_PREVIEW
+                target_height = 0.15
+            "preview":
+                top_color = Color("#e8e4cf")
+                skirt_color = SIDE_ACTIVE
+                target_height = 0.27
+            "draft", "selected":
+                top_color = SELECTED
+                skirt_color = SIDE_ACTIVE
+                target_height = 0.44
+            "focus", "anchor_focus":
+                top_color = CURRENT_LETTER
+                skirt_color = SIDE_ACTIVE
+                target_height = 0.56
+            "side_option":
+                top_color = Color("#999988")
+                skirt_color = SIDE_PREVIEW
+                target_height = 0.16
+        if pickups.has(p) and kind == "base":
+            top_color = GOLD if pickups[p] in ["coin", "crown"] else Color("#79bac8")
+            skirt_color = Color("#a58b50") if pickups[p] in ["coin", "crown"] else Color("#436d7c")
+            target_height = 0.13
+        if level_mode and not _inside_level(p):
+            top_color = Color("#665d7b") if letters.has(p) else OUTER_TILE
+            skirt_color = Color("#393347") if letters.has(p) else Color("#242936")
+            target_height = 0.08 if letters.has(p) else -0.02
+        # O portal conserva o verde tanto vazio quanto cruzado por uma palavra.
         if level_mode and p == exit_cell:
-            target_height = 0.43 if letters.has(p) else -0.13
+            top_color = Color("#56aa35")
+            skirt_color = SIDE_EXIT
+            target_height = 0.38 if letters.has(p) else -0.12
+        var mat_name: String = top_color.to_html()
+        tile.material_override = _material_cached("tile_" + mat_name, top_color)
+        var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
+        skirt.material_override = _material_cached("skirt_" + skirt_color.to_html(), skirt_color)
         tile_target_heights[p] = target_height
         if letters.has(p):
-            _draw_text(p, String(letters[p]), Color("#181c2c"), 0.64)
-        elif kind == "selected" or kind == "active" or kind == "focus" or kind == "anchor_focus" or kind == "branch_source":
-            _draw_text(p, "·", Color("#e9eafa"), 0.42, 66)
+            _draw_text(p, String(letters[p]), TILE_LETTER, 0.64)
         elif level_mode and p == exit_cell:
-            _draw_text(p, "⇧", Color("#c7f6d5"), 0.55, 84)
+            pass  # O portal e identificado pelo verde, sem seta sobreposta.
         elif pickups.has(p):
             var symbol: String = "$"
             match pickups[p]:
@@ -2203,8 +2201,8 @@ func _refresh_board() -> void:
                 "time": symbol = "T"
                 "crown": symbol = "C"
                 "vision": symbol = "V"
-            _draw_text(p, symbol, Color("#f3f0ff"), 0.50, 64)
-    _draw_branch_arrows()
+                "hint": symbol = "?"
+            _draw_text(p, symbol, TILE_LETTER, 0.50, 64)
     _update_hud()
 
 func _update_hud() -> void:
@@ -2315,7 +2313,7 @@ func _process(delta: float) -> void:
         # Efeito sequencial: a onda parte da letra escolhida e alcanca os demais blocos.
         if wave_age < 0.0:
             continue
-        if wave_age < 0.36 and kind in ["selected", "draft", "branch_source", "anchor_focus", "focus"]:
+        if wave_age < 0.36 and kind in ["selected", "draft", "preview", "side_option", "branch_source", "anchor_focus", "focus"]:
             goal += sin(wave_age / 0.36 * PI) * 0.18
         if start_cells.has(p) or (level_mode and p == exit_cell):
             goal += sin(elapsed * 2.0 + float(p.x) * 0.22 + float(p.y) * 0.19) * 0.045
