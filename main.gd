@@ -4,6 +4,8 @@ extends Node3D
 const VISIBLE_RADIUS_X := 9
 const VISIBLE_RADIUS_Y := 15
 const GAP := 1.02
+# Pequena inclinacao para mostrar as laterais dos blocos, preservando a leitura do tabuleiro.
+const CAMERA_BACK_OFFSET := 9.60
 const WORD_TIME := 38.0
 const STORY_MAP_TIME := 300.0
 const INFINITE_MAP_TIME := 360.0
@@ -153,6 +155,9 @@ var letter_slots: HBoxContainer
 var material_cache: Dictionary = {}
 var wave_origin: Vector2i = Vector2i.ZERO
 var wave_sequence: int = 0
+var wave_started_at: float = 0.0
+var tile_target_heights: Dictionary = {}
+var tile_pedestals: Dictionary = {}
 var last_expire_update: int = -1
 var map_vision_moves: int = 0
 var path_time: float = STORY_MAP_TIME
@@ -174,7 +179,7 @@ const HELP_PAGES := [
 ]
 var mode_button: Button
 var typed_buffer: String = ""
-var camera_target: Vector3 = Vector3(0, 25, 1.4)
+var camera_target: Vector3 = Vector3(0, 25, CAMERA_BACK_OFFSET)
 var visible_origin: Vector2i = Vector2i(999999, 999999)
 var shared_tile_mesh: BoxMesh
 var pointer_start: Vector2 = Vector2.ZERO
@@ -333,7 +338,7 @@ func _material_cached(name: String, color: Color, glow: bool = false) -> Standar
     if glow:
         mat.emission_enabled = true
         mat.emission = color
-        mat.emission_energy_multiplier = 0.35
+        mat.emission_energy_multiplier = 0.12
     material_cache[name] = mat
     return mat
 
@@ -350,16 +355,17 @@ func _make_world() -> void:
     var light := DirectionalLight3D.new()
     light.rotation_degrees = Vector3(-55, 25, 15)
     light.light_energy = 1.05
+    # Relevo aparente por iluminacao direcional; evita o custo de sombras dinamicas no celular.
     add_child(light)
     camera = Camera3D.new()
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
     camera.size = 20.0
-    camera.position = Vector3(0, 25, 1.4)
-    camera.rotation_degrees = Vector3(-90, 0, 0)
+    camera.position = Vector3(0, 25, CAMERA_BACK_OFFSET)
+    camera.rotation_degrees = Vector3(-69.0, 0, 0)
     camera.current = true
     add_child(camera)
     shared_tile_mesh = BoxMesh.new()
-    shared_tile_mesh.size = Vector3(0.94, 0.17, 0.94)
+    shared_tile_mesh.size = Vector3(0.94, 0.42, 0.94)
     # Os blocos visíveis são criados após a interface estar pronta.
 
 func _panel_style(fill: Color, edge: Color) -> StyleBoxFlat:
@@ -980,6 +986,9 @@ func _new_game() -> void:
     hints_remaining = HINTS_PER_LEVEL
     regen = 0.0
     elapsed = 0.0
+    wave_started_at = 0.0
+    wave_origin = Vector2i.ZERO
+    tile_target_heights.clear()
     path_time = STORY_MAP_TIME if level_mode else INFINITE_MAP_TIME
     map_vision_moves = 0
     _layout_hud()
@@ -995,7 +1004,7 @@ func _new_game() -> void:
         hud_top.modulate.a = HUD_IDLE_ALPHA
     if is_instance_valid(hud_bottom):
         hud_bottom.modulate.a = HUD_IDLE_ALPHA
-    camera_target = Vector3(0, 25, 1.4)
+    camera_target = Vector3(0, 25, CAMERA_BACK_OFFSET)
     camera.position = camera_target
     level_intro_remaining = 0.0
     camera.size = 18.0
@@ -1512,6 +1521,7 @@ func _select_anchor(index: int, anchor: int) -> void:
     _save_preview_draft()
     wave_origin = _cells(words[index])[anchor]
     wave_sequence += 1
+    wave_started_at = elapsed
     preview_parent = index
     last_solved_word = index
     # Nao zerar last_navigation_arrow aqui: esta funcao e usada pelas setas.
@@ -1566,7 +1576,7 @@ func _load_preview_choices() -> void:
         var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
         if preview_anchor >= 0 and preview_anchor < anchor_cells.size():
             var selected_cell: Vector2i = anchor_cells[preview_anchor]
-            camera_target = Vector3(float(selected_cell.x) * GAP, 25.0, float(selected_cell.y) * GAP + 1.4)
+            camera_target = Vector3(float(selected_cell.x) * GAP, 25.0, float(selected_cell.y) * GAP + CAMERA_BACK_OFFSET)
         _refresh_board()
         _message("Nenhuma candidata conhecida nesse sentido. O rascunho continua editável.")
         return
@@ -1916,8 +1926,14 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
     label.modulate = color
     label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     label.no_depth_test = true
-    label.position = Vector3(p.x * GAP, height, p.y * GAP)
-    add_child(label)
+    # Letra e um filho do proprio bloco: acompanha a elevacao 3D.
+    if board.has(p):
+        var tile: MeshInstance3D = board[p]
+        tile.add_child(label)
+        label.position = Vector3(0.0, maxf(0.27, height - 0.18), 0.0)
+    else:
+        label.position = Vector3(p.x * GAP, height, p.y * GAP)
+        add_child(label)
     visual_nodes.append(label)
 
 func _draw_branch_arrows() -> void:
@@ -2075,7 +2091,7 @@ func _refresh_board() -> void:
             "active":
                 mat = _material_cached("active", ACTIVE, true)
             "selected":
-                mat = _material_cached("selected", SELECTED, true)
+                mat = _material_cached("selected", Color("#fff5c7"), true)
             "draft":
                 mat = _material_cached("draft", Color("#706988"))
             "focus":
@@ -2083,7 +2099,7 @@ func _refresh_board() -> void:
             "anchor_focus":
                 mat = _material_cached("anchor_focus", Color("#f5e3a8"), true)
             "branch_source":
-                mat = _material_cached("branch_source", Color("#fff1a3"), true)
+                mat = _material_cached("branch_source", Color("#b9a6d5"), true)
             _:
                 if level_mode and p == exit_cell:
                     mat = _material_cached("exit", Color("#6ddbc4"), true)
@@ -2091,19 +2107,25 @@ func _refresh_board() -> void:
                     mat = _material_cached("gold", GOLD, true) if pickups[p] in ["coin", "crown"] else _material_cached("blue", Color("#73c7da"), true)
         if level_mode and not _inside_level(p):
             mat = _material_cached("outer_solved", Color("#655f80")) if letters.has(p) else _material_cached("outer_zone", Color("#171b2a"))
+        # O portal continua verde mesmo quando uma palavra passa sobre ele.
+        if level_mode and p == exit_cell:
+            mat = _material_cached("exit_occupied" if letters.has(p) else "exit", Color("#77e59b") if letters.has(p) else Color("#4bb972"), true)
         tile.material_override = mat
         var target_height: float = 0.0
-        if kind in ["selected", "draft"]:
-            target_height = 0.24
-        elif kind in ["focus", "anchor_focus"]:
-            target_height = 0.38
-        elif kind == "branch_source":
-            target_height = 0.12
+        match kind:
+            "solved":
+                target_height = 0.17
+            "active":
+                target_height = 0.17
+            "selected", "draft":
+                target_height = 0.43
+            "focus", "anchor_focus":
+                target_height = 0.56
+            "branch_source":
+                target_height = 0.28
         if level_mode and p == exit_cell:
-            target_height = -0.12
-        var tween_height := create_tween()
-        tween_height.tween_interval(minf(0.36, (absi(p.x - wave_origin.x) + absi(p.y - wave_origin.y)) * 0.026))
-        tween_height.tween_property(tile, "position:y", target_height, 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+            target_height = 0.43 if letters.has(p) else -0.13
+        tile_target_heights[p] = target_height
         if letters.has(p):
             _draw_text(p, String(letters[p]), Color("#181c2c"), 0.64)
         elif kind == "selected" or kind == "active" or kind == "focus" or kind == "anchor_focus" or kind == "branch_source":
@@ -2216,15 +2238,24 @@ func _process(delta: float) -> void:
     var desired_camera: Vector3 = camera_target + Vector3(camera_pan_offset.x, 0.0, camera_pan_offset.y)
     camera.position = camera.position.lerp(desired_camera, minf(1.0, delta * 4.0))
     _sync_visible_board()
+    # Altura de cada bloco e persistente: nenhuma animacao e sobrescrita por outra.
+    var start_cells: Array[Vector2i] = []
+    if not words.is_empty() and words[0]["state"] == "solved":
+        start_cells = _cells(words[0])
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
         var kind: String = tile_state.get(p, "base")
-        if kind == "solved":
-            tile.position.y = 0.26
-        elif kind == "active" or kind == "selected" or kind == "focus":
-            tile.position.y = 0.10 + sin(elapsed * 2.6 + float(p.x) * 0.7 + float(p.y) * 0.45) * 0.06
-        else:
-            tile.position.y = sin(elapsed * 1.5 + float(p.x) * 0.35 + float(p.y) * 0.4) * 0.04
+        var goal: float = float(tile_target_heights.get(p, 0.0))
+        var cell_distance: int = absi(p.x - wave_origin.x) + absi(p.y - wave_origin.y)
+        var wave_age: float = elapsed - wave_started_at - minf(0.55, float(cell_distance) * 0.055)
+        # Efeito sequencial: a onda parte da letra escolhida e alcanca os demais blocos.
+        if wave_age < 0.0:
+            continue
+        if wave_age < 0.36 and kind in ["selected", "draft", "branch_source", "anchor_focus", "focus"]:
+            goal += sin(wave_age / 0.36 * PI) * 0.18
+        if start_cells.has(p) or (level_mode and p == exit_cell):
+            goal += sin(elapsed * 2.0 + float(p.x) * 0.22 + float(p.y) * 0.19) * 0.045
+        tile.position.y = move_toward(tile.position.y, goal, delta * 3.6)
     if is_instance_valid(enemy_node):
         enemy_node.position.y = 0.7 + sin(elapsed * 3.0) * 0.10
 
@@ -2354,7 +2385,7 @@ func _clamp_camera_pan() -> void:
         return
     var margin: float = GAP * 1.5
     camera_pan_offset.x = clampf(camera_pan_offset.x, min_x - margin - camera_target.x, max_x + margin - camera_target.x)
-    camera_pan_offset.y = clampf(camera_pan_offset.y, min_y - margin - (camera_target.z - 1.4), max_y + margin - (camera_target.z - 1.4))
+    camera_pan_offset.y = clampf(camera_pan_offset.y, min_y - margin - (camera_target.z - CAMERA_BACK_OFFSET), max_y + margin - (camera_target.z - CAMERA_BACK_OFFSET))
 
 func _pan_camera(screen_delta: Vector2) -> void:
     var viewport_height: float = maxf(1.0, get_viewport().get_visible_rect().size.y)
@@ -2542,6 +2573,7 @@ func _apply_direction(direction: Vector2i) -> void:
     _save_preview_draft()
     preview_dir = direction
     wave_sequence += 1
+    wave_started_at = elapsed
     preferred_branch_direction = direction
     var key: String = _draft_key(preview_parent, preview_anchor)
     drafts[key] = {"text": entry.text.to_upper(), "dir": direction}
@@ -2549,7 +2581,7 @@ func _apply_direction(direction: Vector2i) -> void:
 
 func _focus_cell(cell: Vector2i) -> void:
     camera_pan_offset = Vector2.ZERO
-    camera_target = Vector3(float(cell.x) * GAP, 25.0, float(cell.y) * GAP + 1.4)
+    camera_target = Vector3(float(cell.x) * GAP, 25.0, float(cell.y) * GAP + CAMERA_BACK_OFFSET)
 
 func _focus_word(word: Dictionary) -> void:
     var cells: Array[Vector2i] = _cells(word)
@@ -2559,7 +2591,9 @@ func _focus_word(word: Dictionary) -> void:
     _focus_cell(midpoint)
 
 func _sync_visible_board(force: bool = false) -> void:
-    var center := Vector2i(roundi(camera.position.x / GAP), roundi(camera.position.z / GAP))
+    # O centro visivel e a intersecao do raio da camera com o tabuleiro.
+    # camera.position.z nao e mais o centro com a camera inclinada.
+    var center: Vector2i = _screen_to_cell(get_viewport().get_visible_rect().size * 0.5)
     if not force and center == visible_origin:
         return
     visible_origin = center
@@ -2578,6 +2612,7 @@ func _sync_visible_board(force: bool = false) -> void:
         if not needed.has(p):
             board[p].queue_free()
             board.erase(p)
+            tile_target_heights.erase(p)
     for p in needed.keys():
         if board.has(p):
             continue
