@@ -164,10 +164,10 @@ var help_index: int = 0
 var help_swipe_start: float = 0.0
 const HELP_PAGES := [
     ["MODOS DE JOGO", "CAMPANHA: avance por 10 fases, formando palavras ate encontrar a saida proxima aos cantos. As 3 coroas de cada fase sao opcionais e aumentam sua pontuacao.\n\nINFINITO: forme palavras, crie cruzamentos e sobreviva pelo maior tempo possivel, acumulando pontos."],
-    ["COMO JOGAR", "Toque em uma letra de uma palavra resolvida e escolha a direcao para criar outra palavra. Leia a pista e digite a resposta no teclado.\n\nPalavras que cruzam outras ja resolvidas aumentam o combo: dois cruzamentos contam dois. Use moedas para liberar ramos extras."],
+    ["COMO JOGAR", "Toque em uma letra de uma palavra resolvida e escolha a direcao para criar outra palavra. Leia a pista e digite a resposta no teclado.\n\nPalavras que cruzam outras ja resolvidas aumentam o combo: dois cruzamentos contam dois. Qualquer letra de uma palavra resolvida pode originar novos cruzamentos."],
     ["TEMPO", "CAMPANHA: o relogio conta para cima. Voce nao perde por demorar, mas cada segundo reduz a pontuacao final. O item de tempo desconta 12 segundos.\n\nINFINITO: o relogio conta para baixo; quando acaba, a partida termina."],
     ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nNa campanha, o limite cresce 2 por fase (10 a 28). Cada energia restante no portal vale 25 pontos extras. Colete itens para recuperar ate 3 pontos. No infinito, o limite e 10."],
-    ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por fase na campanha, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELOGIO: reduz o tempo na campanha.\nVISAO: amplia a area visivel.\nMOEDAS: permitem comprar ramos extras.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
+    ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por fase na campanha, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELOGIO: reduz o tempo na campanha.\nVISAO: amplia a area visivel.\nMOEDAS: aumentam a pontuacao.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
     ["DICAS", "O botao DICA, ao lado da definicao, permite trocar a palavra sugerida para a letra e direcao escolhidas.\n\nNa campanha, voce tem 3 trocas por fase, renovadas ao avancar de nivel. No modo infinito, colete itens de dica para recuperar usos (ate 3). O botao exige alternativas validas."]
 ]
 var mode_button: Button
@@ -428,7 +428,7 @@ func _layout_hud() -> void:
         hud_story_button.add_theme_font_size_override("font_size", 25 if wide else 20)
         hud_infinite_button.add_theme_font_size_override("font_size", 25 if wide else 20)
 
-    camera.size = (23.0 if wide else 27.0) if map_vision_moves > 0 else (17.0 if wide else 20.0)
+    _apply_camera_zoom()
     visible_origin = Vector2i(999999, 999999)
     _sync_visible_board(true)
 
@@ -444,7 +444,7 @@ func _make_ui() -> void:
     hud_top = top
     top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
     top.offset_bottom = 152.0
-    top.add_theme_stylebox_override("panel", _panel_style(Color(0.22, 0.17, 0.23, 0.22), Color(0.47, 0.33, 0.37, 0.28)))
+    top.add_theme_stylebox_override("panel", _panel_style(Color(0.13, 0.17, 0.27, 0.22), Color(0.20, 0.25, 0.38, 0.28)))
     ui.add_child(top)
     var top_column := VBoxContainer.new()
     top_column.add_theme_constant_override("separation", 3)
@@ -464,7 +464,7 @@ func _make_ui() -> void:
     score_label = _make_label("PONTOS 0  |  MOEDAS 0  |  COMBO 0", 17)
     top_column.add_child(score_label)
     var clue_panel := PanelContainer.new()
-    clue_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.50, 0.34, 0.43, 0.38), Color(0.93, 0.72, 0.78, 0.45)))
+    clue_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.26, 0.31, 0.48, 0.38), Color(0.67, 0.72, 0.91, 0.45)))
     top_column.add_child(clue_panel)
     clue_label = _make_label("Resolva a palavra destacada para começar.", 22)
     clue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -486,7 +486,7 @@ func _make_ui() -> void:
     hud_bottom = bottom
     bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
     bottom.offset_top = -430.0
-    bottom.add_theme_stylebox_override("panel", _panel_style(Color(0.22, 0.17, 0.23, 0.22), Color(0.47, 0.33, 0.37, 0.28)))
+    bottom.add_theme_stylebox_override("panel", _panel_style(Color(0.13, 0.17, 0.27, 0.22), Color(0.20, 0.25, 0.38, 0.28)))
     ui.add_child(bottom)
     var column := VBoxContainer.new()
     column.add_theme_constant_override("separation", 3)
@@ -585,7 +585,7 @@ func _make_ui() -> void:
     result_layer.layer = 10
     add_child(result_layer)
     result_overlay = ColorRect.new()
-    result_overlay.color = Color(0.10, 0.07, 0.12, 0.91)
+    result_overlay.color = Color(0.07, 0.09, 0.15, 0.91)
     result_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     result_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
     result_layer.add_child(result_overlay)
@@ -732,7 +732,7 @@ func _add_keyboard_row(parent: VBoxContainer, letters: String, with_erase: bool 
 
 func _make_help_and_pause(layer: CanvasLayer) -> void:
     pause_overlay = ColorRect.new()
-    pause_overlay.color = Color(0.10, 0.07, 0.12, 0.95)
+    pause_overlay.color = Color(0.07, 0.09, 0.15, 0.95)
     pause_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     pause_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
     layer.add_child(pause_overlay)
@@ -781,7 +781,7 @@ func _make_help_and_pause(layer: CanvasLayer) -> void:
     var card_panel := PanelContainer.new()
     card_panel.custom_minimum_size = Vector2(310, 410)
     card_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    card_panel.add_theme_stylebox_override("panel", _panel_style(Color("#594453"), Color("#b38ba0")))
+    card_panel.add_theme_stylebox_override("panel", _panel_style(Color("#353c53"), Color("#7886ad")))
     help_col.add_child(card_panel)
     help_card_container = VBoxContainer.new()
     help_card_container.add_theme_constant_override("separation", 20)
@@ -1809,7 +1809,13 @@ func _collect_pickups() -> void:
         for attempt in range(20):
             var p := center + Vector2i(rng.randi_range(-6, 6), rng.randi_range(-6, 6))
             if (not level_mode or _inside_level(p)) and p != exit_cell and not solved_cells.has(p) and not pickups.has(p):
-                var kinds: Array[String] = ["coin", "energy", "time", "vision"]
+                var kinds: Array[String] = ["coin"]
+                if not level_mode or level_number >= 3:
+                    kinds.append("energy")
+                if not level_mode or level_number >= 5:
+                    kinds.append("time")
+                if not level_mode or level_number >= 6:
+                    kinds.append("vision")
                 if not level_mode:
                     kinds.append("crown")
                     kinds.append("hint")
@@ -2071,14 +2077,14 @@ func _refresh_board() -> void:
                 if level_mode and p == exit_cell:
                     mat = _material_cached("exit", Color("#6ddbc4"), true)
                 elif pickups.has(p):
-                    mat = _material_cached("gold", GOLD, true) if pickups[p] in ["coin", "crown"] else _material_cached("blue", Color("#72a5ae"), true)
+                    mat = _material_cached("gold", GOLD, true) if pickups[p] in ["coin", "crown"] else _material_cached("blue", Color("#73c7da"), true)
         if level_mode and not _inside_level(p):
-            mat = _material_cached("outer_solved", Color("#514354")) if letters.has(p) else _material_cached("outer_zone", Color("#171b2a"))
+            mat = _material_cached("outer_solved", Color("#655f80")) if letters.has(p) else _material_cached("outer_zone", Color("#171b2a"))
         tile.material_override = mat
         if letters.has(p):
-            _draw_text(p, String(letters[p]), Color("#342632"), 0.64)
+            _draw_text(p, String(letters[p]), Color("#181c2c"), 0.64)
         elif kind == "selected" or kind == "active" or kind == "focus" or kind == "anchor_focus" or kind == "branch_source":
-            _draw_text(p, "·", Color("#f7d7db"), 0.42, 66)
+            _draw_text(p, "·", Color("#e9eafa"), 0.42, 66)
         elif level_mode and p == exit_cell:
             _draw_text(p, "⇧", Color("#c7f6d5"), 0.55, 84)
         elif pickups.has(p):
@@ -2333,12 +2339,19 @@ func _pan_camera(screen_delta: Vector2) -> void:
     camera_pan_offset -= screen_delta * scale_factor
     _clamp_camera_pan()
 
+func _apply_camera_zoom() -> void:
+    var screen: Vector2 = get_viewport().get_visible_rect().size
+    var wide: bool = screen.x > screen.y
+    var normal_size: float = 17.0 if wide else 20.0
+    var vision_size: float = 23.0 if wide else 27.0
+    camera.size = (vision_size if map_vision_moves > 0 else normal_size) * camera_zoom_factor
+
 func _zoom_camera(zoom_in: bool) -> void:
     _set_camera_zoom(camera_zoom_factor * (0.94 if zoom_in else 1.06))
 
 func _set_camera_zoom(factor: float) -> void:
     camera_zoom_factor = clampf(factor, 0.85, 1.15)
-    camera.size = 18.0 * camera_zoom_factor
+    _apply_camera_zoom()
     _sync_visible_board(true)
 
 func _pinch_distance() -> float:
