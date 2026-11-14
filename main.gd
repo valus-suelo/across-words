@@ -2030,18 +2030,23 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
 const WORD_FLASH_DURATION := 0.40
 
 func _flash_display_color(data: Dictionary) -> Color:
-    # Todas as casas consultam o mesmo relogio: o gradiente termina no
-    # mesmo instante, independentemente da cor original de cada bloco.
-    var progress: float = clampf((elapsed - flash_started_at) / WORD_FLASH_DURATION, 0.0, 1.0)
+    # Cada piscada guarda seu proprio inicio. Todas as casas da mesma palavra
+    # recebem o mesmo instante, sem reiniciar flashes anteriores.
+    var started_at: float = float(data.get("started_at", elapsed))
+    var progress: float = clampf((elapsed - started_at) / WORD_FLASH_DURATION, 0.0, 1.0)
     var strength: float = 0.94 * pow(1.0 - progress, 1.75)
     var base_color: Color = data.get("base", BASE)
     var flash_color: Color = data.get("color", base_color)
     return base_color.lerp(flash_color, strength)
 
 func _flash_word(cells: Array[Vector2i], flash_color: Color) -> void:
-    flash_started_at = elapsed
+    var started_at: float = elapsed
     for p in cells:
-        flash_cells[p] = {"color": flash_color, "until": flash_started_at + WORD_FLASH_DURATION}
+        flash_cells[p] = {
+            "color": flash_color,
+            "started_at": started_at,
+            "until": started_at + WORD_FLASH_DURATION
+        }
     _refresh_board()
 
 # A saida se comporta como um botao: afunda, libera uma onda e abre o resultado.
