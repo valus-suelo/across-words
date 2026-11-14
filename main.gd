@@ -166,6 +166,8 @@ var wave_sequence: int = 0
 var wave_started_at: float = 0.0
 var tile_target_heights: Dictionary = {}
 var tile_pedestals: Dictionary = {}
+var flash_cells: Dictionary = {}
+var round_epoch: int = 0
 var last_expire_update: int = -1
 var map_vision_moves: int = 0
 var path_time: float = STORY_MAP_TIME
@@ -1052,6 +1054,8 @@ func _new_game() -> void:
     wave_started_at = 0.0
     wave_origin = Vector2i.ZERO
     tile_target_heights.clear()
+    flash_cells.clear()
+    round_epoch += 1
     path_time = STORY_MAP_TIME if level_mode else INFINITE_MAP_TIME
     map_vision_moves = 0
     _layout_hud()
@@ -1764,7 +1768,6 @@ func _submit() -> void:
         _message("Resposta incorreta. Você pode continuar editando sem perder o caminho.")
         _update_hud()
         return
-    _flash_word(_cells(word), Color("#65c96a"))
     if committed_from_preview:
         # Revalida contra o tabuleiro no momento da confirmação.
         var options := _possible_children(preview_parent, preview_anchor, preview_dir)
@@ -1791,6 +1794,7 @@ func _submit() -> void:
         words[chosen] = word
         last_solved_word = chosen
         last_navigation_arrow = Vector2i.ZERO
+    _flash_word(_cells(word), Color("#67cf76"))
     if map_vision_moves > 0:
         map_vision_moves -= 1
         if map_vision_moves == 0:
@@ -1826,8 +1830,7 @@ func _submit() -> void:
             elapsed += 3.0
         if solved_cells.has(exit_cell):
             _collect_pickups()
-            _show_result(true, "Você encontrou a saída da fase %d!" % level_number)
-            _refresh_board()
+            _finish_at_portal()
             return
     _collect_pickups()
     # Apenas o alvo atual provoca derrota; os demais custam pontos.
@@ -2000,19 +2003,39 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
         add_child(label)
     visual_nodes.append(label)
 
+# O brilho e armazenado por casa, para sobreviver aos redesenhos do tabuleiro.
 func _flash_word(cells: Array[Vector2i], flash_color: Color) -> void:
     for p in cells:
-        if not board.has(p):
+        flash_cells[p] = {"color": flash_color, "until": elapsed + 0.34}
+    _refresh_board()
+
+# A saida se comporta como um botao: afunda, libera uma onda e abre o resultado.
+func _finish_at_portal() -> void:
+    if game_over:
+        return
+    game_over = true
+    _refresh_board()
+    var current_epoch: int = round_epoch
+    var animation := create_tween().set_parallel(true)
+    for p in board.keys():
+        var distance: int = absi(p.x - exit_cell.x) + absi(p.y - exit_cell.y)
+        if distance > 6:
             continue
         var tile: MeshInstance3D = board[p]
-        var previous: Material = tile.material_override
-        tile.material_override = _material_cached("flash_%s" % flash_color.to_html(), flash_color, true)
-        var tween := create_tween()
-        tween.tween_interval(0.22)
-        tween.tween_callback(func() -> void:
-            if is_instance_valid(tile):
-                tile.material_override = previous
-        )
+        var start_y: float = tile.position.y
+        var lag: float = float(distance) * 0.07
+        var press: float = 0.24 if distance == 0 else 0.05
+        var rise: float = 0.09 if distance == 0 else 0.17
+        animation.tween_property(tile, "position:y", start_y - press, 0.13).set_delay(lag).set_trans(Tween.TRANS_SINE)
+        animation.tween_property(tile, "position:y", start_y + rise, 0.20).set_delay(lag + 0.13).set_trans(Tween.TRANS_SINE)
+        animation.tween_property(tile, "position:y", start_y, 0.22).set_delay(lag + 0.33).set_trans(Tween.TRANS_SINE)
+        if distance == 0:
+            animation.tween_property(tile, "scale", Vector3(1.08, 0.70, 1.08), 0.13).set_trans(Tween.TRANS_SINE)
+            animation.tween_property(tile, "scale", Vector3.ONE, 0.30).set_delay(0.13).set_trans(Tween.TRANS_BACK)
+    animation.tween_callback(func() -> void:
+        if round_epoch == current_epoch:
+            _show_result(true, "Você encontrou a saída da fase %d!" % level_number)
+    ).set_delay(0.98)
 
 func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
     if preview_parent < 0 or preview_parent >= words.size() or preview_anchor < 0:
@@ -2185,6 +2208,8 @@ func _refresh_board() -> void:
             top_color = Color("#56aa35")
             skirt_color = SIDE_EXIT
             target_height = 0.38 if letters.has(p) else -0.12
+        elif flash_cells.has(p) and elapsed < float(flash_cells[p]["until"]):
+            top_color = flash_cells[p]["color"]
         var mat_name: String = top_color.to_html()
         tile.material_override = _material_cached("tile_" + mat_name, top_color)
         var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
@@ -2320,6 +2345,15 @@ func _process(delta: float) -> void:
         tile.position.y = move_toward(tile.position.y, goal, delta * 3.6)
     if is_instance_valid(enemy_node):
         enemy_node.position.y = 0.7 + sin(elapsed * 3.0) * 0.10
+    if not flash_cells.is_empty():
+        var done: Array[Vector2i] = []
+        for cell in flash_cells.keys():
+            if elapsed >= float(flash_cells[cell]["until"]):
+                done.append(cell)
+        if not done.is_empty():
+            for cell in done:
+                flash_cells.erase(cell)
+            _refresh_board()
 
 func _screen_to_cell(screen_pos: Vector2) -> Vector2i:
     var origin := camera.project_ray_origin(screen_pos)
