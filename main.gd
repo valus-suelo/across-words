@@ -2247,9 +2247,11 @@ func _refresh_board() -> void:
             skirt_color = Color("#a58b50") if pickups[p] in ["coin", "crown"] else Color("#436d7c")
             target_height = 0.025
         if level_mode and not _inside_level(p):
-            top_color = Color("#665d7b") if letters.has(p) else OUTER_TILE
-            skirt_color = Color("#393347") if letters.has(p) else Color("#242936")
-            target_height = 0.01 if letters.has(p) else -0.01
+            # Letras que ultrapassam o limite jogavel continuam visiveis,
+            # mas em amarelo suave para distingui-las do tabuleiro da fase.
+            top_color = Color("#aaa58f") if letters.has(p) else OUTER_TILE
+            skirt_color = Color("#686451") if letters.has(p) else Color("#242936")
+            target_height = 0.0 if letters.has(p) else -0.01
         # O portal conserva o verde tanto vazio quanto cruzado por uma palavra.
         if level_mode and p == exit_cell:
             top_color = Color("#56aa35")
@@ -2269,7 +2271,7 @@ func _refresh_board() -> void:
         tile_target_heights[p] = target_height
         if letters.has(p):
             var letter_color: Color = Color("#34313a") if kind == "draft" else TILE_LETTER
-            _draw_text(p, String(letters[p]), letter_color if not level_mode or _inside_level(p) else Color("#e0d4ed"), 0.64)
+            _draw_text(p, String(letters[p]), letter_color, 0.64)
         elif level_mode and p == exit_cell:
             pass  # O portal e identificado pelo verde, sem seta sobreposta.
         elif pickups.has(p):
