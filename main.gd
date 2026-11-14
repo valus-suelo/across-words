@@ -216,7 +216,6 @@ var direction_left: Button
 var direction_right: Button
 var next_clue_button: Button
 var input_syncing: bool = false
-var extra_branch_armed: bool = false
 var last_solved_word: int = -1  # palavra mais recente para navegação sem clique
 # Direção de ramificação e direção da última varredura de letras.
 var preferred_branch_direction: Vector2i = Vector2i.ZERO
@@ -971,7 +970,6 @@ func _new_game() -> void:
     preview_dir = Vector2i.ZERO
     preview_choices.clear()
     preview_choice_index = 0
-    extra_branch_armed = false
     points = 0
     coins = 0
     crowns = 0
@@ -1825,16 +1823,6 @@ func _spawn_pickup(p: Vector2i, kind: String) -> void:
         return
     pickups[p] = kind
 
-func _buy_path() -> void:
-    if game_over:
-        return
-    if coins < 3:
-        _message("Você precisa de três moedas para habilitar um ramo extra.")
-        return
-    extra_branch_armed = not extra_branch_armed
-    _message("Ramo extra %s. Toque numa palavra já utilizada. Moedas só serão gastas ao confirmar." % ("ativado" if extra_branch_armed else "desativado"))
-    _update_hud()
-
 func _spawn_enemy() -> void:
     var targets: Array[Vector2i] = []
     for word in words:
@@ -2137,8 +2125,6 @@ func _has_possible_path() -> bool:
     for i in range(words.size()):
         if words[i]["state"] != "solved":
             continue
-        if bool(words[i]["spawned"]) and not (extra_branch_armed and coins >= 3):
-            continue
         var directions: Array[Vector2i] = []
         var original: Vector2i = words[i]["dir"]
         if original.x != 0:
@@ -2231,9 +2217,6 @@ func _select_anchor_by_arrow(arrow: Vector2i) -> void:
         return
     var parent: Dictionary = words[parent_index]
     if parent["state"] != "solved":
-        return
-    if bool(parent["spawned"]) and not extra_branch_armed:
-        _message("Esta palavra já gerou um ramo. Escolha outra ou compre um ramo extra.")
         return
     var cells: Array[Vector2i] = _cells(parent)
     var count: int = cells.size()
