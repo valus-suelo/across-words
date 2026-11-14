@@ -393,7 +393,7 @@ func _make_world() -> void:
     add_child(camera)
     # As malhas sao reutilizadas por todas as celulas (sem centenas de recursos unicos).
     shared_tile_mesh = _make_rounded_tile_mesh(0.94, 1.00, 0.20, 0.105)
-    shared_skirt_mesh = _make_rounded_tile_mesh(0.88, 0.94, 0.28, 0.085)
+    shared_skirt_mesh = _make_rounded_tile_mesh(0.88, 0.94, 0.32, 0.085)
     # O topo usa a cor do estado; a base inferior tem uma tinta mais escura.
 
 # Retangulo com quatro cantos de raio real e pequena borda chanfrada.
@@ -2193,11 +2193,11 @@ func _refresh_board() -> void:
             "solved":
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
-                target_height = 0.025
+                target_height = 0.015
             "branch_source":
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
-                target_height = 0.045
+                target_height = 0.03
             "active":
                 top_color = ACTIVE
                 skirt_color = SIDE_PREVIEW
@@ -2205,15 +2205,15 @@ func _refresh_board() -> void:
             "preview":
                 top_color = Color("#e8e4cf")
                 skirt_color = SIDE_ACTIVE
-                target_height = 0.04
+                target_height = 0.025
             "draft", "selected":
                 top_color = SELECTED
                 skirt_color = SIDE_ACTIVE
-                target_height = 0.075
+                target_height = 0.045
             "focus", "anchor_focus":
                 top_color = CURRENT_LETTER
                 skirt_color = SIDE_ACTIVE
-                target_height = 0.11
+                target_height = 0.065
             "side_option":
                 top_color = Color("#999988")
                 skirt_color = SIDE_PREVIEW
@@ -2225,12 +2225,12 @@ func _refresh_board() -> void:
         if level_mode and not _inside_level(p):
             top_color = Color("#665d7b") if letters.has(p) else OUTER_TILE
             skirt_color = Color("#393347") if letters.has(p) else Color("#242936")
-            target_height = 0.015 if letters.has(p) else -0.015
+            target_height = 0.01 if letters.has(p) else -0.01
         # O portal conserva o verde tanto vazio quanto cruzado por uma palavra.
         if level_mode and p == exit_cell:
             top_color = Color("#56aa35")
             skirt_color = SIDE_EXIT
-            target_height = 0.015 if letters.has(p) else -0.15
+            target_height = 0.015 if letters.has(p) else -0.16
         elif flash_cells.has(p) and elapsed < float(flash_cells[p]["until"]):
             top_color = flash_cells[p]["color"]
         var mat_name: String = top_color.to_html()
@@ -2363,9 +2363,9 @@ func _process(delta: float) -> void:
         if wave_age < 0.0:
             continue
         if wave_age < 0.36 and kind in ["selected", "draft", "preview", "side_option", "branch_source", "anchor_focus", "focus"]:
-            goal += sin(wave_age / 0.36 * PI) * 0.055
+            goal += sin(wave_age / 0.36 * PI) * 0.035
         if start_cells.has(p) or (level_mode and p == exit_cell):
-            goal += sin(elapsed * 2.0 + float(p.x) * 0.22 + float(p.y) * 0.19) * 0.012
+            goal += sin(elapsed * 2.0 + float(p.x) * 0.22 + float(p.y) * 0.19) * 0.008
         tile.position.y = move_toward(tile.position.y, goal, delta * 3.6)
     if is_instance_valid(enemy_node):
         enemy_node.position.y = 0.7 + sin(elapsed * 3.0) * 0.10
