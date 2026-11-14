@@ -151,6 +151,8 @@ var message_label: Label
 var selected_info: Label
 var letter_slots: HBoxContainer
 var material_cache: Dictionary = {}
+var wave_origin: Vector2i = Vector2i.ZERO
+var wave_sequence: int = 0
 var last_expire_update: int = -1
 var map_vision_moves: int = 0
 var path_time: float = STORY_MAP_TIME
@@ -1508,6 +1510,8 @@ func _select_anchor(index: int, anchor: int) -> void:
     if preview_parent == index and preview_anchor == anchor:
         return
     _save_preview_draft()
+    wave_origin = _cells(words[index])[anchor]
+    wave_sequence += 1
     preview_parent = index
     last_solved_word = index
     # Nao zerar last_navigation_arrow aqui: esta funcao e usada pelas setas.
@@ -1682,10 +1686,12 @@ func _submit() -> void:
         _message("A resposta deve começar com a letra de origem selecionada.")
         return
     if typed != String(word["answer"]):
+        _flash_word(_cells(word), Color("#e66a82"))
         combo = 0
         _message("Resposta incorreta. Você pode continuar editando sem perder o caminho.")
         _update_hud()
         return
+    _flash_word(_cells(word), Color("#65c96a"))
     if committed_from_preview:
         # Revalida contra o tabuleiro no momento da confirmação.
         var options := _possible_children(preview_parent, preview_anchor, preview_dir)
@@ -1922,27 +1928,32 @@ func _draw_branch_arrows() -> void:
         return
     var anchor: Vector2i = parent_cells[preview_anchor]
     var horizontal: bool = Vector2i(words[preview_parent]["dir"]).x != 0
-    var sides: Array[Vector2i] = []
-    if horizontal:
-        sides.append(Vector2i(0, -1))
-        sides.append(Vector2i(0, 1))
-    else:
-        sides.append(Vector2i(-1, 0))
-        sides.append(Vector2i(1, 0))
+    var sides: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if horizontal else [Vector2i(-1, 0), Vector2i(1, 0)]
     for side in sides:
-        var active: bool = side == preview_dir
-        var arrow := Label3D.new()
-        arrow.text = ("^" if side.y < 0 else "v") if horizontal else ("<" if side.x < 0 else ">")
-        arrow.font_size = 72 if active else 65
-        arrow.pixel_size = 0.005
-        arrow.modulate = Color("#fff2aa") if active else Color("#a2a8c9")
-        arrow.outline_modulate = Color("#20263a")
-        arrow.outline_size = 8
-        arrow.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-        arrow.no_depth_test = true
-        arrow.position = Vector3((float(anchor.x) + float(side.x) * 0.43) * GAP, 0.93, (float(anchor.y) + float(side.y) * 0.43) * GAP)
-        add_child(arrow)
-        visual_nodes.append(arrow)
+        var marker := MeshInstance3D.new()
+        var mesh := BoxMesh.new()
+        mesh.size = Vector3(0.68, 0.18, 0.68)
+        marker.mesh = mesh
+        marker.material_override = _material_cached("direction_active" if side == preview_dir else "direction_idle", Color("#fff1bb") if side == preview_dir else Color("#8791ad"), true)
+        marker.position = Vector3((float(anchor.x) + float(side.x)) * GAP, 0.32, (float(anchor.y) + float(side.y)) * GAP)
+        add_child(marker)
+        visual_nodes.append(marker)
+        var tween := create_tween()
+        tween.tween_property(marker, "position:y", 0.67 if side == preview_dir else 0.34, 0.22).set_trans(Tween.TRANS_SINE)
+
+func _flash_word(cells: Array[Vector2i], flash_color: Color) -> void:
+    for p in cells:
+        if not board.has(p):
+            continue
+        var tile: MeshInstance3D = board[p]
+        var previous: Material = tile.material_override
+        tile.material_override = _material_cached("flash_%s" % flash_color.to_html(), flash_color, true)
+        var tween := create_tween()
+        tween.tween_interval(0.22)
+        tween.tween_callback(func() -> void:
+            if is_instance_valid(tile):
+                tile.material_override = previous
+        )
 
 func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
     if preview_parent < 0 or preview_parent >= words.size() or preview_anchor < 0:
@@ -1961,7 +1972,7 @@ func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
         sides.append(Vector2i(1, 0))
     for side in sides:
         var world_pos := Vector3((float(anchor.x) + float(side.x) * 0.43) * GAP, 0.93, (float(anchor.y) + float(side.y) * 0.43) * GAP)
-        if camera.unproject_position(world_pos).distance_to(screen_pos) < 24.0:
+        if camera.unproject_position(Vector3((float(anchor.x) + float(side.x)) * GAP, 0.5, (float(anchor.y) + float(side.y)) * GAP)).distance_to(screen_pos) < 38.0:
             _apply_direction(side)
             return true
     return false
@@ -2081,6 +2092,18 @@ func _refresh_board() -> void:
         if level_mode and not _inside_level(p):
             mat = _material_cached("outer_solved", Color("#655f80")) if letters.has(p) else _material_cached("outer_zone", Color("#171b2a"))
         tile.material_override = mat
+        var target_height: float = 0.0
+        if kind in ["selected", "draft"]:
+            target_height = 0.24
+        elif kind in ["focus", "anchor_focus"]:
+            target_height = 0.38
+        elif kind == "branch_source":
+            target_height = 0.12
+        if level_mode and p == exit_cell:
+            target_height = -0.12
+        var tween_height := create_tween()
+        tween_height.tween_interval(minf(0.36, (absi(p.x - wave_origin.x) + absi(p.y - wave_origin.y)) * 0.026))
+        tween_height.tween_property(tile, "position:y", target_height, 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
         if letters.has(p):
             _draw_text(p, String(letters[p]), Color("#181c2c"), 0.64)
         elif kind == "selected" or kind == "active" or kind == "focus" or kind == "anchor_focus" or kind == "branch_source":
@@ -2518,6 +2541,7 @@ func _apply_direction(direction: Vector2i) -> void:
     # O array de casas muda de sentido, logo no tabuleiro ABELHA vira AHLEBA.
     _save_preview_draft()
     preview_dir = direction
+    wave_sequence += 1
     preferred_branch_direction = direction
     var key: String = _draft_key(preview_parent, preview_anchor)
     drafts[key] = {"text": entry.text.to_upper(), "dir": direction}
