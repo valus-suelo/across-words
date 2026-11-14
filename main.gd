@@ -2116,11 +2116,19 @@ func _refresh_board() -> void:
             continue
         var start: Vector2i = _cells(words[pidx])[anchor]
         var typed: String = String(drafts[key].get("text", "")).to_upper()
-        for j in range(typed.length()):
+        # So considera rascunho visual quando o jogador realmente digitou
+        # alem da letra de cruzamento. A palavra inteira fica mais discreta.
+        if typed.length() <= 1:
+            continue
+        var branch_key: String = "%d:%d:%d:%d" % [pidx, anchor, d.x, d.y]
+        var draft_answer: String = String(fixed_branch_answers.get(branch_key, ""))
+        var draft_length: int = maxi(typed.length(), draft_answer.length())
+        for j in range(draft_length):
             var cell: Vector2i = start + d * j
             if tile_state.get(cell, "") != "solved":
                 tile_state[cell] = "draft"
-                letters[cell] = typed[j]
+                if j < typed.length():
+                    letters[cell] = typed[j]
     if chosen >= 0 and chosen < words.size() and words[chosen]["state"] == "active":
         var initial_cells: Array[Vector2i] = _cells(words[chosen])
         var entered: String = entry.text.strip_edges().to_upper()
@@ -2206,7 +2214,11 @@ func _refresh_board() -> void:
                 top_color = Color("#e8e4cf")
                 skirt_color = SIDE_ACTIVE
                 target_height = 0.025
-            "draft", "selected":
+            "draft":
+                top_color = Color("#aaa58f")
+                skirt_color = Color("#686451")
+                target_height = 0.0
+            "selected":
                 top_color = SELECTED
                 skirt_color = SIDE_ACTIVE
                 target_height = 0.045
@@ -2240,7 +2252,8 @@ func _refresh_board() -> void:
         skirt.material_override = _material_cached("skirt_" + skirt_color.to_html(), skirt_color)
         tile_target_heights[p] = target_height
         if letters.has(p):
-            _draw_text(p, String(letters[p]), TILE_LETTER if not level_mode or _inside_level(p) else Color("#e0d4ed"), 0.64)
+            var letter_color: Color = Color("#34313a") if kind == "draft" else TILE_LETTER
+            _draw_text(p, String(letters[p]), letter_color if not level_mode or _inside_level(p) else Color("#e0d4ed"), 0.64)
         elif level_mode and p == exit_cell:
             pass  # O portal e identificado pelo verde, sem seta sobreposta.
         elif pickups.has(p):
