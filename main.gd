@@ -2269,12 +2269,16 @@ func _refresh_board() -> void:
             top_color = GOLD if pickups[p] in ["coin", "crown"] else Color("#79bac8")
             skirt_color = Color("#a58b50") if pickups[p] in ["coin", "crown"] else Color("#436d7c")
             target_height = 0.025
+        # Uma casa que pertence a palavra concluida sempre termina na cor
+        # resolvida, mesmo se tambem for foco ou ancora do proximo ramo.
+        # O destaque temporario verde continua sendo aplicado pelo flash abaixo.
+        if solved_cells.has(p):
+            top_color = SOLVED
+            skirt_color = SIDE_SOLVED
+            target_height = 0.03 if kind == "branch_source" else 0.015
         if level_mode and not _inside_level(p):
-            # Letras de palavras concluidas mantem a aparencia final verde/solvida.
-            # O dourado escuro e reservado aos trechos ainda em digitacao.
+            # O dourado escuro fica reservado aos trechos ainda em digitacao.
             if solved_cells.has(p):
-                # A cor final depende de a casa pertencer a uma palavra
-                # concluida, nao do destaque temporario de foco/cruzamento.
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
                 target_height = 0.03 if kind == "branch_source" else 0.015
