@@ -2268,12 +2268,17 @@ func _refresh_board() -> void:
             skirt_color = Color("#a58b50") if pickups[p] in ["coin", "crown"] else Color("#436d7c")
             target_height = 0.025
         if level_mode and not _inside_level(p):
-            # O trecho externo da palavra selecionada fica destacado mesmo
-            # antes de o jogador preencher as letras.
-            var outer_highlight: bool = letters.has(p) or kind in ["selected", "preview", "focus", "anchor_focus", "draft"]
-            top_color = Color("#aaa58f") if outer_highlight else OUTER_TILE
-            skirt_color = Color("#686451") if outer_highlight else Color("#242936")
-            target_height = 0.0 if outer_highlight else -0.01
+            # Letras de palavras concluidas mantem a aparencia final verde/solvida.
+            # O dourado escuro e reservado aos trechos ainda em digitacao.
+            if kind in ["solved", "branch_source"]:
+                top_color = SOLVED
+                skirt_color = SIDE_SOLVED
+                target_height = 0.03 if kind == "branch_source" else 0.015
+            else:
+                var outer_highlight: bool = kind in ["selected", "preview", "focus", "anchor_focus", "draft"]
+                top_color = Color("#aaa58f") if outer_highlight else OUTER_TILE
+                skirt_color = Color("#686451") if outer_highlight else Color("#242936")
+                target_height = 0.0 if outer_highlight else -0.01
         # O portal conserva o verde tanto vazio quanto cruzado por uma palavra.
         if level_mode and p == exit_cell:
             top_color = Color("#56aa35")
