@@ -2040,13 +2040,22 @@ func _flash_display_color(data: Dictionary) -> Color:
     return base_color.lerp(flash_color, strength)
 
 func _flash_word(cells: Array[Vector2i], flash_color: Color) -> void:
-    # Um tabuleiro so pode exibir um pulso por vez. Evita que casas
-    # compartilhadas herdem o inicio ou a cor de um flash anterior.
+    # Primeiro restaura o tabuleiro sem efeitos. Assim a cor-base e
+    # capturada no mesmo instante para todas as casas, nunca quando
+    # cada bloco entrar na area visivel da camera.
     flash_cells.clear()
+    _refresh_board()
     var started_at: float = elapsed
     for p in cells:
+        var base_color: Color = BASE
+        if board.has(p):
+            var tile: MeshInstance3D = board[p]
+            var material: Material = tile.get_surface_override_material(0)
+            if material is StandardMaterial3D:
+                base_color = (material as StandardMaterial3D).albedo_color
         flash_cells[p] = {
             "color": flash_color,
+            "base": base_color,
             "started_at": started_at,
             "until": started_at + WORD_FLASH_DURATION
         }
