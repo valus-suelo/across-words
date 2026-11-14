@@ -182,7 +182,7 @@ var help_index: int = 0
 var help_swipe_start: float = 0.0
 const HELP_PAGES := [
     ["MODOS DE JOGO", "CAMPANHA: avance por 10 fases, formando palavras ate encontrar a saida proxima aos cantos. As 3 coroas de cada fase sao opcionais e aumentam sua pontuacao.\n\nINFINITO: forme palavras, crie cruzamentos e sobreviva pelo maior tempo possivel, acumulando pontos."],
-    ["COMO JOGAR", "Toque em uma letra resolvida. A origem fica lilas, a letra escolhida e a nova palavra ficam creme. Toque no bloco oliva para trocar de lado.\n\nOs blocos sobem em ondas. Acertos piscam em verde; erros, em vermelho. Ao formar uma palavra sobre o portal verde, voce conclui a fase."],
+    ["COMO JOGAR", "Toque em qualquer letra resolvida para iniciar um novo caminho. Use as setas do teclado para percorrer todas as letras do tabuleiro ou arraste o dedo sobre elas para selecionar diretamente. As setas ao lado da letra mudam o lado da nova palavra.\n\nA origem fica lilas, a letra escolhida e a nova palavra ficam creme. Os blocos sobem em ondas. Acertos piscam em verde; erros, em vermelho."],
     ["TEMPO", "CAMPANHA: o relogio conta para cima. Voce nao perde por demorar, mas cada segundo reduz a pontuacao final. O item de tempo desconta 12 segundos.\n\nINFINITO: o relogio conta para baixo; quando acaba, a partida termina."],
     ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nNa campanha, o limite cresce 2 por fase (10 a 28). Cada energia restante no portal vale 25 pontos extras. Colete itens para recuperar ate 3 pontos. No infinito, o limite e 10."],
     ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por fase na campanha, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELOGIO: reduz o tempo na campanha.\nVISAO: amplia a area visivel.\nMOEDAS: aumentam a pontuacao.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
@@ -242,7 +242,6 @@ var preferred_branch_direction: Vector2i = Vector2i.ZERO
 var last_navigation_arrow: Vector2i = Vector2i.ZERO
 # Acumulador de deslocamento para gestos contínuos, em qualquer casa da área 3D.
 var gesture_cursor: Vector2 = Vector2.ZERO
-const DRAG_STEP_PX := 40.0
 var result_overlay: ColorRect
 var result_title: Label
 var result_stats: Label
@@ -1684,7 +1683,7 @@ func _show_preview_choice() -> void:
     drafts[key] = {"text": entry.text, "dir": preview_dir}
     _focus_current_typing_cell()
     _refresh_board()
-    _message("Digite sem clicar. Setas paralelas mudam a letra; perpendiculares invertem o sentido.")
+    _message("Use as setas para percorrer letras resolvidas ou arraste sobre o tabuleiro. As setas junto a letra mudam o lado.")
 
 func _next_preview_clue() -> void:
     if preview_choices.size() <= 1 or game_over:
@@ -2404,54 +2403,49 @@ func _screen_to_cell(screen_pos: Vector2) -> Vector2i:
 # Navegação espacial determinística. Não usa a lista de palavras candidatas.
 # O eixo e os índices são calculados pela posição real da casa, sem usar o
 # sentido em que a palavra foi escrita. Nunca altera a direção perpendicular.
-func _select_anchor_by_arrow(arrow: Vector2i) -> void:
-    var parent_index: int = preview_parent if preview_parent >= 0 else last_solved_word
-    if parent_index < 0 or parent_index >= words.size():
-        return
-    var parent: Dictionary = words[parent_index]
-    if parent["state"] != "solved":
-        return
-    var cells: Array[Vector2i] = _cells(parent)
-    var count: int = cells.size()
-    if count == 0:
-        return
+func _is_solved_cell(cell: Vector2i) -> bool:
+    if not _inside_level(cell):
+        return false
+    for word in words:
+        if word["state"] == "solved" and _cells(word).has(cell):
+            return true
+    return false
 
-    # Ordem VISUAL: esquerda -> direita, cima -> baixo.
-    # A seta sempre desloca no mesmo sentido que aponta na tela.
-    var order: Array[int] = []
-    for i in range(count):
-        order.append(i)
-    var horizontal: bool = abs(cells[count - 1].x - cells[0].x) > 0
-    if horizontal:
-        if arrow.y != 0:
-            return
-        order.sort_custom(func(a: int, b: int) -> bool: return cells[a].x < cells[b].x)
-    else:
-        if arrow.x != 0:
-            return
-        order.sort_custom(func(a: int, b: int) -> bool: return cells[a].y < cells[b].y)
-
-    var slot: int = order.find(preview_anchor) if preview_parent == parent_index else -1
-    var step: int = arrow.x if horizontal else arrow.y
-    if slot < 0:
-        # Começar perto do cruzamento inicial sem bloquear nenhuma letra.
-        slot = mini(1, count - 1) if step > 0 else maxi(0, count - 2)
-    else:
-        # UMA casa no sentido físico da seta; sem inverter no eixo X.
-        slot = posmod(slot + step, count)
-
-    last_navigation_arrow = arrow
-    var anchor_index: int = order[slot]
-    var checked: int = 0
-    while checked < count and not _inside_level(cells[anchor_index]):
-        slot = posmod(slot + step, count)
-        anchor_index = order[slot]
-        checked += 1
-    if not _inside_level(cells[anchor_index]):
-        _message("Nenhuma letra desta palavra está na área principal.")
-        return
-    _select_anchor(parent_index, anchor_index)
-    _message("Letra %s (%d/%d)" % [_anchor_letter(parent_index, anchor_index), slot + 1, count])
+func _navigate_to_solved_cell(direction: Vector2i) -> bool:
+    if direction == Vector2i.ZERO or preview_parent < 0 or preview_parent >= words.size():
+        return false
+    if words[preview_parent]["state"] != "solved":
+        return false
+    var current_cells: Array[Vector2i] = _cells(words[preview_parent])
+    if preview_anchor < 0 or preview_anchor >= current_cells.size():
+        return false
+    var origin: Vector2i = current_cells[preview_anchor]
+    var seen: Dictionary = {}
+    var best_cell: Vector2i = origin
+    var best_score: float = INF
+    for word in words:
+        if word["state"] != "solved":
+            continue
+        for cell in _cells(word):
+            if cell == origin or seen.has(cell) or not _inside_level(cell):
+                continue
+            seen[cell] = true
+            var offset: Vector2i = cell - origin
+            var forward: int = offset.x * direction.x + offset.y * direction.y
+            if forward <= 0:
+                continue
+            var lateral: int = absi(offset.x * direction.y - offset.y * direction.x)
+            # Prefere casas proximas e alinhadas com a seta, mas permite
+            # alcancar palavras em outras linhas/colunas do tabuleiro.
+            var score: float = float(forward) + float(lateral) * 2.0
+            if score < best_score:
+                best_score = score
+                best_cell = cell
+    if best_score == INF:
+        return false
+    last_navigation_arrow = direction
+    _click_tile(best_cell)
+    return true
 
 func _input(event: InputEvent) -> void:
     if game_over or (is_instance_valid(menu_overlay) and menu_overlay.visible) or (is_instance_valid(pause_overlay) and pause_overlay.visible):
@@ -2490,16 +2484,11 @@ func _input(event: InputEvent) -> void:
             get_viewport().set_input_as_handled()
 
 func _navigate_arrow(direction: Vector2i) -> void:
-    if preview_parent < 0 or preview_parent >= words.size():
+    if _navigate_to_solved_cell(direction):
         return
-    var parent_dir: Vector2i = words[preview_parent]["dir"]
-    var dot_product: int = parent_dir.x * direction.x + parent_dir.y * direction.y
-    if dot_product != 0:
-        # As setas paralelas percorrem letras na ordem visual, sem consultar
-        # o dicionário e sem redefinir a direção perpendicular já escolhida.
-        _select_anchor_by_arrow(direction)
-    else:
-        _apply_direction(direction)
+    # Sem outra letra naquela direcao, a seta perpendicular ainda pode
+    # alternar o lado da palavra atual.
+    _apply_direction(direction)
 
 func _clamp_camera_pan() -> void:
     var min_x: float = INF
@@ -2643,55 +2632,35 @@ func _move_pointer(screen_pos: Vector2) -> void:
     if not pointer_dragged:
         pointer_dragged = true
         hud_gesture_fade = true
-        # O gesto so existe se comecou sobre uma letra valida.
-        var drag_sources: Array[int] = []
-        if preview_parent >= 0 and preview_parent < words.size():
-            drag_sources.append(preview_parent)
-        for i in range(words.size() - 1, -1, -1):
-            if not drag_sources.has(i):
-                drag_sources.append(i)
-        for i in drag_sources:
-            if words[i]["state"] != "solved":
-                continue
-            var anchor: int = _cells(words[i]).find(pointer_cell)
-            if anchor >= 0:
-                if preview_parent != i or preview_anchor != anchor:
-                    last_navigation_arrow = Vector2i.ZERO
-                    _select_anchor(i, anchor)
-                break
+        _click_tile(pointer_cell)
         gesture_cursor = pointer_start
 
+    # Amostra o caminho do dedo e seleciona cada letra resolvida atravessada,
+    # mesmo quando ela pertence a outra palavra ou esta em outra linha/coluna.
     var movement: Vector2 = screen_pos - gesture_cursor
-    var attempts: int = 0
-    while movement.length() >= DRAG_STEP_PX and attempts < 8:
-        var arrow: Vector2i = _gesture_direction(movement)
-        _navigate_arrow_from_anywhere(arrow)
-        gesture_cursor += Vector2(float(arrow.x), float(arrow.y)) * DRAG_STEP_PX
-        movement = screen_pos - gesture_cursor
-        attempts += 1
+    var sample_count: int = maxi(1, ceili(movement.length() / 12.0))
+    for sample_index in range(1, sample_count + 1):
+        var sample_pos: Vector2 = gesture_cursor.lerp(screen_pos, float(sample_index) / float(sample_count))
+        var hovered_cell: Vector2i = _screen_to_cell(sample_pos)
+        if hovered_cell == pointer_cell:
+            continue
+        pointer_cell = hovered_cell
+        if _is_solved_cell(hovered_cell):
+            _click_tile(hovered_cell)
+    gesture_cursor = screen_pos
 
-func _gesture_direction(delta: Vector2) -> Vector2i:
-    if absf(delta.x) > absf(delta.y):
-        return Vector2i(1 if delta.x > 0.0 else -1, 0)
-    return Vector2i(0, 1 if delta.y > 0.0 else -1)
 
 func _navigate_arrow_from_anywhere(direction: Vector2i) -> void:
     if game_over:
         return
-    if preview_parent >= 0:
-        _navigate_arrow(direction)
-        return
-    if last_solved_word < 0 or last_solved_word >= words.size():
-        return
-    var parent_dir: Vector2i = words[last_solved_word]["dir"]
-    if parent_dir.x * direction.x + parent_dir.y * direction.y != 0:
-        _select_anchor_by_arrow(direction)
-    else:
-        # First perpendicular key selects the first physical letter, then sets direction.
-        # Do not fabricate an extra arrow press or advance the cursor twice.
+    if preview_parent < 0 or preview_parent >= words.size():
+        if last_solved_word < 0 or last_solved_word >= words.size():
+            return
+        var start_cells: Array[Vector2i] = _cells(words[last_solved_word])
+        if start_cells.is_empty():
+            return
         _select_anchor(last_solved_word, 0)
-        last_navigation_arrow = Vector2i.ZERO
-        _apply_direction(direction)
+    _navigate_arrow(direction)
 
 func _apply_direction(direction: Vector2i) -> void:
     if preview_parent < 0 or preview_parent >= words.size():
