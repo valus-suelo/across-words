@@ -2124,12 +2124,9 @@ func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
     return false
 
 func _refresh_board() -> void:
-    # Os rótulos são filhos dos blocos. Liberação imediata evita que
-    # atualizações consecutivas (por exemplo, ao tocar numa palavra) deixem
-    # rótulos antigos pendentes junto dos novos durante o mesmo frame.
     for node in visual_nodes:
         if is_instance_valid(node):
-            node.free()
+            node.queue_free()
     visual_nodes.clear()
     tile_state.clear()
     var letters: Dictionary = {}
@@ -2222,20 +2219,19 @@ func _refresh_board() -> void:
                 tile_state[crossing_cell] = "anchor_focus"
     if board.has(focus_cell):
         tile_state[focus_cell] = "focus"
-    # Mostra em amarelo-escuro todas as saídas perpendiculares válidas.
-    # A direção já escolhida é indicada pela própria palavra em prévia.
+    # O lado nao escolhido mostra um UNICO bloco oliva. O lado selecionado
+    # e representado pelos blocos da palavra proposta (sem setas flutuantes).
     if preview_parent >= 0 and preview_parent < words.size() and preview_anchor >= 0:
         var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
         if preview_anchor < anchor_cells.size():
             var axis: Vector2i = Vector2i(words[preview_parent]["dir"])
-            var sides: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if axis.x != 0 else [Vector2i(-1, 0), Vector2i(1, 0)]
-            for side in sides:
-                if side == preview_dir or _possible_children(preview_parent, preview_anchor, side).is_empty():
-                    continue
-                var side_cell: Vector2i = anchor_cells[preview_anchor] + side
-                if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
-                    if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
-                        tile_state[side_cell] = "side_option"
+            var opposite: Vector2i = -preview_dir
+            if opposite == Vector2i.ZERO:
+                opposite = Vector2i(0, 1) if axis.x != 0 else Vector2i(1, 0)
+            var side_cell: Vector2i = anchor_cells[preview_anchor] + opposite
+            if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
+                if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
+                    tile_state[side_cell] = "side_option"
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
         var kind: String = tile_state.get(p, "base")
@@ -2248,10 +2244,8 @@ func _refresh_board() -> void:
                 skirt_color = SIDE_SOLVED
                 target_height = 0.015
             "branch_source":
-                # A palavra atual que serve de origem para o próximo ramo
-                # recebe amarelo claro, mantendo o restante do tabuleiro igual.
-                top_color = Color("#eadb91")
-                skirt_color = Color("#9a8749")
+                top_color = SOLVED
+                skirt_color = SIDE_SOLVED
                 target_height = 0.03
             "active":
                 top_color = ACTIVE
@@ -2284,17 +2278,17 @@ func _refresh_board() -> void:
         # Uma casa que pertence a palavra concluida sempre termina na cor
         # resolvida, mesmo se tambem for foco ou ancora do proximo ramo.
         # O destaque temporario verde continua sendo aplicado pelo flash abaixo.
-        if solved_cells.has(p) and kind not in ["branch_source", "anchor_focus"]:
+        if solved_cells.has(p):
             top_color = SOLVED
             skirt_color = SIDE_SOLVED
-            target_height = 0.015
+            target_height = 0.03 if kind == "branch_source" else 0.015
         if level_mode and not _inside_level(p):
             # O dourado escuro fica reservado aos trechos ainda em digitacao.
-            if solved_cells.has(p) and kind not in ["branch_source", "anchor_focus"]:
+            if solved_cells.has(p):
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
-                target_height = 0.015
-            elif kind not in ["branch_source", "anchor_focus"]:
+                target_height = 0.03 if kind == "branch_source" else 0.015
+            else:
                 var outer_highlight: bool = kind in ["selected", "preview", "focus", "anchor_focus", "draft"]
                 top_color = Color("#aaa58f") if outer_highlight else OUTER_TILE
                 skirt_color = Color("#686451") if outer_highlight else Color("#242936")
@@ -2482,48 +2476,6 @@ func _screen_to_cell(screen_pos: Vector2) -> Vector2i:
         return Vector2i(-1000, -1000)
     var point: Vector3 = hit
     return Vector2i(roundi(point.x / GAP), roundi(point.z / ROW_GAP))
-
-# Encontra a letra resolvida mais próxima na tela. A tolerância maior que
-# a área exata da peça deixa o arrasto mais permissivo em celulares.
-func _nearest_solved_cell(screen_pos: Vector2, max_distance: float = 58.0) -> Vector2i:
-    var best_cell := Vector2i(-1000, -1000)
-    var best_distance: float = max_distance
-    var seen: Dictionary = {}
-    for word in words:
-        if word["state"] != "solved":
-            continue
-        for cell in _cells(word):
-            if seen.has(cell) or not _inside_level(cell):
-                continue
-            seen[cell] = true
-            var projected: Vector2 = camera.unproject_position(Vector3(float(cell.x) * GAP, 0.5, float(cell.y) * ROW_GAP))
-            var distance: float = projected.distance_to(screen_pos)
-            if distance <= best_distance:
-                best_distance = distance
-                best_cell = cell
-    return best_cell
-
-func _nearest_branch_direction(screen_pos: Vector2, max_distance: float = 68.0) -> Vector2i:
-    if preview_parent < 0 or preview_parent >= words.size() or preview_anchor < 0:
-        return Vector2i.ZERO
-    var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
-    if preview_anchor >= parent_cells.size():
-        return Vector2i.ZERO
-    var anchor: Vector2i = parent_cells[preview_anchor]
-    var axis: Vector2i = Vector2i(words[preview_parent]["dir"])
-    var sides: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if axis.x != 0 else [Vector2i(-1, 0), Vector2i(1, 0)]
-    var best_direction := Vector2i.ZERO
-    var best_distance: float = max_distance
-    for side in sides:
-        if _possible_children(preview_parent, preview_anchor, side).is_empty():
-            continue
-        var target: Vector2i = anchor + side
-        var projected: Vector2 = camera.unproject_position(Vector3(float(target.x) * GAP, 0.5, float(target.y) * ROW_GAP))
-        var distance: float = projected.distance_to(screen_pos)
-        if distance <= best_distance:
-            best_distance = distance
-            best_direction = side
-    return best_direction
 
 # Navegação espacial determinística. Não usa a lista de palavras candidatas.
 # O eixo e os índices são calculados pela posição real da casa, sem usar o
@@ -2717,15 +2669,20 @@ func _unhandled_input(event: InputEvent) -> void:
 func _start_pointer(screen_pos: Vector2) -> void:
     pointer_start = screen_pos
     gesture_cursor = screen_pos
-    pointer_cell = _nearest_solved_cell(screen_pos)
-    # Aceita o início do gesto perto da peça, não apenas dentro de seu quadrado.
+    pointer_cell = _screen_to_cell(screen_pos)
+    # Gestos so comecam sobre uma letra resolvida e selecionavel.
+    # Arrastar sobre espaco vazio nao deve alterar a palavra.
     pointer_down = false
     pointer_dragged = false
     panning_board = true
     pan_last_screen = screen_pos
-    if _is_solved_cell(pointer_cell):
-        pointer_down = true
-        panning_board = false
+    for i in range(words.size() - 1, -1, -1):
+        if words[i]["state"] != "solved":
+            continue
+        if _inside_level(pointer_cell) and _cells(words[i]).has(pointer_cell):
+            pointer_down = true
+            panning_board = false
+            break
     # As setas desenhadas continuam clicaveis fora das letras.
     if not pointer_down and _try_tap_branch_arrow(screen_pos):
         return
@@ -2747,7 +2704,7 @@ func _move_pointer(screen_pos: Vector2) -> void:
         return
     if not pointer_down or game_over:
         return
-    if screen_pos.distance_to(pointer_start) < 12.0 and not pointer_dragged:
+    if screen_pos.distance_to(pointer_start) < 30.0 and not pointer_dragged:
         return
     if not pointer_dragged:
         pointer_dragged = true
@@ -2758,19 +2715,25 @@ func _move_pointer(screen_pos: Vector2) -> void:
     # Amostra o caminho do dedo e seleciona cada letra resolvida atravessada,
     # mesmo quando ela pertence a outra palavra ou esta em outra linha/coluna.
     var movement: Vector2 = screen_pos - gesture_cursor
-    var sample_count: int = maxi(1, ceili(movement.length() / 7.0))
+    var sample_count: int = maxi(1, ceili(movement.length() / 12.0))
     for sample_index in range(1, sample_count + 1):
         var sample_pos: Vector2 = gesture_cursor.lerp(screen_pos, float(sample_index) / float(sample_count))
-        # Detecta as saídas do cruzamento por proximidade visual: não é
-        # necessário acertar o centro da casa para virar a esquina.
-        var branch_direction: Vector2i = _nearest_branch_direction(sample_pos)
-        if branch_direction != Vector2i.ZERO and branch_direction != preview_dir:
-            _apply_direction(branch_direction)
-            continue
-        var hovered_cell: Vector2i = _nearest_solved_cell(sample_pos, 54.0)
-        if hovered_cell == Vector2i(-1000, -1000) or hovered_cell == pointer_cell:
+        var hovered_cell: Vector2i = _screen_to_cell(sample_pos)
+        if hovered_cell == pointer_cell:
             continue
         pointer_cell = hovered_cell
+        # Ao atravessar uma das casas laterais da ancora, troca a direcao
+        # durante o proprio arrasto, sem exigir um toque separado.
+        if preview_parent >= 0 and preview_parent < words.size() and preview_anchor >= 0:
+            var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
+            if preview_anchor < parent_cells.size():
+                var anchor_cell: Vector2i = parent_cells[preview_anchor]
+                var side_offset: Vector2i = hovered_cell - anchor_cell
+                var parent_axis: Vector2i = Vector2i(words[preview_parent]["dir"])
+                var perpendicular: bool = (parent_axis.x != 0 and side_offset.x == 0 and absi(side_offset.y) == 1) or (parent_axis.y != 0 and side_offset.y == 0 and absi(side_offset.x) == 1)
+                if perpendicular:
+                    _apply_direction(side_offset)
+                    continue
         if _is_solved_cell(hovered_cell):
             _click_tile(hovered_cell)
     gesture_cursor = screen_pos
