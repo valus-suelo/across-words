@@ -2749,8 +2749,12 @@ func _unhandled_input(event: InputEvent) -> void:
 func _start_pointer(screen_pos: Vector2) -> void:
     pointer_start = screen_pos
     gesture_cursor = screen_pos
-    pointer_cell = _nearest_solved_cell(screen_pos)
-    # Aceita o início do gesto perto da peça, não apenas dentro de seu quadrado.
+    # Primeiro usa a célula geométrica exata, como na seleção original.
+    # A busca por proximidade fica como tolerância extra apenas quando o dedo
+    # caiu fora de uma casa resolvida; isso evita trocar a âncora de um toque.
+    pointer_cell = _screen_to_cell(screen_pos)
+    if not _is_solved_cell(pointer_cell):
+        pointer_cell = _nearest_solved_cell(screen_pos, 42.0)
     pointer_down = false
     pointer_dragged = false
     panning_board = true
