@@ -2296,7 +2296,7 @@ func _refresh_board() -> void:
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
                 target_height = 0.015
-            else:
+            elif kind != "branch_source":
                 var outer_highlight: bool = kind in ["selected", "preview", "focus", "anchor_focus", "draft"]
                 top_color = Color("#aaa58f") if outer_highlight else OUTER_TILE
                 skirt_color = Color("#686451") if outer_highlight else Color("#242936")
