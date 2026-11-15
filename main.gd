@@ -123,8 +123,6 @@ const DICTIONARY := [
 var board: Dictionary = {}               # Vector2i -> MeshInstance3D
 var tile_state: Dictionary = {}          # Vector2i -> String
 var visual_nodes: Array[Node3D] = []
-var letter_labels: Dictionary = {}
-var labels_used_this_refresh: Dictionary = {}
 var words: Array[Dictionary] = []
 var used: Dictionary = {}
 var chosen: int = -1
@@ -170,7 +168,6 @@ var wave_started_at: float = 0.0
 var tile_target_heights: Dictionary = {}
 var tile_pedestals: Dictionary = {}
 var flash_cells: Dictionary = {}
-var direction_fades: Dictionary = {}
 var flash_started_at: float = 0.0
 var round_epoch: int = 0
 var last_expire_update: int = -1
@@ -2010,16 +2007,7 @@ func _update_enemy_visual() -> void:
         enemy_node.position = Vector3(enemy_cell.x * GAP, 0.72, enemy_cell.y * ROW_GAP)
 
 func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_size: int = 78) -> void:
-    var label: Label3D = letter_labels.get(p) as Label3D
-    var target_parent: Node = board[p] if board.has(p) else self
-    # Reutiliza o Label3D da casa. Recriar todos os textos a cada toque
-    # causava sumicos durante a movimentacao da camera e a digitacao.
-    if not is_instance_valid(label) or label.get_parent() != target_parent:
-        if is_instance_valid(label):
-            label.queue_free()
-        label = Label3D.new()
-        target_parent.add_child(label)
-        letter_labels[p] = label
+    var label := Label3D.new()
     label.text = caption
     label.font = game_font
     label.font_size = font_size
@@ -2028,18 +2016,23 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
     label.outline_size = 0
     label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     label.no_depth_test = true
-    label.position = Vector3(0.0, 0.16, 0.0) if board.has(p) else Vector3(p.x * GAP, height, p.y * ROW_GAP)
-    label.visible = true
-    labels_used_this_refresh[p] = true
+    # Letra e um filho do proprio bloco: acompanha a elevacao 3D.
+    if board.has(p):
+        var tile: MeshInstance3D = board[p]
+        tile.add_child(label)
+        label.position = Vector3(0.0, 0.16, 0.0)
+    else:
+        label.position = Vector3(p.x * GAP, height, p.y * ROW_GAP)
+        add_child(label)
+    visual_nodes.append(label)
 
 # O flash mistura a cor de acerto/erro com a cor original e desaparece suavemente.
-const WORD_FLASH_DURATION := 0.90
-const DIRECTION_FADE_DURATION := 0.72
+const WORD_FLASH_DURATION := 0.40
 
 func _flash_strength(data: Dictionary) -> float:
     var started_at: float = float(data.get("started_at", elapsed))
     var progress: float = clampf((elapsed - started_at) / WORD_FLASH_DURATION, 0.0, 1.0)
-    return 0.94 * pow(1.0 - progress, 1.35)
+    return 0.94 * pow(1.0 - progress, 1.75)
 
 func _flash_display_color(data: Dictionary) -> Color:
     var base_color: Color = data.get("base", BASE)
@@ -2131,7 +2124,10 @@ func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
     return false
 
 func _refresh_board() -> void:
-    labels_used_this_refresh.clear()
+    for node in visual_nodes:
+        if is_instance_valid(node):
+            node.queue_free()
+    visual_nodes.clear()
     tile_state.clear()
     var letters: Dictionary = {}
     var solved_cells: Dictionary = {}
@@ -2229,20 +2225,19 @@ func _refresh_board() -> void:
                 tile_state[crossing_cell] = "anchor_focus"
     if board.has(focus_cell):
         tile_state[focus_cell] = "focus"
-    # Mostra em amarelo-escuro todas as saídas perpendiculares válidas.
-    # A direção já escolhida é indicada pela própria palavra em prévia.
+    # O lado nao escolhido mostra um UNICO bloco oliva. O lado selecionado
+    # e representado pelos blocos da palavra proposta (sem setas flutuantes).
     if preview_parent >= 0 and preview_parent < words.size() and preview_anchor >= 0:
         var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
         if preview_anchor < anchor_cells.size():
             var axis: Vector2i = Vector2i(words[preview_parent]["dir"])
-            var sides: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if axis.x != 0 else [Vector2i(-1, 0), Vector2i(1, 0)]
-            for side in sides:
-                if side == preview_dir or _possible_children(preview_parent, preview_anchor, side).is_empty():
-                    continue
-                var side_cell: Vector2i = anchor_cells[preview_anchor] + side
-                if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
-                    if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
-                        tile_state[side_cell] = "side_option"
+            var opposite: Vector2i = -preview_dir
+            if opposite == Vector2i.ZERO:
+                opposite = Vector2i(0, 1) if axis.x != 0 else Vector2i(1, 0)
+            var side_cell: Vector2i = anchor_cells[preview_anchor] + opposite
+            if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
+                if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
+                    tile_state[side_cell] = "side_option"
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
         var kind: String = tile_state.get(p, "base")
@@ -2336,14 +2331,6 @@ func _refresh_board() -> void:
                 "vision": symbol = "V"
                 "hint": symbol = "?"
             _draw_text(p, symbol, TILE_LETTER, 0.50, 64)
-    # Remove somente textos que deixaram de representar uma letra ou item.
-    # Os demais Label3D permanecem vivos entre atualizacoes do tabuleiro.
-    for cell in letter_labels.keys():
-        if not labels_used_this_refresh.has(cell):
-            var stale: Label3D = letter_labels[cell] as Label3D
-            if is_instance_valid(stale):
-                stale.queue_free()
-            letter_labels.erase(cell)
     _update_hud()
 
 func _update_hud() -> void:
@@ -2461,35 +2448,6 @@ func _process(delta: float) -> void:
         tile.position.y = move_toward(tile.position.y, goal, delta * 3.6)
     if is_instance_valid(enemy_node):
         enemy_node.position.y = 0.7 + sin(elapsed * 3.0) * 0.10
-    if not direction_fades.is_empty():
-        var faded: Array[Vector2i] = []
-        for cell in direction_fades.keys():
-            var fade_data: Dictionary = direction_fades[cell]
-            var progress: float = clampf((elapsed - float(fade_data["started_at"])) / DIRECTION_FADE_DURATION, 0.0, 1.0)
-            if progress >= 1.0:
-                faded.append(cell)
-                continue
-            if not board.has(cell):
-                faded.append(cell)
-                continue
-            # Curva suave de apagamento, sem trocar a cor de uma vez.
-            var eased: float = progress * progress * (3.0 - 2.0 * progress)
-            var target_top: Color = BASE
-            var target_skirt: Color = SIDE_EMPTY
-            if level_mode and not _inside_level(cell):
-                target_top = OUTER_TILE
-                target_skirt = Color("#242936")
-            var fade_top: Color = fade_data["top"]
-            var fade_skirt: Color = fade_data["skirt"]
-            var top_color: Color = fade_top.lerp(target_top, eased)
-            var skirt_color: Color = fade_skirt.lerp(target_skirt, eased)
-            var tile: MeshInstance3D = board[cell]
-            tile.set_surface_override_material(0, _material_cached("tile_top_" + top_color.to_html(), top_color))
-            tile.set_surface_override_material(1, _material_cached("tile_edge_" + top_color.to_html(), top_color.darkened(0.22)))
-            var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
-            skirt.material_override = _material_cached("skirt_" + skirt_color.to_html(), skirt_color)
-        for cell in faded:
-            direction_fades.erase(cell)
     if not flash_cells.is_empty():
         var done: Array[Vector2i] = []
         for cell in flash_cells.keys():
@@ -2524,48 +2482,6 @@ func _screen_to_cell(screen_pos: Vector2) -> Vector2i:
         return Vector2i(-1000, -1000)
     var point: Vector3 = hit
     return Vector2i(roundi(point.x / GAP), roundi(point.z / ROW_GAP))
-
-# Encontra a letra resolvida mais próxima na tela. A tolerância maior que
-# a área exata da peça deixa o arrasto mais permissivo em celulares.
-func _nearest_solved_cell(screen_pos: Vector2, max_distance: float = 58.0) -> Vector2i:
-    var best_cell := Vector2i(-1000, -1000)
-    var best_distance: float = max_distance
-    var seen: Dictionary = {}
-    for word in words:
-        if word["state"] != "solved":
-            continue
-        for cell in _cells(word):
-            if seen.has(cell) or not _inside_level(cell):
-                continue
-            seen[cell] = true
-            var projected: Vector2 = camera.unproject_position(Vector3(float(cell.x) * GAP, 0.5, float(cell.y) * ROW_GAP))
-            var distance: float = projected.distance_to(screen_pos)
-            if distance <= best_distance:
-                best_distance = distance
-                best_cell = cell
-    return best_cell
-
-func _nearest_branch_direction(screen_pos: Vector2, max_distance: float = 68.0) -> Vector2i:
-    if preview_parent < 0 or preview_parent >= words.size() or preview_anchor < 0:
-        return Vector2i.ZERO
-    var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
-    if preview_anchor >= parent_cells.size():
-        return Vector2i.ZERO
-    var anchor: Vector2i = parent_cells[preview_anchor]
-    var axis: Vector2i = Vector2i(words[preview_parent]["dir"])
-    var sides: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if axis.x != 0 else [Vector2i(-1, 0), Vector2i(1, 0)]
-    var best_direction := Vector2i.ZERO
-    var best_distance: float = max_distance
-    for side in sides:
-        if _possible_children(preview_parent, preview_anchor, side).is_empty():
-            continue
-        var target: Vector2i = anchor + side
-        var projected: Vector2 = camera.unproject_position(Vector3(float(target.x) * GAP, 0.5, float(target.y) * ROW_GAP))
-        var distance: float = projected.distance_to(screen_pos)
-        if distance <= best_distance:
-            best_distance = distance
-            best_direction = side
-    return best_direction
 
 # Navegação espacial determinística. Não usa a lista de palavras candidatas.
 # O eixo e os índices são calculados pela posição real da casa, sem usar o
@@ -2759,19 +2675,20 @@ func _unhandled_input(event: InputEvent) -> void:
 func _start_pointer(screen_pos: Vector2) -> void:
     pointer_start = screen_pos
     gesture_cursor = screen_pos
-    # Primeiro usa a célula geométrica exata, como na seleção original.
-    # A busca por proximidade fica como tolerância extra apenas quando o dedo
-    # caiu fora de uma casa resolvida; isso evita trocar a âncora de um toque.
     pointer_cell = _screen_to_cell(screen_pos)
-    if not _is_solved_cell(pointer_cell):
-        pointer_cell = _nearest_solved_cell(screen_pos, 42.0)
+    # Gestos so comecam sobre uma letra resolvida e selecionavel.
+    # Arrastar sobre espaco vazio nao deve alterar a palavra.
     pointer_down = false
     pointer_dragged = false
     panning_board = true
     pan_last_screen = screen_pos
-    if _is_solved_cell(pointer_cell):
-        pointer_down = true
-        panning_board = false
+    for i in range(words.size() - 1, -1, -1):
+        if words[i]["state"] != "solved":
+            continue
+        if _inside_level(pointer_cell) and _cells(words[i]).has(pointer_cell):
+            pointer_down = true
+            panning_board = false
+            break
     # As setas desenhadas continuam clicaveis fora das letras.
     if not pointer_down and _try_tap_branch_arrow(screen_pos):
         return
@@ -2793,7 +2710,7 @@ func _move_pointer(screen_pos: Vector2) -> void:
         return
     if not pointer_down or game_over:
         return
-    if screen_pos.distance_to(pointer_start) < 12.0 and not pointer_dragged:
+    if screen_pos.distance_to(pointer_start) < 30.0 and not pointer_dragged:
         return
     if not pointer_dragged:
         pointer_dragged = true
@@ -2804,19 +2721,25 @@ func _move_pointer(screen_pos: Vector2) -> void:
     # Amostra o caminho do dedo e seleciona cada letra resolvida atravessada,
     # mesmo quando ela pertence a outra palavra ou esta em outra linha/coluna.
     var movement: Vector2 = screen_pos - gesture_cursor
-    var sample_count: int = maxi(1, ceili(movement.length() / 7.0))
+    var sample_count: int = maxi(1, ceili(movement.length() / 12.0))
     for sample_index in range(1, sample_count + 1):
         var sample_pos: Vector2 = gesture_cursor.lerp(screen_pos, float(sample_index) / float(sample_count))
-        # Detecta as saídas do cruzamento por proximidade visual: não é
-        # necessário acertar o centro da casa para virar a esquina.
-        var branch_direction: Vector2i = _nearest_branch_direction(sample_pos)
-        if branch_direction != Vector2i.ZERO and branch_direction != preview_dir:
-            _apply_direction(branch_direction)
-            continue
-        var hovered_cell: Vector2i = _nearest_solved_cell(sample_pos, 54.0)
-        if hovered_cell == Vector2i(-1000, -1000) or hovered_cell == pointer_cell:
+        var hovered_cell: Vector2i = _screen_to_cell(sample_pos)
+        if hovered_cell == pointer_cell:
             continue
         pointer_cell = hovered_cell
+        # Ao atravessar uma das casas laterais da ancora, troca a direcao
+        # durante o proprio arrasto, sem exigir um toque separado.
+        if preview_parent >= 0 and preview_parent < words.size() and preview_anchor >= 0:
+            var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
+            if preview_anchor < parent_cells.size():
+                var anchor_cell: Vector2i = parent_cells[preview_anchor]
+                var side_offset: Vector2i = hovered_cell - anchor_cell
+                var parent_axis: Vector2i = Vector2i(words[preview_parent]["dir"])
+                var perpendicular: bool = (parent_axis.x != 0 and side_offset.x == 0 and absi(side_offset.y) == 1) or (parent_axis.y != 0 and side_offset.y == 0 and absi(side_offset.x) == 1)
+                if perpendicular:
+                    _apply_direction(side_offset)
+                    continue
         if _is_solved_cell(hovered_cell):
             _click_tile(hovered_cell)
     gesture_cursor = screen_pos
@@ -2851,31 +2774,7 @@ func _apply_direction(direction: Vector2i) -> void:
     preferred_branch_direction = direction
     var key: String = _draft_key(preview_parent, preview_anchor)
     drafts[key] = {"text": entry.text.to_upper(), "dir": direction}
-    # Guarda as casas amarelo-escuras da direcao anterior antes de redesenhar.
-    # Quando deixam de ser opcoes, elas apagam suavemente ate a cor normal.
-    var previous_options: Dictionary = {}
-    for cell in tile_state.keys():
-        if tile_state[cell] != "side_option" or not board.has(cell):
-            continue
-        var tile: MeshInstance3D = board[cell]
-        var top_material: Material = tile.get_surface_override_material(0)
-        var skirt_node: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
-        var skirt_material: Material = skirt_node.material_override
-        if top_material is StandardMaterial3D and skirt_material is StandardMaterial3D:
-            previous_options[cell] = {
-                "top": (top_material as StandardMaterial3D).albedo_color,
-                "skirt": (skirt_material as StandardMaterial3D).albedo_color
-            }
     _load_preview_choices()
-    for cell in previous_options:
-        if tile_state.get(cell, "base") == "side_option" or not board.has(cell):
-            continue
-        var colors: Dictionary = previous_options[cell]
-        direction_fades[cell] = {
-            "top": colors["top"],
-            "skirt": colors["skirt"],
-            "started_at": elapsed
-        }
 
 func _focus_cell(cell: Vector2i) -> void:
     camera_pan_offset = Vector2.ZERO
