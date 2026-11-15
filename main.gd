@@ -2309,8 +2309,6 @@ func _refresh_board() -> void:
         tile.set_surface_override_material(1, _material_cached("tile_edge_" + mat_name, top_color.darkened(0.22)))
         var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
         skirt.material_override = _material_cached("skirt_" + skirt_color.to_html(), skirt_color)
-        if kind == "side_option":
-            _draw_direction_knob(p)
         tile_target_heights[p] = target_height
         if letters.has(p):
             var letter_color: Color = Color("#34313a") if kind == "draft" else TILE_LETTER
@@ -2521,21 +2519,6 @@ func _gesture_branch_at(screen_pos: Vector2, radius: float = 58.0) -> Vector2i:
     if screen_pos.distance_to(anchor_screen) > radius + 34.0:
         return Vector2i.ZERO
     return side_a if distance_a < distance_b else side_b
-
-func _draw_direction_knob(cell: Vector2i) -> void:
-    if not board.has(cell):
-        return
-    var marker := MeshInstance3D.new()
-    marker.name = "DirectionKnob"
-    var sphere := SphereMesh.new()
-    sphere.radius = 0.13
-    sphere.height = 0.26
-    marker.mesh = sphere
-    marker.position = Vector3(0.0, 0.30, 0.0)
-    marker.material_override = _material_cached("direction_knob", Color("#b8b49d"), true)
-    marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    board[cell].add_child(marker)
-    visual_nodes.append(marker)
 
 func _screen_to_cell(screen_pos: Vector2) -> Vector2i:
     var origin := camera.project_ray_origin(screen_pos)
