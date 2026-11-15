@@ -168,6 +168,7 @@ var wave_started_at: float = 0.0
 var tile_target_heights: Dictionary = {}
 var tile_pedestals: Dictionary = {}
 var flash_cells: Dictionary = {}
+var direction_fades: Dictionary = {}
 var flash_started_at: float = 0.0
 var round_epoch: int = 0
 var last_expire_update: int = -1
@@ -2027,12 +2028,13 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
     visual_nodes.append(label)
 
 # O flash mistura a cor de acerto/erro com a cor original e desaparece suavemente.
-const WORD_FLASH_DURATION := 0.40
+const WORD_FLASH_DURATION := 0.90
+const DIRECTION_FADE_DURATION := 0.72
 
 func _flash_strength(data: Dictionary) -> float:
     var started_at: float = float(data.get("started_at", elapsed))
     var progress: float = clampf((elapsed - started_at) / WORD_FLASH_DURATION, 0.0, 1.0)
-    return 0.94 * pow(1.0 - progress, 1.75)
+    return 0.94 * pow(1.0 - progress, 1.35)
 
 func _flash_display_color(data: Dictionary) -> Color:
     var base_color: Color = data.get("base", BASE)
@@ -2448,6 +2450,33 @@ func _process(delta: float) -> void:
         tile.position.y = move_toward(tile.position.y, goal, delta * 3.6)
     if is_instance_valid(enemy_node):
         enemy_node.position.y = 0.7 + sin(elapsed * 3.0) * 0.10
+    if not direction_fades.is_empty():
+        var faded: Array[Vector2i] = []
+        for cell in direction_fades.keys():
+            var fade_data: Dictionary = direction_fades[cell]
+            var progress: float = clampf((elapsed - float(fade_data["started_at"])) / DIRECTION_FADE_DURATION, 0.0, 1.0)
+            if progress >= 1.0:
+                faded.append(cell)
+                continue
+            if not board.has(cell):
+                faded.append(cell)
+                continue
+            # Curva suave de apagamento, sem trocar a cor de uma vez.
+            var eased: float = progress * progress * (3.0 - 2.0 * progress)
+            var target_top: Color = BASE
+            var target_skirt: Color = SIDE_EMPTY
+            if level_mode and not _inside_level(cell):
+                target_top = OUTER_TILE
+                target_skirt = Color("#242936")
+            var top_color: Color = (fade_data["top"] as Color).lerp(target_top, eased)
+            var skirt_color: Color = (fade_data["skirt"] as Color).lerp(target_skirt, eased)
+            var tile: MeshInstance3D = board[cell]
+            tile.set_surface_override_material(0, _material_cached("tile_top_" + top_color.to_html(), top_color))
+            tile.set_surface_override_material(1, _material_cached("tile_edge_" + top_color.to_html(), top_color.darkened(0.22)))
+            var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
+            skirt.material_override = _material_cached("skirt_" + skirt_color.to_html(), skirt_color)
+        for cell in faded:
+            direction_fades.erase(cell)
     if not flash_cells.is_empty():
         var done: Array[Vector2i] = []
         for cell in flash_cells.keys():
@@ -2774,7 +2803,31 @@ func _apply_direction(direction: Vector2i) -> void:
     preferred_branch_direction = direction
     var key: String = _draft_key(preview_parent, preview_anchor)
     drafts[key] = {"text": entry.text.to_upper(), "dir": direction}
+    # Guarda as casas amarelo-escuras da direcao anterior antes de redesenhar.
+    # Quando deixam de ser opcoes, elas apagam suavemente ate a cor normal.
+    var previous_options: Dictionary = {}
+    for cell in tile_state.keys():
+        if tile_state[cell] != "side_option" or not board.has(cell):
+            continue
+        var tile: MeshInstance3D = board[cell]
+        var top_material: Material = tile.get_surface_override_material(0)
+        var skirt_node: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
+        var skirt_material: Material = skirt_node.material_override
+        if top_material is StandardMaterial3D and skirt_material is StandardMaterial3D:
+            previous_options[cell] = {
+                "top": (top_material as StandardMaterial3D).albedo_color,
+                "skirt": (skirt_material as StandardMaterial3D).albedo_color
+            }
     _load_preview_choices()
+    for cell in previous_options:
+        if tile_state.get(cell, "base") == "side_option" or not board.has(cell):
+            continue
+        var colors: Dictionary = previous_options[cell]
+        direction_fades[cell] = {
+            "top": colors["top"],
+            "skirt": colors["skirt"],
+            "started_at": elapsed
+        }
 
 func _focus_cell(cell: Vector2i) -> void:
     camera_pan_offset = Vector2.ZERO
