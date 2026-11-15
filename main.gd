@@ -2738,10 +2738,11 @@ func _unhandled_input(event: InputEvent) -> void:
 func _start_pointer(screen_pos: Vector2) -> void:
     pointer_start = screen_pos
     gesture_cursor = screen_pos
-    # Campo de atração maior que a própria peça: o toque não precisa acertar
-    # o centro da letra, apenas entrar no raio magnético dela.
-    pointer_cell = _gesture_nearest_solved_cell(screen_pos, 70.0)
-    pointer_down = pointer_cell != Vector2i(-1000, -1000)
+    # O gesto só começa com toque direto numa letra resolvida.
+    # O campo magnético fica inativo durante o toque inicial e só é ativado
+    # depois que o jogador ultrapassa o limiar de arraste.
+    pointer_cell = _screen_to_cell(screen_pos)
+    pointer_down = _is_solved_cell(pointer_cell)
     pointer_dragged = false
     panning_board = not pointer_down
     pan_last_screen = screen_pos
