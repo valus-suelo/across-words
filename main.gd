@@ -20,10 +20,10 @@ const BASE := Color("#4f5772")
 const OUTER_TILE := Color("#2e3342")
 const ACTIVE := Color("#999988")
 const SELECTED := Color("#ffffe3")
-const SOLVED := Color("#af9bcc")
+const SOLVED := Color("#eadb91")
 const CURRENT_LETTER := Color("#ffffe3")
 const SIDE_EMPTY := Color("#30374d")
-const SIDE_SOLVED := Color("#75658f")
+const SIDE_SOLVED := Color("#9a8749")
 const SIDE_ACTIVE := Color("#aaa48d")
 const SIDE_PREVIEW := Color("#656557")
 const SIDE_EXIT := Color("#2d6b24")
@@ -2190,10 +2190,11 @@ func _refresh_board() -> void:
         var typed: String = entry.text.strip_edges().to_upper()
         for i in range(cells.size()):
             var p: Vector2i = cells[i]
-            if tile_state.get(p, "") != "solved":
-                tile_state[p] = "selected" if i < typed.length() else "preview"
-                if i < typed.length():
-                    letters[p] = typed[i]
+            # Toda a palavra candidata fica acesa, inclusive as letras
+            # que cruzam palavras já concluídas.
+            tile_state[p] = "focus"
+            if i < typed.length():
+                letters[p] = typed[i]
     # Realce da proxima letra a digitar, diretamente no tabuleiro.
     var focus_cell: Vector2i = Vector2i(999999, 999999)
     var focus_cells: Array[Vector2i] = []
@@ -2206,15 +2207,8 @@ func _refresh_board() -> void:
         focus_cell = focus_cells[next_index]
     elif preview_parent >= 0 and preview_anchor >= 0:
         focus_cell = _cells(words[preview_parent])[preview_anchor]
-    # Marca TODAS as letras da palavra que pode gerar o proximo ramo.
-    # Palavras anteriores permanecem no tabuleiro, mas sem este destaque.
-    var highlighted_parent: int = preview_parent if preview_parent >= 0 else last_solved_word
-    if highlighted_parent >= 0 and highlighted_parent < words.size():
-        var source_word: Dictionary = words[highlighted_parent]
-        if source_word["state"] == "solved":
-            for source_cell in _cells(source_word):
-                if board.has(source_cell) and tile_state.get(source_cell, "") == "solved":
-                    tile_state[source_cell] = "branch_source"
+    # As palavras concluídas compartilham a mesma cor; não há destaque
+    # permanente separado para a palavra de origem.
     # A letra de cruzamento da palavra antiga permanece iluminada,
     # mesmo quando a proxima letra da palavra nova esta em outra casa.
     if preview_parent >= 0 and preview_parent < words.size():
