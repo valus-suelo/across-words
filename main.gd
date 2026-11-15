@@ -1594,8 +1594,10 @@ func _clear_preview(save: bool = true) -> void:
     preview_choice_index = 0
 
 func _preview_default_direction(index: int) -> Vector2i:
+    # A direção inicial é determinada pela palavra que acabou de ser escolhida.
+    # Horizontal -> cima; vertical -> direita (coordenadas do tabuleiro).
     var d: Vector2i = words[index]["dir"]
-    return Vector2i(0, 1) if d.x != 0 else Vector2i(1, 0)
+    return Vector2i(d.y, -d.x)
 
 func _select_anchor(index: int, anchor: int) -> void:
     if index < 0 or index >= words.size():
@@ -1618,11 +1620,9 @@ func _select_anchor(index: int, anchor: int) -> void:
     chosen = -1
     var key: String = _draft_key(index, anchor)
     var old: Dictionary = drafts.get(key, {})
-    # O lado escolhido tem prioridade ao avançar para outra letra.
-    var remembered_direction: Vector2i = preferred_branch_direction
-    var parent_direction: Vector2i = words[index]["dir"]
-    if remembered_direction == Vector2i.ZERO or parent_direction.x * remembered_direction.x + parent_direction.y * remembered_direction.y != 0:
-        remembered_direction = old.get("dir", _preview_default_direction(index))
+    # Cada palavra determina sua própria direção inicial na letra compartilhada.
+    # Não herda a direção global nem a de um rascunho de outra palavra.
+    var remembered_direction: Vector2i = _preview_default_direction(index)
     preview_dir = remembered_direction
     preferred_branch_direction = remembered_direction
     var text_value: String = String(old.get("text", _anchor_letter(index, anchor)))
