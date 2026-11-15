@@ -123,6 +123,8 @@ const DICTIONARY := [
 var board: Dictionary = {}               # Vector2i -> MeshInstance3D
 var tile_state: Dictionary = {}          # Vector2i -> String
 var visual_nodes: Array[Node3D] = []
+var letter_labels: Dictionary = {}
+var labels_used_this_refresh: Dictionary = {}
 var words: Array[Dictionary] = []
 var used: Dictionary = {}
 var chosen: int = -1
@@ -2008,7 +2010,16 @@ func _update_enemy_visual() -> void:
         enemy_node.position = Vector3(enemy_cell.x * GAP, 0.72, enemy_cell.y * ROW_GAP)
 
 func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_size: int = 78) -> void:
-    var label := Label3D.new()
+    var label: Label3D = letter_labels.get(p) as Label3D
+    var target_parent: Node = board[p] if board.has(p) else self
+    # Reutiliza o Label3D da casa. Recriar todos os textos a cada toque
+    # causava sumicos durante a movimentacao da camera e a digitacao.
+    if not is_instance_valid(label) or label.get_parent() != target_parent:
+        if is_instance_valid(label):
+            label.queue_free()
+        label = Label3D.new()
+        target_parent.add_child(label)
+        letter_labels[p] = label
     label.text = caption
     label.font = game_font
     label.font_size = font_size
@@ -2017,15 +2028,9 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
     label.outline_size = 0
     label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     label.no_depth_test = true
-    # Letra e um filho do proprio bloco: acompanha a elevacao 3D.
-    if board.has(p):
-        var tile: MeshInstance3D = board[p]
-        tile.add_child(label)
-        label.position = Vector3(0.0, 0.16, 0.0)
-    else:
-        label.position = Vector3(p.x * GAP, height, p.y * ROW_GAP)
-        add_child(label)
-    visual_nodes.append(label)
+    label.position = Vector3(0.0, 0.16, 0.0) if board.has(p) else Vector3(p.x * GAP, height, p.y * ROW_GAP)
+    label.visible = true
+    labels_used_this_refresh[p] = true
 
 # O flash mistura a cor de acerto/erro com a cor original e desaparece suavemente.
 const WORD_FLASH_DURATION := 0.90
@@ -2126,10 +2131,7 @@ func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
     return false
 
 func _refresh_board() -> void:
-    for node in visual_nodes:
-        if is_instance_valid(node):
-            node.queue_free()
-    visual_nodes.clear()
+    labels_used_this_refresh.clear()
     tile_state.clear()
     var letters: Dictionary = {}
     var solved_cells: Dictionary = {}
@@ -2334,6 +2336,14 @@ func _refresh_board() -> void:
                 "vision": symbol = "V"
                 "hint": symbol = "?"
             _draw_text(p, symbol, TILE_LETTER, 0.50, 64)
+    # Remove somente textos que deixaram de representar uma letra ou item.
+    # Os demais Label3D permanecem vivos entre atualizacoes do tabuleiro.
+    for cell in letter_labels.keys():
+        if not labels_used_this_refresh.has(cell):
+            var stale: Label3D = letter_labels[cell] as Label3D
+            if is_instance_valid(stale):
+                stale.queue_free()
+            letter_labels.erase(cell)
     _update_hud()
 
 func _update_hud() -> void:
