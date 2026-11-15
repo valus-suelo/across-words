@@ -243,7 +243,6 @@ var preferred_branch_direction: Vector2i = Vector2i.ZERO
 var last_navigation_arrow: Vector2i = Vector2i.ZERO
 # Acumulador de deslocamento para gestos contínuos, em qualquer casa da área 3D.
 var gesture_cursor: Vector2 = Vector2.ZERO
-var gesture_branch_changed: bool = false
 var result_overlay: ColorRect
 var result_title: Label
 var result_stats: Label
@@ -2220,19 +2219,18 @@ func _refresh_board() -> void:
                 tile_state[crossing_cell] = "anchor_focus"
     if board.has(focus_cell):
         tile_state[focus_cell] = "focus"
-    # O lado nao escolhido mostra um UNICO bloco oliva. O lado selecionado
-    # e representado pelos blocos da palavra proposta (sem setas flutuantes).
+    # Os dois quadrados laterais indicam as duas direções possíveis na esquina.
+    # Cada um recebe uma ponta arredondada que funciona como alvo do gesto.
     if preview_parent >= 0 and preview_parent < words.size() and preview_anchor >= 0:
         var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
         if preview_anchor < anchor_cells.size():
             var axis: Vector2i = Vector2i(words[preview_parent]["dir"])
-            var opposite: Vector2i = -preview_dir
-            if opposite == Vector2i.ZERO:
-                opposite = Vector2i(0, 1) if axis.x != 0 else Vector2i(1, 0)
-            var side_cell: Vector2i = anchor_cells[preview_anchor] + opposite
-            if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
-                if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
-                    tile_state[side_cell] = "side_option"
+            var side_a: Vector2i = Vector2i(0, -1) if axis.x != 0 else Vector2i(-1, 0)
+            for side in [side_a, -side_a]:
+                var side_cell: Vector2i = anchor_cells[preview_anchor] + side
+                if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
+                    if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
+                        tile_state[side_cell] = "side_option"
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
         var kind: String = tile_state.get(p, "base")
@@ -2311,6 +2309,8 @@ func _refresh_board() -> void:
         tile.set_surface_override_material(1, _material_cached("tile_edge_" + mat_name, top_color.darkened(0.22)))
         var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
         skirt.material_override = _material_cached("skirt_" + skirt_color.to_html(), skirt_color)
+        if kind == "side_option":
+            _draw_direction_knob(p)
         tile_target_heights[p] = target_height
         if letters.has(p):
             var letter_color: Color = Color("#34313a") if kind == "draft" else TILE_LETTER
@@ -2471,6 +2471,8 @@ func _process(delta: float) -> void:
 
 # Localiza letras resolvidas pela posição projetada, sem depender do raio 3D
 # nas bordas das peças, onde a célula calculada pode oscilar.
+# Campo magnético: qualquer ponto próximo de uma letra resolvida pode
+# iniciar a seleção. A letra mais próxima dentro do raio é atraída para o dedo.
 func _gesture_nearest_solved_cell(screen_pos: Vector2, radius: float) -> Vector2i:
     var best_cell := Vector2i(-1000, -1000)
     var best_distance: float = radius
@@ -2489,9 +2491,10 @@ func _gesture_nearest_solved_cell(screen_pos: Vector2, radius: float) -> Vector2
                 best_cell = cell
     return best_cell
 
-# Identifica as casas laterais possíveis por distância na tela. A direção
-# só será aplicada uma vez por gesto para evitar alternâncias involuntárias.
-func _gesture_branch_at(screen_pos: Vector2, radius: float = 46.0) -> Vector2i:
+# Dois lóbulos arredondados ficam nas laterais da âncora. Ao deslizar o dedo
+# para um deles, a direção perpendicular muda; a seleção pode ser revertida
+# durante o mesmo gesto, sem travar na primeira direção escolhida.
+func _gesture_branch_at(screen_pos: Vector2, radius: float = 58.0) -> Vector2i:
     if preview_parent < 0 or preview_parent >= words.size() or preview_anchor < 0:
         return Vector2i.ZERO
     var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
@@ -2499,19 +2502,40 @@ func _gesture_branch_at(screen_pos: Vector2, radius: float = 46.0) -> Vector2i:
         return Vector2i.ZERO
     var anchor: Vector2i = parent_cells[preview_anchor]
     var axis: Vector2i = Vector2i(words[preview_parent]["dir"])
-    var sides: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if axis.x != 0 else [Vector2i(-1, 0), Vector2i(1, 0)]
-    var nearest := Vector2i.ZERO
-    var nearest_distance: float = radius
-    for side in sides:
-        if _possible_children(preview_parent, preview_anchor, side).is_empty():
-            continue
-        var target: Vector2i = anchor + side
-        var world := Vector3(float(target.x) * GAP, 0.5, float(target.y) * ROW_GAP)
-        var distance: float = camera.unproject_position(world).distance_to(screen_pos)
-        if distance < nearest_distance:
-            nearest_distance = distance
-            nearest = side
-    return nearest
+    var side_a: Vector2i = Vector2i(0, -1) if axis.x != 0 else Vector2i(-1, 0)
+    var side_b: Vector2i = -side_a
+    var anchor_world := Vector3(float(anchor.x) * GAP, 0.5, float(anchor.y) * ROW_GAP)
+    var point_a := Vector3(float(anchor.x + side_a.x) * GAP, 0.5, float(anchor.y + side_a.y) * ROW_GAP)
+    var point_b := Vector3(float(anchor.x + side_b.x) * GAP, 0.5, float(anchor.y + side_b.y) * ROW_GAP)
+    var anchor_screen: Vector2 = camera.unproject_position(anchor_world)
+    var a_screen: Vector2 = camera.unproject_position(point_a)
+    var b_screen: Vector2 = camera.unproject_position(point_b)
+    var distance_a: float = a_screen.distance_to(screen_pos)
+    var distance_b: float = b_screen.distance_to(screen_pos)
+    # A zona de decisão é limitada ao entorno da âncora. A margem evita
+    # oscilações quando o dedo está exatamente entre os dois lados.
+    if minf(distance_a, distance_b) > radius:
+        return Vector2i.ZERO
+    if absf(distance_a - distance_b) < 9.0:
+        return Vector2i.ZERO
+    if screen_pos.distance_to(anchor_screen) > radius + 34.0:
+        return Vector2i.ZERO
+    return side_a if distance_a < distance_b else side_b
+
+func _draw_direction_knob(cell: Vector2i) -> void:
+    if not board.has(cell):
+        return
+    var marker := MeshInstance3D.new()
+    marker.name = "DirectionKnob"
+    var sphere := SphereMesh.new()
+    sphere.radius = 0.13
+    sphere.height = 0.26
+    marker.mesh = sphere
+    marker.position = Vector3(0.0, 0.30, 0.0)
+    marker.material_override = _material_cached("direction_knob", Color("#b8b49d"), true)
+    marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    board[cell].add_child(marker)
+    visual_nodes.append(marker)
 
 func _screen_to_cell(screen_pos: Vector2) -> Vector2i:
     var origin := camera.project_ray_origin(screen_pos)
@@ -2714,10 +2738,11 @@ func _unhandled_input(event: InputEvent) -> void:
 func _start_pointer(screen_pos: Vector2) -> void:
     pointer_start = screen_pos
     gesture_cursor = screen_pos
-    pointer_cell = _gesture_nearest_solved_cell(screen_pos, 50.0)
+    # Campo de atração maior que a própria peça: o toque não precisa acertar
+    # o centro da letra, apenas entrar no raio magnético dela.
+    pointer_cell = _gesture_nearest_solved_cell(screen_pos, 70.0)
     pointer_down = pointer_cell != Vector2i(-1000, -1000)
     pointer_dragged = false
-    gesture_branch_changed = false
     panning_board = not pointer_down
     pan_last_screen = screen_pos
     if not pointer_down and _try_tap_branch_arrow(screen_pos):
@@ -2730,7 +2755,6 @@ func _stop_pointer() -> void:
         if not _try_tap_branch_arrow(pointer_start):
             _click_tile(pointer_cell)
     pointer_down = false
-    gesture_branch_changed = false
 
 func _move_pointer(screen_pos: Vector2) -> void:
     if panning_board:
@@ -2749,19 +2773,17 @@ func _move_pointer(screen_pos: Vector2) -> void:
         _click_tile(pointer_cell)
         gesture_cursor = pointer_start
 
-    # Amostra o segmento para não perder letras quando os eventos chegam
-    # espaçados; só seleciona uma casa nova quando ela é realmente resolvida.
+    # O dedo pode atravessar o campo de uma letra para outra: cada âncora
+    # próxima é atraída e selecionada sem exigir precisão no centro da peça.
     var segment: Vector2 = screen_pos - gesture_cursor
-    var steps: int = maxi(1, ceili(segment.length() / 9.0))
+    var steps: int = maxi(1, ceili(segment.length() / 8.0))
     for step in range(1, steps + 1):
         var sample: Vector2 = gesture_cursor.lerp(screen_pos, float(step) / float(steps))
-        if not gesture_branch_changed:
-            var branch: Vector2i = _gesture_branch_at(sample)
-            if branch != Vector2i.ZERO and branch != preview_dir:
-                _apply_direction(branch)
-                gesture_branch_changed = true
-                continue
-        var candidate: Vector2i = _gesture_nearest_solved_cell(sample, 42.0)
+        var branch: Vector2i = _gesture_branch_at(sample)
+        if branch != Vector2i.ZERO and branch != preview_dir:
+            _apply_direction(branch)
+            continue
+        var candidate: Vector2i = _gesture_nearest_solved_cell(sample, 62.0)
         if candidate == Vector2i(-1000, -1000) or candidate == pointer_cell:
             continue
         pointer_cell = candidate
