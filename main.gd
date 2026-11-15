@@ -243,6 +243,7 @@ var preferred_branch_direction: Vector2i = Vector2i.ZERO
 var last_navigation_arrow: Vector2i = Vector2i.ZERO
 # Acumulador de deslocamento para gestos contínuos, em qualquer casa da área 3D.
 var gesture_cursor: Vector2 = Vector2.ZERO
+var gesture_branch_changed: bool = false
 var result_overlay: ColorRect
 var result_title: Label
 var result_stats: Label
@@ -2219,20 +2220,19 @@ func _refresh_board() -> void:
                 tile_state[crossing_cell] = "anchor_focus"
     if board.has(focus_cell):
         tile_state[focus_cell] = "focus"
-    # Mostra em amarelo-escuro todas as saídas perpendiculares válidas.
-    # A direção já escolhida é indicada pela própria palavra em prévia.
+    # O lado nao escolhido mostra um UNICO bloco oliva. O lado selecionado
+    # e representado pelos blocos da palavra proposta (sem setas flutuantes).
     if preview_parent >= 0 and preview_parent < words.size() and preview_anchor >= 0:
         var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
         if preview_anchor < anchor_cells.size():
             var axis: Vector2i = Vector2i(words[preview_parent]["dir"])
-            var sides: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if axis.x != 0 else [Vector2i(-1, 0), Vector2i(1, 0)]
-            for side in sides:
-                if side == preview_dir or _possible_children(preview_parent, preview_anchor, side).is_empty():
-                    continue
-                var side_cell: Vector2i = anchor_cells[preview_anchor] + side
-                if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
-                    if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
-                        tile_state[side_cell] = "side_option"
+            var opposite: Vector2i = -preview_dir
+            if opposite == Vector2i.ZERO:
+                opposite = Vector2i(0, 1) if axis.x != 0 else Vector2i(1, 0)
+            var side_cell: Vector2i = anchor_cells[preview_anchor] + opposite
+            if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
+                if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
+                    tile_state[side_cell] = "side_option"
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
         var kind: String = tile_state.get(p, "base")
@@ -2469,36 +2469,29 @@ func _process(delta: float) -> void:
                 flash_cells.erase(cell)
             _refresh_board()
 
-func _screen_to_cell(screen_pos: Vector2) -> Vector2i:
-    var origin := camera.project_ray_origin(screen_pos)
-    var direction := camera.project_ray_normal(screen_pos)
-    var hit: Variant = Plane(Vector3.UP, 0.0).intersects_ray(origin, direction)
-    if hit == null:
-        return Vector2i(-1000, -1000)
-    var point: Vector3 = hit
-    return Vector2i(roundi(point.x / GAP), roundi(point.z / ROW_GAP))
-
-# Encontra a letra resolvida mais próxima na tela. A tolerância maior que
-# a área exata da peça deixa o arrasto mais permissivo em celulares.
-func _nearest_solved_cell(screen_pos: Vector2, max_distance: float = 58.0) -> Vector2i:
+# Localiza letras resolvidas pela posição projetada, sem depender do raio 3D
+# nas bordas das peças, onde a célula calculada pode oscilar.
+func _gesture_nearest_solved_cell(screen_pos: Vector2, radius: float) -> Vector2i:
     var best_cell := Vector2i(-1000, -1000)
-    var best_distance: float = max_distance
-    var seen: Dictionary = {}
+    var best_distance: float = radius
+    var visited: Dictionary = {}
     for word in words:
         if word["state"] != "solved":
             continue
         for cell in _cells(word):
-            if seen.has(cell) or not _inside_level(cell):
+            if visited.has(cell) or not _inside_level(cell):
                 continue
-            seen[cell] = true
-            var projected: Vector2 = camera.unproject_position(Vector3(float(cell.x) * GAP, 0.5, float(cell.y) * ROW_GAP))
-            var distance: float = projected.distance_to(screen_pos)
-            if distance <= best_distance:
+            visited[cell] = true
+            var world := Vector3(float(cell.x) * GAP, 0.5, float(cell.y) * ROW_GAP)
+            var distance: float = camera.unproject_position(world).distance_to(screen_pos)
+            if distance < best_distance:
                 best_distance = distance
                 best_cell = cell
     return best_cell
 
-func _nearest_branch_direction(screen_pos: Vector2, max_distance: float = 68.0) -> Vector2i:
+# Identifica as casas laterais possíveis por distância na tela. A direção
+# só será aplicada uma vez por gesto para evitar alternâncias involuntárias.
+func _gesture_branch_at(screen_pos: Vector2, radius: float = 46.0) -> Vector2i:
     if preview_parent < 0 or preview_parent >= words.size() or preview_anchor < 0:
         return Vector2i.ZERO
     var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
@@ -2507,18 +2500,27 @@ func _nearest_branch_direction(screen_pos: Vector2, max_distance: float = 68.0) 
     var anchor: Vector2i = parent_cells[preview_anchor]
     var axis: Vector2i = Vector2i(words[preview_parent]["dir"])
     var sides: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1)] if axis.x != 0 else [Vector2i(-1, 0), Vector2i(1, 0)]
-    var best_direction := Vector2i.ZERO
-    var best_distance: float = max_distance
+    var nearest := Vector2i.ZERO
+    var nearest_distance: float = radius
     for side in sides:
         if _possible_children(preview_parent, preview_anchor, side).is_empty():
             continue
         var target: Vector2i = anchor + side
-        var projected: Vector2 = camera.unproject_position(Vector3(float(target.x) * GAP, 0.5, float(target.y) * ROW_GAP))
-        var distance: float = projected.distance_to(screen_pos)
-        if distance <= best_distance:
-            best_distance = distance
-            best_direction = side
-    return best_direction
+        var world := Vector3(float(target.x) * GAP, 0.5, float(target.y) * ROW_GAP)
+        var distance: float = camera.unproject_position(world).distance_to(screen_pos)
+        if distance < nearest_distance:
+            nearest_distance = distance
+            nearest = side
+    return nearest
+
+func _screen_to_cell(screen_pos: Vector2) -> Vector2i:
+    var origin := camera.project_ray_origin(screen_pos)
+    var direction := camera.project_ray_normal(screen_pos)
+    var hit: Variant = Plane(Vector3.UP, 0.0).intersects_ray(origin, direction)
+    if hit == null:
+        return Vector2i(-1000, -1000)
+    var point: Vector3 = hit
+    return Vector2i(roundi(point.x / GAP), roundi(point.z / ROW_GAP))
 
 # Navegação espacial determinística. Não usa a lista de palavras candidatas.
 # O eixo e os índices são calculados pela posição real da casa, sem usar o
@@ -2712,18 +2714,14 @@ func _unhandled_input(event: InputEvent) -> void:
 func _start_pointer(screen_pos: Vector2) -> void:
     pointer_start = screen_pos
     gesture_cursor = screen_pos
-    pointer_cell = _nearest_solved_cell(screen_pos)
-    # Aceita o início do gesto perto da peça, não apenas dentro de seu quadrado.
-    pointer_down = false
+    pointer_cell = _gesture_nearest_solved_cell(screen_pos, 50.0)
+    pointer_down = pointer_cell != Vector2i(-1000, -1000)
     pointer_dragged = false
-    panning_board = true
+    gesture_branch_changed = false
+    panning_board = not pointer_down
     pan_last_screen = screen_pos
-    if _is_solved_cell(pointer_cell):
-        pointer_down = true
-        panning_board = false
-    # As setas desenhadas continuam clicaveis fora das letras.
     if not pointer_down and _try_tap_branch_arrow(screen_pos):
-        return
+        panning_board = false
 
 func _stop_pointer() -> void:
     panning_board = false
@@ -2732,6 +2730,7 @@ func _stop_pointer() -> void:
         if not _try_tap_branch_arrow(pointer_start):
             _click_tile(pointer_cell)
     pointer_down = false
+    gesture_branch_changed = false
 
 func _move_pointer(screen_pos: Vector2) -> void:
     if panning_board:
@@ -2742,7 +2741,7 @@ func _move_pointer(screen_pos: Vector2) -> void:
         return
     if not pointer_down or game_over:
         return
-    if screen_pos.distance_to(pointer_start) < 12.0 and not pointer_dragged:
+    if not pointer_dragged and screen_pos.distance_to(pointer_start) < 14.0:
         return
     if not pointer_dragged:
         pointer_dragged = true
@@ -2750,24 +2749,23 @@ func _move_pointer(screen_pos: Vector2) -> void:
         _click_tile(pointer_cell)
         gesture_cursor = pointer_start
 
-    # Amostra o caminho do dedo e seleciona cada letra resolvida atravessada,
-    # mesmo quando ela pertence a outra palavra ou esta em outra linha/coluna.
-    var movement: Vector2 = screen_pos - gesture_cursor
-    var sample_count: int = maxi(1, ceili(movement.length() / 7.0))
-    for sample_index in range(1, sample_count + 1):
-        var sample_pos: Vector2 = gesture_cursor.lerp(screen_pos, float(sample_index) / float(sample_count))
-        # Detecta as saídas do cruzamento por proximidade visual: não é
-        # necessário acertar o centro da casa para virar a esquina.
-        var branch_direction: Vector2i = _nearest_branch_direction(sample_pos)
-        if branch_direction != Vector2i.ZERO and branch_direction != preview_dir:
-            _apply_direction(branch_direction)
+    # Amostra o segmento para não perder letras quando os eventos chegam
+    # espaçados; só seleciona uma casa nova quando ela é realmente resolvida.
+    var segment: Vector2 = screen_pos - gesture_cursor
+    var steps: int = maxi(1, ceili(segment.length() / 9.0))
+    for step in range(1, steps + 1):
+        var sample: Vector2 = gesture_cursor.lerp(screen_pos, float(step) / float(steps))
+        if not gesture_branch_changed:
+            var branch: Vector2i = _gesture_branch_at(sample)
+            if branch != Vector2i.ZERO and branch != preview_dir:
+                _apply_direction(branch)
+                gesture_branch_changed = true
+                continue
+        var candidate: Vector2i = _gesture_nearest_solved_cell(sample, 42.0)
+        if candidate == Vector2i(-1000, -1000) or candidate == pointer_cell:
             continue
-        var hovered_cell: Vector2i = _nearest_solved_cell(sample_pos, 54.0)
-        if hovered_cell == Vector2i(-1000, -1000) or hovered_cell == pointer_cell:
-            continue
-        pointer_cell = hovered_cell
-        if _is_solved_cell(hovered_cell):
-            _click_tile(hovered_cell)
+        pointer_cell = candidate
+        _click_tile(candidate)
     gesture_cursor = screen_pos
 
 
