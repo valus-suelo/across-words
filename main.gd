@@ -2286,9 +2286,16 @@ func _refresh_board() -> void:
         # resolvida, mesmo se tambem for foco ou ancora do proximo ramo.
         # O destaque temporario verde continua sendo aplicado pelo flash abaixo.
         if solved_cells.has(p):
-            top_color = SOLVED
-            skirt_color = SIDE_SOLVED
-            target_height = 0.03 if kind == "branch_source" else 0.015
+            if kind == "branch_source":
+                # A palavra de origem selecionada para novos ramos fica
+                # destacada em dourado forte, sem perder o estado resolvido.
+                top_color = Color("#d9b94f")
+                skirt_color = Color("#88713a")
+                target_height = 0.03
+            else:
+                top_color = SOLVED
+                skirt_color = SIDE_SOLVED
+                target_height = 0.015
         if level_mode and not _inside_level(p):
             # O dourado escuro fica reservado aos trechos ainda em digitacao.
             if solved_cells.has(p):
