@@ -2286,17 +2286,17 @@ func _refresh_board() -> void:
         # Uma casa que pertence a palavra concluida sempre termina na cor
         # resolvida, mesmo se tambem for foco ou ancora do proximo ramo.
         # O destaque temporario verde continua sendo aplicado pelo flash abaixo.
-        if solved_cells.has(p) and kind != "branch_source":
+        if solved_cells.has(p) and kind not in ["branch_source", "anchor_focus"]:
             top_color = SOLVED
             skirt_color = SIDE_SOLVED
             target_height = 0.015
         if level_mode and not _inside_level(p):
             # O dourado escuro fica reservado aos trechos ainda em digitacao.
-            if solved_cells.has(p) and kind != "branch_source":
+            if solved_cells.has(p) and kind not in ["branch_source", "anchor_focus"]:
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
                 target_height = 0.015
-            elif kind != "branch_source":
+            elif kind not in ["branch_source", "anchor_focus"]:
                 var outer_highlight: bool = kind in ["selected", "preview", "focus", "anchor_focus", "draft"]
                 top_color = Color("#aaa58f") if outer_highlight else OUTER_TILE
                 skirt_color = Color("#686451") if outer_highlight else Color("#242936")
