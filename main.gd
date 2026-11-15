@@ -2250,8 +2250,10 @@ func _refresh_board() -> void:
                 skirt_color = SIDE_SOLVED
                 target_height = 0.015
             "branch_source":
-                top_color = SOLVED
-                skirt_color = SIDE_SOLVED
+                # A palavra atual que serve de origem para o próximo ramo
+                # recebe amarelo claro, mantendo o restante do tabuleiro igual.
+                top_color = Color("#eadb91")
+                skirt_color = Color("#9a8749")
                 target_height = 0.03
             "active":
                 top_color = ACTIVE
@@ -2284,16 +2286,16 @@ func _refresh_board() -> void:
         # Uma casa que pertence a palavra concluida sempre termina na cor
         # resolvida, mesmo se tambem for foco ou ancora do proximo ramo.
         # O destaque temporario verde continua sendo aplicado pelo flash abaixo.
-        if solved_cells.has(p):
+        if solved_cells.has(p) and kind != "branch_source":
             top_color = SOLVED
             skirt_color = SIDE_SOLVED
-            target_height = 0.03 if kind == "branch_source" else 0.015
+            target_height = 0.015
         if level_mode and not _inside_level(p):
             # O dourado escuro fica reservado aos trechos ainda em digitacao.
-            if solved_cells.has(p):
+            if solved_cells.has(p) and kind != "branch_source":
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
-                target_height = 0.03 if kind == "branch_source" else 0.015
+                target_height = 0.015
             else:
                 var outer_highlight: bool = kind in ["selected", "preview", "focus", "anchor_focus", "draft"]
                 top_color = Color("#aaa58f") if outer_highlight else OUTER_TILE
