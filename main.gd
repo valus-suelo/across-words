@@ -2468,8 +2468,10 @@ func _process(delta: float) -> void:
             if level_mode and not _inside_level(cell):
                 target_top = OUTER_TILE
                 target_skirt = Color("#242936")
-            var top_color: Color = (fade_data["top"] as Color).lerp(target_top, eased)
-            var skirt_color: Color = (fade_data["skirt"] as Color).lerp(target_skirt, eased)
+            var fade_top: Color = fade_data["top"]
+            var fade_skirt: Color = fade_data["skirt"]
+            var top_color: Color = fade_top.lerp(target_top, eased)
+            var skirt_color: Color = fade_skirt.lerp(target_skirt, eased)
             var tile: MeshInstance3D = board[cell]
             tile.set_surface_override_material(0, _material_cached("tile_top_" + top_color.to_html(), top_color))
             tile.set_surface_override_material(1, _material_cached("tile_edge_" + top_color.to_html(), top_color.darkened(0.22)))
