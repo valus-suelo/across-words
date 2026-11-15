@@ -6,7 +6,7 @@ Este projeto inclui a versão v0.17 do jogo, a exportação Android e uma ação
 1. Envie os arquivos à raiz do repositório, inclusive `.github/workflows/web-pages.yml`.
 2. Em GitHub Settings > Pages, escolha **GitHub Actions** como fonte de publicação.
 3. Vá a Actions > Publicar jogo no GitHub Pages > Run workflow (ou aguarde o push).
-4. Quando a execução terminar com sucesso, acesse `https://valus-suelo.github.io/across-words/`.
+4. Quando a execução terminar com sucesso, acesse `https://valusuelo.github.io/acrosswords/`.
 
 O projeto deve estar em repositório público para o Pages gratuito no plano GitHub Free. Caso queira manter o código privado, avalie o suporte do seu plano ou outro serviço de hospedagem.
 
