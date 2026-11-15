@@ -2219,18 +2219,28 @@ func _refresh_board() -> void:
                 tile_state[crossing_cell] = "anchor_focus"
     if board.has(focus_cell):
         tile_state[focus_cell] = "focus"
-    # Os dois quadrados laterais indicam as duas direções possíveis na esquina.
-    # Cada um recebe uma ponta arredondada que funciona como alvo do gesto.
+    # Em uma letra compartilhada, cada palavra resolvida que passa pela
+    # âncora contribui com sua própria direção inicial de ramificação.
+    # Assim, IRA pode indicar cima e AIA pode indicar direita no mesmo A.
     if preview_parent >= 0 and preview_parent < words.size() and preview_anchor >= 0:
         var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
         if preview_anchor < anchor_cells.size():
-            var axis: Vector2i = Vector2i(words[preview_parent]["dir"])
-            var side_a: Vector2i = Vector2i(0, -1) if axis.x != 0 else Vector2i(-1, 0)
-            for side in [side_a, -side_a]:
-                var side_cell: Vector2i = anchor_cells[preview_anchor] + side
+            var crossing_cell: Vector2i = anchor_cells[preview_anchor]
+            var shown_directions: Dictionary = {}
+            for word_index in range(words.size()):
+                if words[word_index]["state"] != "solved":
+                    continue
+                var word_cells: Array[Vector2i] = _cells(words[word_index])
+                if not word_cells.has(crossing_cell):
+                    continue
+                var branch_direction: Vector2i = _preview_default_direction(word_index)
+                if shown_directions.has(branch_direction):
+                    continue
+                shown_directions[branch_direction] = true
+                var side_cell: Vector2i = crossing_cell + branch_direction
                 if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
                     if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
-                        tile_state[side_cell] = "side_option"
+                        tile_state[side_cell] = "side_option_selected" if word_index == preview_parent and branch_direction == preview_dir else "side_option"
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
         var kind: String = tile_state.get(p, "base")
@@ -2270,6 +2280,10 @@ func _refresh_board() -> void:
                 top_color = Color("#999988")
                 skirt_color = SIDE_PREVIEW
                 target_height = 0.0
+            "side_option_selected":
+                top_color = CURRENT_LETTER
+                skirt_color = SIDE_ACTIVE
+                target_height = 0.025
         if pickups.has(p) and kind == "base":
             top_color = GOLD if pickups[p] in ["coin", "crown"] else Color("#79bac8")
             skirt_color = Color("#a58b50") if pickups[p] in ["coin", "crown"] else Color("#436d7c")
