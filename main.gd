@@ -2124,9 +2124,12 @@ func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
     return false
 
 func _refresh_board() -> void:
+    # Os rótulos são filhos dos blocos. Liberação imediata evita que
+    # atualizações consecutivas (por exemplo, ao tocar numa palavra) deixem
+    # rótulos antigos pendentes junto dos novos durante o mesmo frame.
     for node in visual_nodes:
         if is_instance_valid(node):
-            node.queue_free()
+            node.free()
     visual_nodes.clear()
     tile_state.clear()
     var letters: Dictionary = {}
