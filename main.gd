@@ -2333,7 +2333,7 @@ func _refresh_board() -> void:
             target_height = 0.015
         if level_mode and not _inside_level(p):
             # O dourado escuro fica reservado aos trechos ainda em digitacao.
-            if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus"]:
+            if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "blocked_outer"]:
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
                 target_height = 0.015
