@@ -171,6 +171,7 @@ var tile_target_heights: Dictionary = {}
 var tile_pedestals: Dictionary = {}
 var flash_cells: Dictionary = {}
 var flash_started_at: float = 0.0
+var word_fade_cells: Dictionary = {}
 var round_epoch: int = 0
 var last_expire_update: int = -1
 var map_vision_moves: int = 0
@@ -1783,6 +1784,7 @@ func _submit() -> void:
         _message("Sem raios! Aguarde recarga ou colete energia.")
         return
     var typed: String = entry.text.strip_edges().to_upper()
+    var previous_word_index: int = preview_parent if committed_from_preview else -1
     if committed_from_preview and not typed.begins_with(_anchor_letter(preview_parent, preview_anchor)):
         _message("A resposta deve começar com a letra de origem selecionada.")
         return
@@ -1818,7 +1820,23 @@ func _submit() -> void:
         words[chosen] = word
         last_solved_word = chosen
         last_navigation_arrow = Vector2i.ZERO
-    _flash_word(_cells(word), Color("#67cf76"))
+    var confirmed_cells: Array[Vector2i] = _cells(word)
+    _flash_word(confirmed_cells, Color("#67cf76"), true)
+    # A palavra anterior permanece dourada durante o flash e depois volta
+    # ao lilás letra por letra, começando pela sua primeira letra.
+    if previous_word_index >= 0 and previous_word_index < words.size():
+        var previous_cells: Array[Vector2i] = _cells(words[previous_word_index])
+        var confirmed_set: Dictionary = {}
+        for cell in confirmed_cells:
+            confirmed_set[cell] = true
+        for letter_index in range(previous_cells.size()):
+            var old_cell: Vector2i = previous_cells[letter_index]
+            if confirmed_set.has(old_cell):
+                continue
+            word_fade_cells[old_cell] = {
+                "start_at": elapsed + WORD_FLASH_DURATION + float(letter_index) * 0.075,
+                "duration": 0.24
+            }
     if map_vision_moves > 0:
         map_vision_moves -= 1
         if map_vision_moves == 0:
@@ -2046,7 +2064,7 @@ func _flash_display_skirt_color(data: Dictionary) -> Color:
     var flash_color: Color = data.get("color", base_color).darkened(0.32)
     return base_color.lerp(flash_color, _flash_strength(data))
 
-func _flash_word(cells: Array[Vector2i], flash_color: Color) -> void:
+func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool = false) -> void:
     # Primeiro restaura o tabuleiro sem efeitos. Assim a cor-base e
     # capturada no mesmo instante para todas as casas, nunca quando
     # cada bloco entrar na area visivel da camera.
@@ -2066,6 +2084,9 @@ func _flash_word(cells: Array[Vector2i], flash_color: Color) -> void:
             var skirt_material: Material = skirt_node.material_override
             if skirt_material is StandardMaterial3D:
                 base_skirt = (skirt_material as StandardMaterial3D).albedo_color
+        if success_base:
+            base_color = CURRENT_WORD
+            base_skirt = CURRENT_WORD_SIDE
         flash_cells[p] = {
             "color": flash_color,
             "base": base_color,
@@ -2475,6 +2496,27 @@ func _process(delta: float) -> void:
             for cell in done:
                 flash_cells.erase(cell)
             _refresh_board()
+    if not word_fade_cells.is_empty():
+        var faded: Array[Vector2i] = []
+        for cell in word_fade_cells.keys():
+            var fade_data: Dictionary = word_fade_cells[cell]
+            var start_at: float = float(fade_data["start_at"])
+            var duration: float = float(fade_data["duration"])
+            var progress: float = clampf((elapsed - start_at) / duration, 0.0, 1.0)
+            var eased: float = progress * progress * (3.0 - 2.0 * progress)
+            var shown_color: Color = CURRENT_WORD.lerp(SOLVED, eased)
+            var shown_skirt: Color = CURRENT_WORD_SIDE.lerp(SIDE_SOLVED, eased)
+            if board.has(cell):
+                var tile: MeshInstance3D = board[cell]
+                tile.set_surface_override_material(0, _material_cached("tile_top_" + shown_color.to_html(), shown_color))
+                tile.set_surface_override_material(1, _material_cached("tile_edge_" + shown_color.to_html(), shown_color.darkened(0.22)))
+                var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
+                skirt.material_override = _material_cached("skirt_" + shown_skirt.to_html(), shown_skirt)
+            if progress >= 1.0:
+                faded.append(cell)
+        if not faded.is_empty():
+            for cell in faded:
+                word_fade_cells.erase(cell)
 
 func _screen_to_cell(screen_pos: Vector2) -> Vector2i:
     var origin := camera.project_ray_origin(screen_pos)
