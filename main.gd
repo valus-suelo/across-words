@@ -2123,7 +2123,10 @@ func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
         return false
     var anchor: Vector2i = parent_cells[preview_anchor]
     var best_direction := Vector2i.ZERO
-    var best_distance: float = 38.0
+    # Mesmo alcance do reconhecimento magnético usado no início do gesto.
+    # O valor anterior (38 px) fazia o toque ser reconhecido no pressionar,
+    # mas rejeitado ao soltar sobre o mesmo indicador.
+    var best_distance: float = 76.0
     for direction in _available_branch_directions(anchor):
         var neighbor: Vector2i = anchor + direction
         var target := Vector3(float(neighbor.x) * GAP, 0.5, float(neighbor.y) * ROW_GAP)
@@ -2242,13 +2245,11 @@ func _refresh_board() -> void:
             # A direção da palavra selecionada é processada primeiro; as
             # outras palavras cruzadas aparecem como alternativas distintas.
             for branch_direction in _available_branch_directions(crossing_cell):
-                # Só apresenta direções com ao menos uma palavra possível.
-                if _possible_children(preview_parent, preview_anchor, branch_direction).is_empty():
-                    continue
                 var side_cell: Vector2i = crossing_cell + branch_direction
+                # Mostra toda casa livre ao redor da âncora, mesmo quando
+                # ainda não há candidata no dicionário para aquela direção.
+                # Isso mantém o canto selecionável e permite alternar o eixo.
                 if board.has(side_cell) and not solved_cells.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
-                    # Indicadores sempre ficam acima da prévia e podem ser
-                    # tocados ou usados como ponto inicial de um arraste.
                     tile_state[side_cell] = "side_option_selected" if branch_direction == preview_dir else "side_option"
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
