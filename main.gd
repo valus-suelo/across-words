@@ -2207,15 +2207,14 @@ func _refresh_board() -> void:
         # alem da letra de cruzamento. A palavra inteira fica mais discreta.
         if typed.length() <= 1:
             continue
-        var branch_key: String = "%d:%d:%d:%d" % [pidx, anchor, d.x, d.y]
-        var draft_answer: String = String(fixed_branch_answers.get(branch_key, ""))
-        var draft_length: int = maxi(typed.length(), draft_answer.length())
-        for j in range(draft_length):
+        # O rascunho visual acompanha somente as letras realmente digitadas.
+        # A resposta sugerida completa pertence a pre-visualizacao, nao deve
+        # criar blocos extras depois do limite da palavra.
+        for j in range(typed.length()):
             var cell: Vector2i = start + d * j
             if tile_state.get(cell, "") != "solved":
                 tile_state[cell] = "draft"
-                if j < typed.length():
-                    letters[cell] = typed[j]
+                letters[cell] = typed[j]
     if chosen >= 0 and chosen < words.size() and words[chosen]["state"] == "active":
         var initial_cells: Array[Vector2i] = _cells(words[chosen])
         var entered: String = entry.text.strip_edges().to_upper()
