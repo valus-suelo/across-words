@@ -1822,6 +1822,8 @@ func _submit() -> void:
         last_solved_word = chosen
         last_navigation_arrow = Vector2i.ZERO
     var confirmed_cells: Array[Vector2i] = _cells(word)
+    # Uma nova confirmação substitui qualquer fade ainda em andamento.
+    word_fade_cells.clear()
     _flash_word(confirmed_cells, Color("#67cf76"), true)
     # A palavra anterior permanece dourada durante o flash e depois volta
     # ao lilás letra por letra, começando pela sua primeira letra.
