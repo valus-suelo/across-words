@@ -20,10 +20,10 @@ const BASE := Color("#4f5772")
 const OUTER_TILE := Color("#2e3342")
 const ACTIVE := Color("#999988")
 const SELECTED := Color("#ffffe3")
-const SOLVED := Color("#eadb91")
+const SOLVED := Color("#af9bcc")
 const CURRENT_LETTER := Color("#ffffe3")
 const SIDE_EMPTY := Color("#30374d")
-const SIDE_SOLVED := Color("#9a8749")
+const SIDE_SOLVED := Color("#75658f")
 const SIDE_ACTIVE := Color("#aaa48d")
 const SIDE_PREVIEW := Color("#656557")
 const SIDE_EXIT := Color("#2d6b24")
@@ -1397,23 +1397,18 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
     var parent_cells: Array[Vector2i] = _cells(parent)
     if anchor < 0 or anchor >= parent_cells.size():
         return choices
-    # A direção precisa ser perpendicular a pelo menos uma palavra
-    # resolvida que atravesse esta âncora. Em cruzamentos, os dois eixos
-    # podem ser escolhidos; em letras comuns, apenas um.
-    var crossing: Vector2i = parent_cells[anchor]
-    if not _available_branch_directions(crossing).has(direction):
+    var parent_dir: Vector2i = parent["dir"]
+    if direction == Vector2i.ZERO or parent_dir.x * direction.x + parent_dir.y * direction.y != 0:
         return choices
+    var crossing: Vector2i = parent_cells[anchor]
     if not _inside_level(crossing):
         return choices
-    # A letra inicial vem da malha resolvida completa, não do texto da
-    # palavra usada internamente como referência para localizar a âncora.
+    var parent_answer: String = parent["answer"]
     var occupied: Dictionary = _occupied_letters()
-    if not occupied.has(crossing):
-        return choices
     # Impedimento por inimigo: não é permitido traçar uma palavra sobre ele.
     if enemy_cell == crossing:
         return choices
-    var initial_letter: String = String(occupied[crossing])
+    var initial_letter: String = parent_answer.substr(anchor, 1)
     var source: Array = words_by_initial.get(initial_letter, [])
     for item in source:
         if not _word_difficulty_allowed(item):
@@ -1599,33 +1594,8 @@ func _clear_preview(save: bool = true) -> void:
     preview_choice_index = 0
 
 func _preview_default_direction(index: int) -> Vector2i:
-    # A direção inicial é determinada pela palavra que acabou de ser escolhida.
-    # Horizontal -> baixo; vertical -> direita (coordenadas do tabuleiro).
     var d: Vector2i = words[index]["dir"]
-    return Vector2i(d.y, d.x)
-
-func _available_branch_directions(anchor_cell: Vector2i) -> Array[Vector2i]:
-    # Uma nova palavra sempre deve ser perpendicular a uma palavra
-    # resolvida que passe pela âncora. Em cruzamentos, cada eixo existente
-    # oferece sua perpendicular; assim, somente cantos permitem escolher
-    # entre os eixos X e Y.
-    var directions: Array[Vector2i] = []
-    for word in words:
-        if word["state"] != "solved":
-            continue
-        var cells: Array[Vector2i] = _cells(word)
-        if not cells.has(anchor_cell):
-            continue
-        var axis: Vector2i = word["dir"]
-        if absi(axis.x) + absi(axis.y) != 1:
-            continue
-        var perpendicular := Vector2i(-axis.y, axis.x)
-        if not directions.has(perpendicular):
-            directions.append(perpendicular)
-        var opposite: Vector2i = -perpendicular
-        if not directions.has(opposite):
-            directions.append(opposite)
-    return directions
+    return Vector2i(0, 1) if d.x != 0 else Vector2i(1, 0)
 
 func _select_anchor(index: int, anchor: int) -> void:
     if index < 0 or index >= words.size():
@@ -1648,9 +1618,11 @@ func _select_anchor(index: int, anchor: int) -> void:
     chosen = -1
     var key: String = _draft_key(index, anchor)
     var old: Dictionary = drafts.get(key, {})
-    # Cada palavra determina sua própria direção inicial na letra compartilhada.
-    # Não herda a direção global nem a de um rascunho de outra palavra.
-    var remembered_direction: Vector2i = _preview_default_direction(index)
+    # O lado escolhido tem prioridade ao avançar para outra letra.
+    var remembered_direction: Vector2i = preferred_branch_direction
+    var parent_direction: Vector2i = words[index]["dir"]
+    if remembered_direction == Vector2i.ZERO or parent_direction.x * remembered_direction.x + parent_direction.y * remembered_direction.y != 0:
+        remembered_direction = old.get("dir", _preview_default_direction(index))
     preview_dir = remembered_direction
     preferred_branch_direction = remembered_direction
     var text_value: String = String(old.get("text", _anchor_letter(index, anchor)))
@@ -1768,11 +1740,23 @@ func _choose(index: int) -> void:
 func _click_tile(p: Vector2i) -> void:
     if game_over:
         return
-    # Todas as palavras resolvidas formam uma única malha. A casa clicada
-    # identifica a âncora; a palavra que originalmente a criou é irrelevante.
-    if _is_solved_cell(p):
+    # Prioriza a palavra de origem atual em casas compartilhadas.
+    # Nunca seleciona uma palavra antiga bloqueada se uma nova pode ramificar.
+    var eligible: Array[int] = []
+    if preview_parent >= 0 and preview_parent < words.size():
+        eligible.append(preview_parent)
+    for i in range(words.size() - 1, -1, -1):
+        if not eligible.has(i):
+            eligible.append(i)
+    for i in eligible:
+        var word: Dictionary = words[i]
+        if word["state"] != "solved":
+            continue
+        var anchor: int = _cells(word).find(p)
+        if anchor < 0:
+            continue
         last_navigation_arrow = Vector2i.ZERO
-        _select_anchor_at_cell(p)
+        _select_anchor(i, anchor)
         return
     for i in range(words.size() - 1, -1, -1):
         if words[i]["state"] == "active" and _cells(words[i]).has(p):
@@ -1780,17 +1764,6 @@ func _click_tile(p: Vector2i) -> void:
             _message("Palavra selecionada. Digite a resposta e confirme.")
             return
     _message("Toque numa letra resolvida para testar um novo caminho.")
-
-func _select_anchor_at_cell(cell: Vector2i) -> void:
-    # Usa uma representação canônica para a coordenada compartilhada,
-    # evitando alternar entre palavras quando a letra está num cruzamento.
-    for i in range(words.size()):
-        if words[i]["state"] != "solved":
-            continue
-        var anchor: int = _cells(words[i]).find(cell)
-        if anchor >= 0:
-            _select_anchor(i, anchor)
-            return
 
 func _submit() -> void:
     if game_over:
@@ -2135,22 +2108,20 @@ func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
     if preview_anchor >= parent_cells.size():
         return false
     var anchor: Vector2i = parent_cells[preview_anchor]
-    var best_direction := Vector2i.ZERO
-    # Mesmo alcance do reconhecimento magnético usado no início do gesto.
-    # O valor anterior (38 px) fazia o toque ser reconhecido no pressionar,
-    # mas rejeitado ao soltar sobre o mesmo indicador.
-    var best_distance: float = 76.0
-    for direction in _available_branch_directions(anchor):
-        var neighbor: Vector2i = anchor + direction
-        var target := Vector3(float(neighbor.x) * GAP, 0.5, float(neighbor.y) * ROW_GAP)
-        var distance: float = camera.unproject_position(target).distance_to(screen_pos)
-        if distance < best_distance:
-            best_distance = distance
-            best_direction = direction
-    if best_direction == Vector2i.ZERO:
-        return false
-    _apply_direction(best_direction)
-    return true
+    var horizontal: bool = Vector2i(words[preview_parent]["dir"]).x != 0
+    var sides: Array[Vector2i] = []
+    if horizontal:
+        sides.append(Vector2i(0, -1))
+        sides.append(Vector2i(0, 1))
+    else:
+        sides.append(Vector2i(-1, 0))
+        sides.append(Vector2i(1, 0))
+    for side in sides:
+        var world_pos := Vector3((float(anchor.x) + float(side.x) * 0.43) * GAP, 0.93, (float(anchor.y) + float(side.y) * 0.43) * ROW_GAP)
+        if camera.unproject_position(Vector3((float(anchor.x) + float(side.x)) * GAP, 0.5, (float(anchor.y) + float(side.y)) * ROW_GAP)).distance_to(screen_pos) < 38.0:
+            _apply_direction(side)
+            return true
+    return false
 
 func _refresh_board() -> void:
     for node in visual_nodes:
@@ -2219,11 +2190,10 @@ func _refresh_board() -> void:
         var typed: String = entry.text.strip_edges().to_upper()
         for i in range(cells.size()):
             var p: Vector2i = cells[i]
-            # Toda a palavra candidata fica acesa, inclusive as letras
-            # que cruzam palavras já concluídas.
-            tile_state[p] = "focus"
-            if i < typed.length():
-                letters[p] = typed[i]
+            if tile_state.get(p, "") != "solved":
+                tile_state[p] = "selected" if i < typed.length() else "preview"
+                if i < typed.length():
+                    letters[p] = typed[i]
     # Realce da proxima letra a digitar, diretamente no tabuleiro.
     var focus_cell: Vector2i = Vector2i(999999, 999999)
     var focus_cells: Array[Vector2i] = []
@@ -2236,8 +2206,15 @@ func _refresh_board() -> void:
         focus_cell = focus_cells[next_index]
     elif preview_parent >= 0 and preview_anchor >= 0:
         focus_cell = _cells(words[preview_parent])[preview_anchor]
-    # As palavras concluídas compartilham a mesma cor; não há destaque
-    # permanente separado para a palavra de origem.
+    # Marca TODAS as letras da palavra que pode gerar o proximo ramo.
+    # Palavras anteriores permanecem no tabuleiro, mas sem este destaque.
+    var highlighted_parent: int = preview_parent if preview_parent >= 0 else last_solved_word
+    if highlighted_parent >= 0 and highlighted_parent < words.size():
+        var source_word: Dictionary = words[highlighted_parent]
+        if source_word["state"] == "solved":
+            for source_cell in _cells(source_word):
+                if board.has(source_cell) and tile_state.get(source_cell, "") == "solved":
+                    tile_state[source_cell] = "branch_source"
     # A letra de cruzamento da palavra antiga permanece iluminada,
     # mesmo quando a proxima letra da palavra nova esta em outra casa.
     if preview_parent >= 0 and preview_parent < words.size():
@@ -2248,22 +2225,19 @@ func _refresh_board() -> void:
                 tile_state[crossing_cell] = "anchor_focus"
     if board.has(focus_cell):
         tile_state[focus_cell] = "focus"
-    # Em uma letra compartilhada, cada palavra resolvida que passa pela
-    # âncora contribui com sua própria direção inicial de ramificação.
-    # Assim, IRA pode indicar cima e AIA pode indicar direita no mesmo A.
+    # O lado nao escolhido mostra um UNICO bloco oliva. O lado selecionado
+    # e representado pelos blocos da palavra proposta (sem setas flutuantes).
     if preview_parent >= 0 and preview_parent < words.size() and preview_anchor >= 0:
         var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
         if preview_anchor < anchor_cells.size():
-            var crossing_cell: Vector2i = anchor_cells[preview_anchor]
-            # A direção da palavra selecionada é processada primeiro; as
-            # outras palavras cruzadas aparecem como alternativas distintas.
-            for branch_direction in _available_branch_directions(crossing_cell):
-                var side_cell: Vector2i = crossing_cell + branch_direction
-                # Mostra toda casa livre ao redor da âncora, mesmo quando
-                # ainda não há candidata no dicionário para aquela direção.
-                # Isso mantém o canto selecionável e permite alternar o eixo.
-                if board.has(side_cell) and not solved_cells.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
-                    tile_state[side_cell] = "side_option_selected" if branch_direction == preview_dir else "side_option"
+            var axis: Vector2i = Vector2i(words[preview_parent]["dir"])
+            var opposite: Vector2i = -preview_dir
+            if opposite == Vector2i.ZERO:
+                opposite = Vector2i(0, 1) if axis.x != 0 else Vector2i(1, 0)
+            var side_cell: Vector2i = anchor_cells[preview_anchor] + opposite
+            if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
+                if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
+                    tile_state[side_cell] = "side_option"
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
         var kind: String = tile_state.get(p, "base")
@@ -2303,10 +2277,6 @@ func _refresh_board() -> void:
                 top_color = Color("#999988")
                 skirt_color = SIDE_PREVIEW
                 target_height = 0.0
-            "side_option_selected":
-                top_color = CURRENT_LETTER
-                skirt_color = SIDE_ACTIVE
-                target_height = 0.025
         if pickups.has(p) and kind == "base":
             top_color = GOLD if pickups[p] in ["coin", "crown"] else Color("#79bac8")
             skirt_color = Color("#a58b50") if pickups[p] in ["coin", "crown"] else Color("#436d7c")
@@ -2503,52 +2473,6 @@ func _process(delta: float) -> void:
             for cell in done:
                 flash_cells.erase(cell)
             _refresh_board()
-
-# Localiza letras resolvidas pela posição projetada, sem depender do raio 3D
-# nas bordas das peças, onde a célula calculada pode oscilar.
-# Campo magnético: qualquer ponto próximo de uma letra resolvida pode
-# iniciar a seleção. A letra mais próxima dentro do raio é atraída para o dedo.
-func _gesture_nearest_solved_cell(screen_pos: Vector2, radius: float) -> Vector2i:
-    var best_cell := Vector2i(-1000, -1000)
-    var best_distance: float = radius
-    var visited: Dictionary = {}
-    for word in words:
-        if word["state"] != "solved":
-            continue
-        for cell in _cells(word):
-            if visited.has(cell) or not _inside_level(cell):
-                continue
-            visited[cell] = true
-            var world := Vector3(float(cell.x) * GAP, 0.5, float(cell.y) * ROW_GAP)
-            var distance: float = camera.unproject_position(world).distance_to(screen_pos)
-            if distance < best_distance:
-                best_distance = distance
-                best_cell = cell
-    return best_cell
-
-# Dois lóbulos arredondados ficam nas laterais da âncora. Ao deslizar o dedo
-# para um deles, a direção perpendicular muda; a seleção pode ser revertida
-# durante o mesmo gesto, sem travar na primeira direção escolhida.
-func _gesture_branch_at(screen_pos: Vector2, radius: float = 58.0) -> Vector2i:
-    if preview_parent < 0 or preview_parent >= words.size() or preview_anchor < 0:
-        return Vector2i.ZERO
-    var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
-    if preview_anchor >= parent_cells.size():
-        return Vector2i.ZERO
-    var anchor: Vector2i = parent_cells[preview_anchor]
-    var anchor_screen: Vector2 = camera.unproject_position(Vector3(float(anchor.x) * GAP, 0.5, float(anchor.y) * ROW_GAP))
-    if screen_pos.distance_to(anchor_screen) > radius + 34.0:
-        return Vector2i.ZERO
-    var best_direction := Vector2i.ZERO
-    var best_distance: float = radius
-    for direction in _available_branch_directions(anchor):
-        var neighbor: Vector2i = anchor + direction
-        var target := Vector3(float(neighbor.x) * GAP, 0.5, float(neighbor.y) * ROW_GAP)
-        var distance: float = camera.unproject_position(target).distance_to(screen_pos)
-        if distance < best_distance:
-            best_distance = distance
-            best_direction = direction
-    return best_direction
 
 func _screen_to_cell(screen_pos: Vector2) -> Vector2i:
     var origin := camera.project_ray_origin(screen_pos)
@@ -2751,28 +2675,23 @@ func _unhandled_input(event: InputEvent) -> void:
 func _start_pointer(screen_pos: Vector2) -> void:
     pointer_start = screen_pos
     gesture_cursor = screen_pos
-    # O gesto pode começar tanto numa letra resolvida quanto num dos
-    # indicadores ao redor da âncora atualmente selecionada.
-    var branch_at_start: Vector2i = _gesture_branch_at(screen_pos, 76.0)
-    if branch_at_start != Vector2i.ZERO and preview_parent >= 0 and preview_parent < words.size():
-        var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
-        if preview_anchor >= 0 and preview_anchor < anchor_cells.size():
-            pointer_cell = anchor_cells[preview_anchor]
-            pointer_down = true
-        else:
-            pointer_down = false
-    else:
-        # O toque inicial precisa atingir uma letra resolvida; o campo
-        # magnético só entra em ação depois que o arraste começa.
-        pointer_cell = _gesture_nearest_solved_cell(screen_pos, 34.0)
-        pointer_down = pointer_cell != Vector2i(-1000, -1000)
-    if not pointer_down:
-        pointer_cell = _screen_to_cell(screen_pos)
+    pointer_cell = _screen_to_cell(screen_pos)
+    # Gestos so comecam sobre uma letra resolvida e selecionavel.
+    # Arrastar sobre espaco vazio nao deve alterar a palavra.
+    pointer_down = false
     pointer_dragged = false
-    panning_board = not pointer_down
+    panning_board = true
     pan_last_screen = screen_pos
+    for i in range(words.size() - 1, -1, -1):
+        if words[i]["state"] != "solved":
+            continue
+        if _inside_level(pointer_cell) and _cells(words[i]).has(pointer_cell):
+            pointer_down = true
+            panning_board = false
+            break
+    # As setas desenhadas continuam clicaveis fora das letras.
     if not pointer_down and _try_tap_branch_arrow(screen_pos):
-        panning_board = false
+        return
 
 func _stop_pointer() -> void:
     panning_board = false
@@ -2791,7 +2710,7 @@ func _move_pointer(screen_pos: Vector2) -> void:
         return
     if not pointer_down or game_over:
         return
-    if not pointer_dragged and screen_pos.distance_to(pointer_start) < 14.0:
+    if screen_pos.distance_to(pointer_start) < 30.0 and not pointer_dragged:
         return
     if not pointer_dragged:
         pointer_dragged = true
@@ -2799,21 +2718,30 @@ func _move_pointer(screen_pos: Vector2) -> void:
         _click_tile(pointer_cell)
         gesture_cursor = pointer_start
 
-    # O dedo pode atravessar o campo de uma letra para outra: cada âncora
-    # próxima é atraída e selecionada sem exigir precisão no centro da peça.
-    var segment: Vector2 = screen_pos - gesture_cursor
-    var steps: int = maxi(1, ceili(segment.length() / 8.0))
-    for step in range(1, steps + 1):
-        var sample: Vector2 = gesture_cursor.lerp(screen_pos, float(step) / float(steps))
-        var branch: Vector2i = _gesture_branch_at(sample)
-        if branch != Vector2i.ZERO and branch != preview_dir:
-            _apply_direction(branch)
+    # Amostra o caminho do dedo e seleciona cada letra resolvida atravessada,
+    # mesmo quando ela pertence a outra palavra ou esta em outra linha/coluna.
+    var movement: Vector2 = screen_pos - gesture_cursor
+    var sample_count: int = maxi(1, ceili(movement.length() / 12.0))
+    for sample_index in range(1, sample_count + 1):
+        var sample_pos: Vector2 = gesture_cursor.lerp(screen_pos, float(sample_index) / float(sample_count))
+        var hovered_cell: Vector2i = _screen_to_cell(sample_pos)
+        if hovered_cell == pointer_cell:
             continue
-        var candidate: Vector2i = _gesture_nearest_solved_cell(sample, 62.0)
-        if candidate == Vector2i(-1000, -1000) or candidate == pointer_cell:
-            continue
-        pointer_cell = candidate
-        _click_tile(candidate)
+        pointer_cell = hovered_cell
+        # Ao atravessar uma das casas laterais da ancora, troca a direcao
+        # durante o proprio arrasto, sem exigir um toque separado.
+        if preview_parent >= 0 and preview_parent < words.size() and preview_anchor >= 0:
+            var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
+            if preview_anchor < parent_cells.size():
+                var anchor_cell: Vector2i = parent_cells[preview_anchor]
+                var side_offset: Vector2i = hovered_cell - anchor_cell
+                var parent_axis: Vector2i = Vector2i(words[preview_parent]["dir"])
+                var perpendicular: bool = (parent_axis.x != 0 and side_offset.x == 0 and absi(side_offset.y) == 1) or (parent_axis.y != 0 and side_offset.y == 0 and absi(side_offset.x) == 1)
+                if perpendicular:
+                    _apply_direction(side_offset)
+                    continue
+        if _is_solved_cell(hovered_cell):
+            _click_tile(hovered_cell)
     gesture_cursor = screen_pos
 
 
@@ -2832,12 +2760,8 @@ func _navigate_arrow_from_anywhere(direction: Vector2i) -> void:
 func _apply_direction(direction: Vector2i) -> void:
     if preview_parent < 0 or preview_parent >= words.size():
         return
-    if direction == Vector2i.ZERO:
-        return
-    var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
-    if preview_anchor < 0 or preview_anchor >= anchor_cells.size():
-        return
-    if not _available_branch_directions(anchor_cells[preview_anchor]).has(direction):
+    var parent_dir: Vector2i = words[preview_parent]["dir"]
+    if direction == Vector2i.ZERO or parent_dir.x * direction.x + parent_dir.y * direction.y != 0:
         return
     if direction == preview_dir:
         return
