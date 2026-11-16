@@ -1597,7 +1597,7 @@ func _preview_default_direction(index: int) -> Vector2i:
     # A direção inicial é determinada pela palavra que acabou de ser escolhida.
     # Horizontal -> baixo; vertical -> direita (coordenadas do tabuleiro).
     var d: Vector2i = words[index]["dir"]
-    return Vector2i(-d.y, d.x)
+    return Vector2i(d.y, d.x)
 
 func _available_branch_directions(anchor_cell: Vector2i) -> Array[Vector2i]:
     var directions: Array[Vector2i] = []
