@@ -21,6 +21,8 @@ const OUTER_TILE := Color("#2e3342")
 const ACTIVE := Color("#999988")
 const SELECTED := Color("#ffffe3")
 const SOLVED := Color("#af9bcc")
+const CURRENT_WORD := Color("#eadb91")
+const CURRENT_WORD_SIDE := Color("#9a8749")
 const CURRENT_LETTER := Color("#ffffe3")
 const SIDE_EMPTY := Color("#30374d")
 const SIDE_SOLVED := Color("#75658f")
@@ -2214,7 +2216,7 @@ func _refresh_board() -> void:
         if source_word["state"] == "solved":
             for source_cell in _cells(source_word):
                 if board.has(source_cell) and tile_state.get(source_cell, "") == "solved":
-                    tile_state[source_cell] = "branch_source"
+                    tile_state[source_cell] = "current_word"
     # A letra de cruzamento da palavra antiga permanece iluminada,
     # mesmo quando a proxima letra da palavra nova esta em outra casa.
     if preview_parent >= 0 and preview_parent < words.size():
@@ -2249,9 +2251,9 @@ func _refresh_board() -> void:
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
                 target_height = 0.015
-            "branch_source":
-                top_color = SOLVED
-                skirt_color = SIDE_SOLVED
+            "current_word":
+                top_color = CURRENT_WORD
+                skirt_color = CURRENT_WORD_SIDE
                 target_height = 0.03
             "active":
                 top_color = ACTIVE
@@ -2284,16 +2286,16 @@ func _refresh_board() -> void:
         # Uma casa que pertence a palavra concluida sempre termina na cor
         # resolvida, mesmo se tambem for foco ou ancora do proximo ramo.
         # O destaque temporario verde continua sendo aplicado pelo flash abaixo.
-        if solved_cells.has(p):
+        if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus"]:
             top_color = SOLVED
             skirt_color = SIDE_SOLVED
-            target_height = 0.03 if kind == "branch_source" else 0.015
+            target_height = 0.015
         if level_mode and not _inside_level(p):
             # O dourado escuro fica reservado aos trechos ainda em digitacao.
-            if solved_cells.has(p):
+            if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus"]:
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
-                target_height = 0.03 if kind == "branch_source" else 0.015
+                target_height = 0.015
             else:
                 var outer_highlight: bool = kind in ["selected", "preview", "focus", "anchor_focus", "draft"]
                 top_color = Color("#aaa58f") if outer_highlight else OUTER_TILE
