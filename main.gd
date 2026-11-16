@@ -1836,6 +1836,9 @@ func _submit() -> void:
             var old_cell: Vector2i = previous_cells[letter_index]
             if confirmed_set.has(old_cell):
                 continue
+            # Trechos externos ficam bloqueados em azul-escuro e nao participam do fade.
+            if level_mode and not _inside_level(old_cell):
+                continue
             # Trechos fora da area jogavel usam um amarelo mais escuro
             # para indicar que a palavra ja nao pode receber novas letras.
             var fade_start_color: Color = CURRENT_WORD if _inside_level(old_cell) else Color("#b59b45")
@@ -2094,10 +2097,10 @@ func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool 
             if skirt_material is StandardMaterial3D:
                 base_skirt = (skirt_material as StandardMaterial3D).albedo_color
         if success_base:
-            # Ao terminar o flash, cada trecho ja deve revelar sua cor final:
-            # creme dentro da area jogavel e dourado escuro fora dela.
-            base_color = CURRENT_WORD if _inside_level(p) else Color("#b59b45")
-            base_skirt = CURRENT_WORD_SIDE if _inside_level(p) else Color("#76632d")
+            # Ao terminar o flash, trechos externos ja ficam com a cor dos
+            # blocos bloqueados; a letra permanece visivel sobre eles.
+            base_color = CURRENT_WORD if _inside_level(p) else OUTER_TILE
+            base_skirt = CURRENT_WORD_SIDE if _inside_level(p) else Color("#242936")
         flash_cells[p] = {
             "color": flash_color,
             "base": base_color,
@@ -2173,7 +2176,9 @@ func _refresh_board() -> void:
         for i in range(cells.size()):
             var p: Vector2i = cells[i]
             if word["state"] == "solved":
-                tile_state[p] = "solved"
+                # Letras confirmadas fora da area jogavel ficam bloqueadas
+                # permanentemente, mantendo a letra sobre o bloco azul-escuro.
+                tile_state[p] = "blocked_outer" if level_mode and not _inside_level(p) else "solved"
                 solved_cells[p] = true
                 letters[p] = answer[i]
             elif not tile_state.has(p):
@@ -2283,6 +2288,10 @@ func _refresh_board() -> void:
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
                 target_height = 0.015
+            "blocked_outer":
+                top_color = OUTER_TILE
+                skirt_color = Color("#242936")
+                target_height = -0.01
             "current_word":
                 top_color = CURRENT_WORD
                 skirt_color = CURRENT_WORD_SIDE
@@ -2318,7 +2327,7 @@ func _refresh_board() -> void:
         # Uma casa que pertence a palavra concluida sempre termina na cor
         # resolvida, mesmo se tambem for foco ou ancora do proximo ramo.
         # O destaque temporario verde continua sendo aplicado pelo flash abaixo.
-        if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus"]:
+        if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "blocked_outer"]:
             top_color = SOLVED
             skirt_color = SIDE_SOLVED
             target_height = 0.015
