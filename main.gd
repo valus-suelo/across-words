@@ -1397,8 +1397,9 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
     var parent_cells: Array[Vector2i] = _cells(parent)
     if anchor < 0 or anchor >= parent_cells.size():
         return choices
-    var parent_dir: Vector2i = parent["dir"]
-    if direction == Vector2i.ZERO or parent_dir.x * direction.x + parent_dir.y * direction.y != 0:
+    # A direção pertence à malha inteira, não ao eixo da palavra
+    # que originalmente continha a letra selecionada.
+    if direction == Vector2i.ZERO or absi(direction.x) + absi(direction.y) != 1:
         return choices
     var crossing: Vector2i = parent_cells[anchor]
     if not _inside_level(crossing):
@@ -1600,38 +1601,16 @@ func _preview_default_direction(index: int) -> Vector2i:
     return Vector2i(d.y, d.x)
 
 func _available_branch_directions(anchor_cell: Vector2i) -> Array[Vector2i]:
+    # O conjunto resolvido funciona como uma única malha conectada.
+    # A âncora é a coordenada da letra; não há troca de palavra para
+    # descobrir quais eixos podem ser usados no cruzamento.
     var directions: Array[Vector2i] = []
-    var crossing_words: Array[int] = []
-    for word_index in range(words.size()):
-        if words[word_index]["state"] != "solved":
-            continue
-        if _cells(words[word_index]).has(anchor_cell):
-            crossing_words.append(word_index)
-
-    if crossing_words.is_empty():
+    if not _is_solved_cell(anchor_cell):
         return directions
-
-    # Em uma letra pertencente a uma única palavra, os dois lados
-    # perpendiculares continuam disponíveis: principal e alternativa.
-    # Em cruzamentos, cada palavra que passa pela âncora fornece sua
-    # direção padrão, evitando criar quatro opções artificiais.
-    if crossing_words.size() == 1:
-        var only_direction: Vector2i = _preview_default_direction(crossing_words[0])
-        directions.append(only_direction)
-        directions.append(-only_direction)
-        return directions
-
-    # A palavra engatilhada vem primeiro para manter seu indicador principal.
-    if crossing_words.has(preview_parent):
-        var selected_direction: Vector2i = _preview_default_direction(preview_parent)
-        directions.append(selected_direction)
-
-    for word_index in crossing_words:
-        if word_index == preview_parent:
-            continue
-        var direction: Vector2i = _preview_default_direction(word_index)
-        if direction != Vector2i.ZERO and not directions.has(direction):
-            directions.append(direction)
+    directions.append(Vector2i(0, -1))
+    directions.append(Vector2i(0, 1))
+    directions.append(Vector2i(-1, 0))
+    directions.append(Vector2i(1, 0))
     return directions
 
 func _select_anchor(index: int, anchor: int) -> void:
@@ -2263,10 +2242,13 @@ func _refresh_board() -> void:
             # A direção da palavra selecionada é processada primeiro; as
             # outras palavras cruzadas aparecem como alternativas distintas.
             for branch_direction in _available_branch_directions(crossing_cell):
+                # Só apresenta direções com ao menos uma palavra possível.
+                if _possible_children(preview_parent, preview_anchor, branch_direction).is_empty():
+                    continue
                 var side_cell: Vector2i = crossing_cell + branch_direction
                 if board.has(side_cell) and not solved_cells.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
-                    # Os marcadores ficam acima do realce da prévia para
-                    # permanecerem visíveis e clicáveis durante a seleção.
+                    # Indicadores sempre ficam acima da prévia e podem ser
+                    # tocados ou usados como ponto inicial de um arraste.
                     tile_state[side_cell] = "side_option_selected" if branch_direction == preview_dir else "side_option"
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
@@ -2755,13 +2737,21 @@ func _unhandled_input(event: InputEvent) -> void:
 func _start_pointer(screen_pos: Vector2) -> void:
     pointer_start = screen_pos
     gesture_cursor = screen_pos
-    # O gesto só começa com toque direto numa letra resolvida.
-    # O campo magnético fica inativo durante o toque inicial e só é ativado
-    # depois que o jogador ultrapassa o limiar de arraste.
-    # O toque precisa atingir uma letra, mas usa uma tolerância curta para
-    # compensar a perspectiva e as bordas visuais das peças.
-    pointer_cell = _gesture_nearest_solved_cell(screen_pos, 34.0)
-    pointer_down = pointer_cell != Vector2i(-1000, -1000)
+    # O gesto pode começar tanto numa letra resolvida quanto num dos
+    # indicadores ao redor da âncora atualmente selecionada.
+    var branch_at_start: Vector2i = _gesture_branch_at(screen_pos, 76.0)
+    if branch_at_start != Vector2i.ZERO and preview_parent >= 0 and preview_parent < words.size():
+        var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
+        if preview_anchor >= 0 and preview_anchor < anchor_cells.size():
+            pointer_cell = anchor_cells[preview_anchor]
+            pointer_down = true
+        else:
+            pointer_down = false
+    else:
+        # O toque inicial precisa atingir uma letra resolvida; o campo
+        # magnético só entra em ação depois que o arraste começa.
+        pointer_cell = _gesture_nearest_solved_cell(screen_pos, 34.0)
+        pointer_down = pointer_cell != Vector2i(-1000, -1000)
     if not pointer_down:
         pointer_cell = _screen_to_cell(screen_pos)
     pointer_dragged = false
