@@ -187,7 +187,7 @@ var help_index: int = 0
 var help_swipe_start: float = 0.0
 const HELP_PAGES := [
     ["MODOS DE JOGO", "CAMPANHA: avance por 10 fases, formando palavras ate encontrar a saida proxima aos cantos. As 3 coroas de cada fase sao opcionais e aumentam sua pontuacao.\n\nINFINITO: forme palavras, crie cruzamentos e sobreviva pelo maior tempo possivel, acumulando pontos."],
-    ["COMO JOGAR", "Toque em qualquer letra resolvida para iniciar um novo caminho. Use as setas do teclado para percorrer todas as letras do tabuleiro ou arraste o dedo sobre elas para selecionar diretamente. As setas ao lado da letra mudam o lado da nova palavra.\n\nA origem fica lilas, a letra escolhida e a nova palavra ficam creme. Os blocos sobem em ondas. Acertos piscam em verde; erros, em vermelho."],
+    ["COMO JOGAR", "Toque em qualquer letra da palavra atual para iniciar um novo caminho. Use as setas do teclado ou arraste o dedo para percorrer as letras dessa palavra. Somente a palavra mais recente pode gerar novas palavras. As setas ao lado da letra mudam o lado da nova palavra.\n\nA origem fica lilas, a letra escolhida e a nova palavra ficam creme. Os blocos sobem em ondas. Acertos piscam em verde; erros, em vermelho."],
     ["TEMPO", "CAMPANHA: o relogio conta para cima. Voce nao perde por demorar, mas cada segundo reduz a pontuacao final. O item de tempo desconta 12 segundos.\n\nINFINITO: o relogio conta para baixo; quando acaba, a partida termina."],
     ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nNa campanha, o limite cresce 2 por fase (10 a 28). Cada energia restante no portal vale 25 pontos extras. Colete itens para recuperar ate 3 pontos. No infinito, o limite e 10."],
     ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por fase na campanha, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELOGIO: reduz o tempo na campanha.\nVISAO: amplia a area visivel.\nMOEDAS: aumentam a pontuacao.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
@@ -1606,6 +1606,9 @@ func _preview_default_direction(index: int) -> Vector2i:
 func _select_anchor(index: int, anchor: int) -> void:
     if index < 0 or index >= words.size():
         return
+    if last_solved_word >= 0 and index != last_solved_word:
+        _message("Somente a palavra atual pode gerar novas palavras.")
+        return
     if anchor < 0 or anchor >= _cells(words[index]).size():
         return
     if not _inside_level(_cells(words[index])[anchor]):
@@ -1746,30 +1749,25 @@ func _choose(index: int) -> void:
 func _click_tile(p: Vector2i) -> void:
     if game_over:
         return
-    # Prioriza a palavra de origem atual em casas compartilhadas.
-    # Nunca seleciona uma palavra antiga bloqueada se uma nova pode ramificar.
-    var eligible: Array[int] = []
-    if preview_parent >= 0 and preview_parent < words.size():
-        eligible.append(preview_parent)
-    for i in range(words.size() - 1, -1, -1):
-        if not eligible.has(i):
-            eligible.append(i)
-    for i in eligible:
-        var word: Dictionary = words[i]
-        if word["state"] != "solved":
-            continue
-        var anchor: int = _cells(word).find(p)
-        if anchor < 0:
-            continue
-        last_navigation_arrow = Vector2i.ZERO
-        _select_anchor(i, anchor)
-        return
+    # Depois da primeira confirmacao, somente a palavra mais recente pode
+    # servir de origem para novos caminhos.
+    if last_solved_word >= 0 and last_solved_word < words.size():
+        var current_word: Dictionary = words[last_solved_word]
+        if current_word["state"] == "solved":
+            var current_anchor: int = _cells(current_word).find(p)
+            if current_anchor >= 0:
+                last_navigation_arrow = Vector2i.ZERO
+                _select_anchor(last_solved_word, current_anchor)
+            else:
+                _message("Somente letras da palavra atual podem gerar novas palavras.")
+            return
+    # Antes da primeira palavra resolvida, permite selecionar a palavra inicial.
     for i in range(words.size() - 1, -1, -1):
         if words[i]["state"] == "active" and _cells(words[i]).has(p):
             _choose(i)
             _message("Palavra selecionada. Digite a resposta e confirme.")
             return
-    _message("Toque numa letra resolvida para testar um novo caminho.")
+    _message("Toque numa letra da palavra atual para criar um novo caminho.")
 
 func _submit() -> void:
     if game_over:
@@ -2581,43 +2579,36 @@ func _screen_to_cell(screen_pos: Vector2) -> Vector2i:
 # O eixo e os índices são calculados pela posição real da casa, sem usar o
 # sentido em que a palavra foi escrita. Nunca altera a direção perpendicular.
 func _is_solved_cell(cell: Vector2i) -> bool:
-    if not _inside_level(cell):
+    if not _inside_level(cell) or last_solved_word < 0 or last_solved_word >= words.size():
         return false
-    for word in words:
-        if word["state"] == "solved" and _cells(word).has(cell):
-            return true
-    return false
+    if words[last_solved_word]["state"] != "solved":
+        return false
+    return _cells(words[last_solved_word]).has(cell)
 
 func _navigate_to_solved_cell(direction: Vector2i) -> bool:
     if direction == Vector2i.ZERO or preview_parent < 0 or preview_parent >= words.size():
         return false
-    if words[preview_parent]["state"] != "solved":
+    if preview_parent != last_solved_word or words[preview_parent]["state"] != "solved":
         return false
     var current_cells: Array[Vector2i] = _cells(words[preview_parent])
     if preview_anchor < 0 or preview_anchor >= current_cells.size():
         return false
     var origin: Vector2i = current_cells[preview_anchor]
-    var seen: Dictionary = {}
     var best_cell: Vector2i = origin
     var best_score: float = INF
-    for word in words:
-        if word["state"] != "solved":
+    # A navegacao por setas fica restrita as letras da palavra atual.
+    for cell in current_cells:
+        if cell == origin or not _inside_level(cell):
             continue
-        for cell in _cells(word):
-            if cell == origin or seen.has(cell) or not _inside_level(cell):
-                continue
-            seen[cell] = true
-            var offset: Vector2i = cell - origin
-            var forward: int = offset.x * direction.x + offset.y * direction.y
-            if forward <= 0:
-                continue
-            var lateral: int = absi(offset.x * direction.y - offset.y * direction.x)
-            # Prefere casas proximas e alinhadas com a seta, mas permite
-            # alcancar palavras em outras linhas/colunas do tabuleiro.
-            var score: float = float(forward) + float(lateral) * 2.0
-            if score < best_score:
-                best_score = score
-                best_cell = cell
+        var offset: Vector2i = cell - origin
+        var forward: int = offset.x * direction.x + offset.y * direction.y
+        if forward <= 0:
+            continue
+        var lateral: int = absi(offset.x * direction.y - offset.y * direction.x)
+        var score: float = float(forward) + float(lateral) * 2.0
+        if score < best_score:
+            best_score = score
+            best_cell = cell
     if best_score == INF:
         return false
     last_navigation_arrow = direction
@@ -2776,13 +2767,10 @@ func _start_pointer(screen_pos: Vector2) -> void:
     pointer_dragged = false
     panning_board = true
     pan_last_screen = screen_pos
-    for i in range(words.size() - 1, -1, -1):
-        if words[i]["state"] != "solved":
-            continue
-        if _inside_level(pointer_cell) and _cells(words[i]).has(pointer_cell):
+    if last_solved_word >= 0 and last_solved_word < words.size():
+        if words[last_solved_word]["state"] == "solved" and _inside_level(pointer_cell) and _cells(words[last_solved_word]).has(pointer_cell):
             pointer_down = true
             panning_board = false
-            break
     # As setas desenhadas continuam clicaveis fora das letras.
     if not pointer_down and _try_tap_branch_arrow(screen_pos):
         return
