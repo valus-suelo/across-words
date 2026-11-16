@@ -1838,8 +1838,8 @@ func _submit() -> void:
                 continue
             # Trechos fora da area jogavel usam um amarelo mais escuro
             # para indicar que a palavra ja nao pode receber novas letras.
-            var fade_start_color: Color = CURRENT_WORD if _inside_level(old_cell) else Color("#aaa58f")
-            var fade_start_skirt: Color = CURRENT_WORD_SIDE if _inside_level(old_cell) else Color("#686451")
+            var fade_start_color: Color = CURRENT_WORD if _inside_level(old_cell) else Color("#b59b45")
+            var fade_start_skirt: Color = CURRENT_WORD_SIDE if _inside_level(old_cell) else Color("#76632d")
             word_fade_cells[old_cell] = {
                 "start_at": elapsed + WORD_FLASH_DURATION + float(letter_index) * 0.075,
                 "duration": 0.24,
@@ -2331,14 +2331,6 @@ func _refresh_board() -> void:
                 top_color = Color("#aaa58f") if outer_highlight else OUTER_TILE
                 skirt_color = Color("#686451") if outer_highlight else Color("#242936")
                 target_height = 0.0 if outer_highlight else -0.01
-        # Celulas da palavra anterior aguardando o fade preservam sua
-        # cor dourada/amarela, inclusive fora da area jogavel. Sem esta
-        # prioridade, a regra de casas externas as pinta de azul escuro.
-        if word_fade_cells.has(p):
-            var pending_fade: Dictionary = word_fade_cells[p]
-            top_color = pending_fade.get("start_color", CURRENT_WORD)
-            skirt_color = pending_fade.get("start_skirt_color", CURRENT_WORD_SIDE)
-            target_height = 0.015
         # O portal conserva o verde tanto vazio quanto cruzado por uma palavra.
         if level_mode and p == exit_cell:
             top_color = Color("#56aa35")
@@ -2351,6 +2343,14 @@ func _refresh_board() -> void:
                 flash_cells[p] = flash_data
             top_color = _flash_display_color(flash_data)
             skirt_color = _flash_display_skirt_color(flash_data)
+        # Prioridade final: trechos da palavra anterior aguardando o fade
+        # nunca podem herdar OUTER_TILE (preto/azul), mesmo fora da area jogavel.
+        # As casas compartilhadas ja foram excluidas ao montar word_fade_cells.
+        if word_fade_cells.has(p) and not flash_cells.has(p):
+            var pending_fade: Dictionary = word_fade_cells[p]
+            top_color = pending_fade.get("start_color", CURRENT_WORD)
+            skirt_color = pending_fade.get("start_skirt_color", CURRENT_WORD_SIDE)
+            target_height = 0.015
         var mat_name: String = top_color.to_html()
         tile.set_surface_override_material(0, _material_cached("tile_top_" + mat_name, top_color))
         tile.set_surface_override_material(1, _material_cached("tile_edge_" + mat_name, top_color.darkened(0.22)))
