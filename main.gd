@@ -2507,14 +2507,14 @@ func _process(delta: float) -> void:
             var duration: float = float(fade_data["duration"])
             var progress: float = clampf((elapsed - start_at) / duration, 0.0, 1.0)
             var eased: float = progress * progress * (3.0 - 2.0 * progress)
-            var shown_color: Color = CURRENT_WORD.lerp(SOLVED, eased)
-            var shown_skirt: Color = CURRENT_WORD_SIDE.lerp(SIDE_SOLVED, eased)
+            var fade_color: Color = CURRENT_WORD.lerp(SOLVED, eased)
+            var fade_skirt_color: Color = CURRENT_WORD_SIDE.lerp(SIDE_SOLVED, eased)
             if board.has(cell):
-                var tile: MeshInstance3D = board[cell]
-                tile.set_surface_override_material(0, _material_cached("tile_top_" + shown_color.to_html(), shown_color))
-                tile.set_surface_override_material(1, _material_cached("tile_edge_" + shown_color.to_html(), shown_color.darkened(0.22)))
-                var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
-                skirt.material_override = _material_cached("skirt_" + shown_skirt.to_html(), shown_skirt)
+                var fade_tile: MeshInstance3D = board[cell]
+                fade_tile.set_surface_override_material(0, _material_cached("tile_top_" + fade_color.to_html(), fade_color))
+                fade_tile.set_surface_override_material(1, _material_cached("tile_edge_" + fade_color.to_html(), fade_color.darkened(0.22)))
+                var fade_skirt: MeshInstance3D = fade_tile.get_node("Skirt") as MeshInstance3D
+                fade_skirt.material_override = _material_cached("skirt_" + fade_skirt_color.to_html(), fade_skirt_color)
             if progress >= 1.0:
                 faded.append(cell)
         if not faded.is_empty():
