@@ -1404,12 +1404,15 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
     var crossing: Vector2i = parent_cells[anchor]
     if not _inside_level(crossing):
         return choices
-    var parent_answer: String = parent["answer"]
+    # A letra inicial vem da malha resolvida completa, não do texto da
+    # palavra usada internamente como referência para localizar a âncora.
     var occupied: Dictionary = _occupied_letters()
+    if not occupied.has(crossing):
+        return choices
     # Impedimento por inimigo: não é permitido traçar uma palavra sobre ele.
     if enemy_cell == crossing:
         return choices
-    var initial_letter: String = parent_answer.substr(anchor, 1)
+    var initial_letter: String = String(occupied[crossing])
     var source: Array = words_by_initial.get(initial_letter, [])
     for item in source:
         if not _word_difficulty_allowed(item):
@@ -1754,23 +1757,11 @@ func _choose(index: int) -> void:
 func _click_tile(p: Vector2i) -> void:
     if game_over:
         return
-    # Prioriza a palavra de origem atual em casas compartilhadas.
-    # Nunca seleciona uma palavra antiga bloqueada se uma nova pode ramificar.
-    var eligible: Array[int] = []
-    if preview_parent >= 0 and preview_parent < words.size():
-        eligible.append(preview_parent)
-    for i in range(words.size() - 1, -1, -1):
-        if not eligible.has(i):
-            eligible.append(i)
-    for i in eligible:
-        var word: Dictionary = words[i]
-        if word["state"] != "solved":
-            continue
-        var anchor: int = _cells(word).find(p)
-        if anchor < 0:
-            continue
+    # Todas as palavras resolvidas formam uma única malha. A casa clicada
+    # identifica a âncora; a palavra que originalmente a criou é irrelevante.
+    if _is_solved_cell(p):
         last_navigation_arrow = Vector2i.ZERO
-        _select_anchor(i, anchor)
+        _select_anchor_at_cell(p)
         return
     for i in range(words.size() - 1, -1, -1):
         if words[i]["state"] == "active" and _cells(words[i]).has(p):
@@ -1778,6 +1769,17 @@ func _click_tile(p: Vector2i) -> void:
             _message("Palavra selecionada. Digite a resposta e confirme.")
             return
     _message("Toque numa letra resolvida para testar um novo caminho.")
+
+func _select_anchor_at_cell(cell: Vector2i) -> void:
+    # Usa uma representação canônica para a coordenada compartilhada,
+    # evitando alternar entre palavras quando a letra está num cruzamento.
+    for i in range(words.size()):
+        if words[i]["state"] != "solved":
+            continue
+        var anchor: int = _cells(words[i]).find(cell)
+        if anchor >= 0:
+            _select_anchor(i, anchor)
+            return
 
 func _submit() -> void:
     if game_over:
