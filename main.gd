@@ -2327,9 +2327,11 @@ func _refresh_board() -> void:
                 skirt_color = SIDE_SOLVED
                 target_height = 0.015
             else:
-                var outer_highlight: bool = kind in ["selected", "preview", "focus", "anchor_focus", "draft"]
-                top_color = Color("#aaa58f") if outer_highlight else OUTER_TILE
-                skirt_color = Color("#686451") if outer_highlight else Color("#242936")
+                # A palavra recém-confirmada continua sendo a palavra atual.
+                # Seus trechos externos devem ficar em dourado escuro, não em OUTER_TILE.
+                var outer_highlight: bool = kind in ["selected", "preview", "focus", "anchor_focus", "draft", "current_word"]
+                top_color = Color("#b59b45") if kind == "current_word" else (Color("#aaa58f") if outer_highlight else OUTER_TILE)
+                skirt_color = Color("#76632d") if kind == "current_word" else (Color("#686451") if outer_highlight else Color("#242936"))
                 target_height = 0.0 if outer_highlight else -0.01
         # O portal conserva o verde tanto vazio quanto cruzado por uma palavra.
         if level_mode and p == exit_cell:
