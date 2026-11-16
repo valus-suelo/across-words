@@ -2094,8 +2094,10 @@ func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool 
             if skirt_material is StandardMaterial3D:
                 base_skirt = (skirt_material as StandardMaterial3D).albedo_color
         if success_base:
-            base_color = CURRENT_WORD
-            base_skirt = CURRENT_WORD_SIDE
+            # Ao terminar o flash, cada trecho ja deve revelar sua cor final:
+            # creme dentro da area jogavel e dourado escuro fora dela.
+            base_color = CURRENT_WORD if _inside_level(p) else Color("#b59b45")
+            base_skirt = CURRENT_WORD_SIDE if _inside_level(p) else Color("#76632d")
         flash_cells[p] = {
             "color": flash_color,
             "base": base_color,
