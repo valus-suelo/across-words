@@ -1080,6 +1080,7 @@ func _new_game() -> void:
     wave_origin = Vector2i.ZERO
     tile_target_heights.clear()
     flash_cells.clear()
+    word_fade_cells.clear()
     round_epoch += 1
     path_time = STORY_MAP_TIME if level_mode else INFINITE_MAP_TIME
     map_vision_moves = 0
