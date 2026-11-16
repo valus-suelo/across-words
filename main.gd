@@ -2331,6 +2331,14 @@ func _refresh_board() -> void:
                 top_color = Color("#aaa58f") if outer_highlight else OUTER_TILE
                 skirt_color = Color("#686451") if outer_highlight else Color("#242936")
                 target_height = 0.0 if outer_highlight else -0.01
+        # Celulas da palavra anterior aguardando o fade preservam sua
+        # cor dourada/amarela, inclusive fora da area jogavel. Sem esta
+        # prioridade, a regra de casas externas as pinta de azul escuro.
+        if word_fade_cells.has(p):
+            var pending_fade: Dictionary = word_fade_cells[p]
+            top_color = pending_fade.get("start_color", CURRENT_WORD)
+            skirt_color = pending_fade.get("start_skirt_color", CURRENT_WORD_SIDE)
+            target_height = 0.015
         # O portal conserva o verde tanto vazio quanto cruzado por uma palavra.
         if level_mode and p == exit_cell:
             top_color = Color("#56aa35")
