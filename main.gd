@@ -1836,9 +1836,15 @@ func _submit() -> void:
             var old_cell: Vector2i = previous_cells[letter_index]
             if confirmed_set.has(old_cell):
                 continue
+            # Trechos fora da area jogavel usam um amarelo mais escuro
+            # para indicar que a palavra ja nao pode receber novas letras.
+            var fade_start_color: Color = CURRENT_WORD if _inside_level(old_cell) else Color("#aaa58f")
+            var fade_start_skirt: Color = CURRENT_WORD_SIDE if _inside_level(old_cell) else Color("#686451")
             word_fade_cells[old_cell] = {
                 "start_at": elapsed + WORD_FLASH_DURATION + float(letter_index) * 0.075,
-                "duration": 0.24
+                "duration": 0.24,
+                "start_color": fade_start_color,
+                "start_skirt_color": fade_start_skirt
             }
     if map_vision_moves > 0:
         map_vision_moves -= 1
@@ -2507,8 +2513,10 @@ func _process(delta: float) -> void:
             var duration: float = float(fade_data["duration"])
             var progress: float = clampf((elapsed - start_at) / duration, 0.0, 1.0)
             var eased: float = progress * progress * (3.0 - 2.0 * progress)
-            var fade_color: Color = CURRENT_WORD.lerp(SOLVED, eased)
-            var fade_skirt_color: Color = CURRENT_WORD_SIDE.lerp(SIDE_SOLVED, eased)
+            var fade_start_color: Color = fade_data.get("start_color", CURRENT_WORD)
+            var fade_start_skirt: Color = fade_data.get("start_skirt_color", CURRENT_WORD_SIDE)
+            var fade_color: Color = fade_start_color.lerp(SOLVED, eased)
+            var fade_skirt_color: Color = fade_start_skirt.lerp(SIDE_SOLVED, eased)
             if board.has(cell):
                 var fade_tile: MeshInstance3D = board[cell]
                 fade_tile.set_surface_override_material(0, _material_cached("tile_top_" + fade_color.to_html(), fade_color))
