@@ -1595,9 +1595,31 @@ func _clear_preview(save: bool = true) -> void:
 
 func _preview_default_direction(index: int) -> Vector2i:
     # A direção inicial é determinada pela palavra que acabou de ser escolhida.
-    # Horizontal -> cima; vertical -> direita (coordenadas do tabuleiro).
+    # Horizontal -> baixo; vertical -> direita (coordenadas do tabuleiro).
     var d: Vector2i = words[index]["dir"]
-    return Vector2i(d.y, -d.x)
+    return Vector2i(-d.y, d.x)
+
+func _available_branch_directions(anchor_cell: Vector2i) -> Array[Vector2i]:
+    var directions: Array[Vector2i] = []
+    var seen: Dictionary = {}
+    # A palavra atualmente engatilhada define primeiro a direção principal.
+    if preview_parent >= 0 and preview_parent < words.size():
+        if words[preview_parent]["state"] == "solved" and _cells(words[preview_parent]).has(anchor_cell):
+            var selected_direction: Vector2i = _preview_default_direction(preview_parent)
+            directions.append(selected_direction)
+            seen[selected_direction] = true
+    # As demais palavras que cruzam a mesma letra fornecem alternativas.
+    for word_index in range(words.size()):
+        if word_index == preview_parent or words[word_index]["state"] != "solved":
+            continue
+        if not _cells(words[word_index]).has(anchor_cell):
+            continue
+        var direction: Vector2i = _preview_default_direction(word_index)
+        if direction == Vector2i.ZERO or seen.has(direction):
+            continue
+        directions.append(direction)
+        seen[direction] = true
+    return directions
 
 func _select_anchor(index: int, anchor: int) -> void:
     if index < 0 or index >= words.size():
@@ -2108,20 +2130,19 @@ func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
     if preview_anchor >= parent_cells.size():
         return false
     var anchor: Vector2i = parent_cells[preview_anchor]
-    var horizontal: bool = Vector2i(words[preview_parent]["dir"]).x != 0
-    var sides: Array[Vector2i] = []
-    if horizontal:
-        sides.append(Vector2i(0, -1))
-        sides.append(Vector2i(0, 1))
-    else:
-        sides.append(Vector2i(-1, 0))
-        sides.append(Vector2i(1, 0))
-    for side in sides:
-        var world_pos := Vector3((float(anchor.x) + float(side.x) * 0.43) * GAP, 0.93, (float(anchor.y) + float(side.y) * 0.43) * ROW_GAP)
-        if camera.unproject_position(Vector3((float(anchor.x) + float(side.x)) * GAP, 0.5, (float(anchor.y) + float(side.y)) * ROW_GAP)).distance_to(screen_pos) < 38.0:
-            _apply_direction(side)
-            return true
-    return false
+    var best_direction := Vector2i.ZERO
+    var best_distance: float = 38.0
+    for direction in _available_branch_directions(anchor):
+        var neighbor: Vector2i = anchor + direction
+        var target := Vector3(float(neighbor.x) * GAP, 0.5, float(neighbor.y) * ROW_GAP)
+        var distance: float = camera.unproject_position(target).distance_to(screen_pos)
+        if distance < best_distance:
+            best_distance = distance
+            best_direction = direction
+    if best_direction == Vector2i.ZERO:
+        return false
+    _apply_direction(best_direction)
+    return true
 
 func _refresh_board() -> void:
     for node in visual_nodes:
@@ -2226,21 +2247,13 @@ func _refresh_board() -> void:
         var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
         if preview_anchor < anchor_cells.size():
             var crossing_cell: Vector2i = anchor_cells[preview_anchor]
-            var shown_directions: Dictionary = {}
-            for word_index in range(words.size()):
-                if words[word_index]["state"] != "solved":
-                    continue
-                var word_cells: Array[Vector2i] = _cells(words[word_index])
-                if not word_cells.has(crossing_cell):
-                    continue
-                var branch_direction: Vector2i = _preview_default_direction(word_index)
-                if shown_directions.has(branch_direction):
-                    continue
-                shown_directions[branch_direction] = true
+            # A direção da palavra selecionada é processada primeiro; as
+            # outras palavras cruzadas aparecem como alternativas distintas.
+            for branch_direction in _available_branch_directions(crossing_cell):
                 var side_cell: Vector2i = crossing_cell + branch_direction
                 if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
                     if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
-                        tile_state[side_cell] = "side_option_selected" if word_index == preview_parent and branch_direction == preview_dir else "side_option"
+                        tile_state[side_cell] = "side_option_selected" if branch_direction == preview_dir else "side_option"
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
         var kind: String = tile_state.get(p, "base")
@@ -2513,26 +2526,19 @@ func _gesture_branch_at(screen_pos: Vector2, radius: float = 58.0) -> Vector2i:
     if preview_anchor >= parent_cells.size():
         return Vector2i.ZERO
     var anchor: Vector2i = parent_cells[preview_anchor]
-    var axis: Vector2i = Vector2i(words[preview_parent]["dir"])
-    var side_a: Vector2i = Vector2i(0, -1) if axis.x != 0 else Vector2i(-1, 0)
-    var side_b: Vector2i = -side_a
-    var anchor_world := Vector3(float(anchor.x) * GAP, 0.5, float(anchor.y) * ROW_GAP)
-    var point_a := Vector3(float(anchor.x + side_a.x) * GAP, 0.5, float(anchor.y + side_a.y) * ROW_GAP)
-    var point_b := Vector3(float(anchor.x + side_b.x) * GAP, 0.5, float(anchor.y + side_b.y) * ROW_GAP)
-    var anchor_screen: Vector2 = camera.unproject_position(anchor_world)
-    var a_screen: Vector2 = camera.unproject_position(point_a)
-    var b_screen: Vector2 = camera.unproject_position(point_b)
-    var distance_a: float = a_screen.distance_to(screen_pos)
-    var distance_b: float = b_screen.distance_to(screen_pos)
-    # A zona de decisão é limitada ao entorno da âncora. A margem evita
-    # oscilações quando o dedo está exatamente entre os dois lados.
-    if minf(distance_a, distance_b) > radius:
-        return Vector2i.ZERO
-    if absf(distance_a - distance_b) < 9.0:
-        return Vector2i.ZERO
+    var anchor_screen: Vector2 = camera.unproject_position(Vector3(float(anchor.x) * GAP, 0.5, float(anchor.y) * ROW_GAP))
     if screen_pos.distance_to(anchor_screen) > radius + 34.0:
         return Vector2i.ZERO
-    return side_a if distance_a < distance_b else side_b
+    var best_direction := Vector2i.ZERO
+    var best_distance: float = radius
+    for direction in _available_branch_directions(anchor):
+        var neighbor: Vector2i = anchor + direction
+        var target := Vector3(float(neighbor.x) * GAP, 0.5, float(neighbor.y) * ROW_GAP)
+        var distance: float = camera.unproject_position(target).distance_to(screen_pos)
+        if distance < best_distance:
+            best_distance = distance
+            best_direction = direction
+    return best_direction
 
 func _screen_to_cell(screen_pos: Vector2) -> Vector2i:
     var origin := camera.project_ray_origin(screen_pos)
@@ -2738,8 +2744,12 @@ func _start_pointer(screen_pos: Vector2) -> void:
     # O gesto só começa com toque direto numa letra resolvida.
     # O campo magnético fica inativo durante o toque inicial e só é ativado
     # depois que o jogador ultrapassa o limiar de arraste.
-    pointer_cell = _screen_to_cell(screen_pos)
-    pointer_down = _is_solved_cell(pointer_cell)
+    # O toque precisa atingir uma letra, mas usa uma tolerância curta para
+    # compensar a perspectiva e as bordas visuais das peças.
+    pointer_cell = _gesture_nearest_solved_cell(screen_pos, 34.0)
+    pointer_down = pointer_cell != Vector2i(-1000, -1000)
+    if not pointer_down:
+        pointer_cell = _screen_to_cell(screen_pos)
     pointer_dragged = false
     panning_board = not pointer_down
     pan_last_screen = screen_pos
@@ -2804,8 +2814,12 @@ func _navigate_arrow_from_anywhere(direction: Vector2i) -> void:
 func _apply_direction(direction: Vector2i) -> void:
     if preview_parent < 0 or preview_parent >= words.size():
         return
-    var parent_dir: Vector2i = words[preview_parent]["dir"]
-    if direction == Vector2i.ZERO or parent_dir.x * direction.x + parent_dir.y * direction.y != 0:
+    if direction == Vector2i.ZERO:
+        return
+    var anchor_cells: Array[Vector2i] = _cells(words[preview_parent])
+    if preview_anchor < 0 or preview_anchor >= anchor_cells.size():
+        return
+    if not _available_branch_directions(anchor_cells[preview_anchor]).has(direction):
         return
     if direction == preview_dir:
         return
