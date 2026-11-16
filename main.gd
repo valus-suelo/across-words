@@ -1884,6 +1884,9 @@ func _submit() -> void:
             elapsed += 3.0
         if solved_cells.has(exit_cell):
             _collect_pickups()
+            # A confirmacao final usa a propria letra da saida como origem
+            # da onda verde, em vez de iluminar a palavra inteira de uma vez.
+            _flash_word(confirmed_cells, Color("#67cf76"), true, exit_cell)
             _finish_at_portal()
             return
     _collect_pickups()
@@ -2076,14 +2079,21 @@ func _flash_display_skirt_color(data: Dictionary) -> Color:
     var flash_color: Color = data.get("color", base_color).darkened(0.32)
     return base_color.lerp(flash_color, _flash_strength(data))
 
-func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool = false) -> void:
+func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool = false, spread_from: Vector2i = Vector2i(-999999, -999999)) -> void:
     # Primeiro restaura o tabuleiro sem efeitos. Assim a cor-base e
     # capturada no mesmo instante para todas as casas, nunca quando
     # cada bloco entrar na area visivel da camera.
     flash_cells.clear()
     _refresh_board()
     var started_at: float = elapsed
-    for p in cells:
+    var spread_origin_index: int = cells.find(spread_from)
+    for cell_index in range(cells.size()):
+        var p: Vector2i = cells[cell_index]
+        var cell_started_at: float = started_at
+        if spread_origin_index >= 0:
+            # A onda verde comeca na letra da saida e avanca uma casa por vez
+            # em ambas as direcoes ao longo da palavra confirmada.
+            cell_started_at += float(absi(cell_index - spread_origin_index)) * 0.075
         var base_color: Color = BASE
         if board.has(p):
             var tile: MeshInstance3D = board[p]
@@ -2105,8 +2115,8 @@ func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool 
             "color": flash_color,
             "base": base_color,
             "base_skirt": base_skirt,
-            "started_at": started_at,
-            "until": started_at + WORD_FLASH_DURATION
+            "started_at": cell_started_at,
+            "until": cell_started_at + WORD_FLASH_DURATION
         }
     _refresh_board()
 
@@ -2114,6 +2124,9 @@ func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool 
 func _finish_at_portal() -> void:
     if game_over:
         return
+    # Centraliza a camera na letra da saida antes da animacao de vitoria.
+    camera_pan_offset = Vector2.ZERO
+    camera_target = Vector3(float(exit_cell.x) * GAP, 25.0, float(exit_cell.y) * ROW_GAP + CAMERA_BACK_OFFSET)
     game_over = true
     _refresh_board()
     var current_epoch: int = round_epoch
@@ -2464,7 +2477,7 @@ func _solved_count() -> int:
 func _process(delta: float) -> void:
     if is_instance_valid(pause_overlay) and pause_overlay.visible:
         return
-    if game_over or (is_instance_valid(menu_overlay) and menu_overlay.visible):
+    if is_instance_valid(menu_overlay) and menu_overlay.visible:
         return
     elapsed += delta
     if hud_gesture_fade:
