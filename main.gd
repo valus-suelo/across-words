@@ -1403,7 +1403,6 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
     var crossing: Vector2i = parent_cells[anchor]
     if not _available_branch_directions(crossing).has(direction):
         return choices
-    var crossing: Vector2i = parent_cells[anchor]
     if not _inside_level(crossing):
         return choices
     # A letra inicial vem da malha resolvida completa, não do texto da
