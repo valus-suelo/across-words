@@ -1397,9 +1397,11 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
     var parent_cells: Array[Vector2i] = _cells(parent)
     if anchor < 0 or anchor >= parent_cells.size():
         return choices
-    # A direção pertence à malha inteira, não ao eixo da palavra
-    # que originalmente continha a letra selecionada.
-    if direction == Vector2i.ZERO or absi(direction.x) + absi(direction.y) != 1:
+    # A direção precisa ser perpendicular a pelo menos uma palavra
+    # resolvida que atravesse esta âncora. Em cruzamentos, os dois eixos
+    # podem ser escolhidos; em letras comuns, apenas um.
+    var crossing: Vector2i = parent_cells[anchor]
+    if not _available_branch_directions(crossing).has(direction):
         return choices
     var crossing: Vector2i = parent_cells[anchor]
     if not _inside_level(crossing):
@@ -1604,16 +1606,26 @@ func _preview_default_direction(index: int) -> Vector2i:
     return Vector2i(d.y, d.x)
 
 func _available_branch_directions(anchor_cell: Vector2i) -> Array[Vector2i]:
-    # O conjunto resolvido funciona como uma única malha conectada.
-    # A âncora é a coordenada da letra; não há troca de palavra para
-    # descobrir quais eixos podem ser usados no cruzamento.
+    # Uma nova palavra sempre deve ser perpendicular a uma palavra
+    # resolvida que passe pela âncora. Em cruzamentos, cada eixo existente
+    # oferece sua perpendicular; assim, somente cantos permitem escolher
+    # entre os eixos X e Y.
     var directions: Array[Vector2i] = []
-    if not _is_solved_cell(anchor_cell):
-        return directions
-    directions.append(Vector2i(0, -1))
-    directions.append(Vector2i(0, 1))
-    directions.append(Vector2i(-1, 0))
-    directions.append(Vector2i(1, 0))
+    for word in words:
+        if word["state"] != "solved":
+            continue
+        var cells: Array[Vector2i] = _cells(word)
+        if not cells.has(anchor_cell):
+            continue
+        var axis: Vector2i = word["dir"]
+        if absi(axis.x) + absi(axis.y) != 1:
+            continue
+        var perpendicular := Vector2i(-axis.y, axis.x)
+        if not directions.has(perpendicular):
+            directions.append(perpendicular)
+        var opposite: Vector2i = -perpendicular
+        if not directions.has(opposite):
+            directions.append(opposite)
     return directions
 
 func _select_anchor(index: int, anchor: int) -> void:
