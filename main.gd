@@ -172,6 +172,7 @@ var tile_pedestals: Dictionary = {}
 var flash_cells: Dictionary = {}
 var flash_started_at: float = 0.0
 var word_fade_cells: Dictionary = {}
+var direction_fade_cells: Dictionary = {}
 var round_epoch: int = 0
 var last_expire_update: int = -1
 var map_vision_moves: int = 0
@@ -1081,6 +1082,7 @@ func _new_game() -> void:
     tile_target_heights.clear()
     flash_cells.clear()
     word_fade_cells.clear()
+    direction_fade_cells.clear()
     round_epoch += 1
     path_time = STORY_MAP_TIME if level_mode else INFINITE_MAP_TIME
     map_vision_moves = 0
@@ -2165,6 +2167,7 @@ func _refresh_board() -> void:
         if is_instance_valid(node):
             node.queue_free()
     visual_nodes.clear()
+    var previous_tile_state: Dictionary = tile_state.duplicate()
     tile_state.clear()
     var letters: Dictionary = {}
     var solved_cells: Dictionary = {}
@@ -2364,6 +2367,21 @@ func _refresh_board() -> void:
             top_color = pending_fade.get("start_color", CURRENT_WORD)
             skirt_color = pending_fade.get("start_skirt_color", CURRENT_WORD_SIDE)
             target_height = 0.015
+        # Quando o bloco oliva de direcao desaparece, ele apaga suavemente
+        # para a cor normal do tabuleiro em vez de trocar de cor de uma vez.
+        if previous_tile_state.get(p, "") == "side_option" and kind == "base":
+            direction_fade_cells[p] = {"start_at": elapsed, "duration": 0.32}
+        if direction_fade_cells.has(p):
+            if kind == "base":
+                var direction_fade: Dictionary = direction_fade_cells[p]
+                var direction_progress: float = clampf((elapsed - float(direction_fade["start_at"])) / float(direction_fade["duration"]), 0.0, 1.0)
+                var direction_eased: float = direction_progress * direction_progress * (3.0 - 2.0 * direction_progress)
+                top_color = Color("#999988").lerp(BASE, direction_eased)
+                skirt_color = SIDE_PREVIEW.lerp(SIDE_EMPTY, direction_eased)
+                if direction_progress >= 1.0:
+                    direction_fade_cells.erase(p)
+            else:
+                direction_fade_cells.erase(p)
         var mat_name: String = top_color.to_html()
         tile.set_surface_override_material(0, _material_cached("tile_top_" + mat_name, top_color))
         tile.set_surface_override_material(1, _material_cached("tile_edge_" + mat_name, top_color.darkened(0.22)))
