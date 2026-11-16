@@ -1884,9 +1884,12 @@ func _submit() -> void:
             elapsed += 3.0
         if solved_cells.has(exit_cell):
             _collect_pickups()
-            # A confirmacao final usa a propria letra da saida como origem
-            # da onda verde, em vez de iluminar a palavra inteira de uma vez.
-            _flash_word(confirmed_cells, Color("#67cf76"), true, exit_cell)
+            # A camera comeca a se deslocar antes da onda verde alcancar a palavra.
+            camera_pan_offset = Vector2.ZERO
+            camera_target = Vector3(float(exit_cell.x) * GAP, 25.0, float(exit_cell.y) * ROW_GAP + CAMERA_BACK_OFFSET)
+            # O pequeno atraso permite perceber o salto inicial da saida antes
+            # de a cor verde se propagar, letra por letra.
+            _flash_word(confirmed_cells, Color("#67cf76"), true, exit_cell, 0.38)
             _finish_at_portal()
             return
     _collect_pickups()
@@ -2067,6 +2070,10 @@ const WORD_FLASH_DURATION := 0.40
 func _flash_strength(data: Dictionary) -> float:
     var started_at: float = float(data.get("started_at", elapsed))
     var progress: float = clampf((elapsed - started_at) / WORD_FLASH_DURATION, 0.0, 1.0)
+    if bool(data.get("persistent", false)):
+        # A cor cresce quando a onda chega e permanece totalmente aplicada.
+        var arrival: float = clampf((elapsed - started_at) / 0.20, 0.0, 1.0)
+        return arrival * arrival * (3.0 - 2.0 * arrival)
     return 0.94 * pow(1.0 - progress, 1.75)
 
 func _flash_display_color(data: Dictionary) -> Color:
@@ -2079,7 +2086,7 @@ func _flash_display_skirt_color(data: Dictionary) -> Color:
     var flash_color: Color = data.get("color", base_color).darkened(0.32)
     return base_color.lerp(flash_color, _flash_strength(data))
 
-func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool = false, spread_from: Vector2i = Vector2i(-999999, -999999)) -> void:
+func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool = false, spread_from: Vector2i = Vector2i(-999999, -999999), spread_delay: float = 0.0) -> void:
     # Primeiro restaura o tabuleiro sem efeitos. Assim a cor-base e
     # capturada no mesmo instante para todas as casas, nunca quando
     # cada bloco entrar na area visivel da camera.
@@ -2089,11 +2096,11 @@ func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool 
     var spread_origin_index: int = cells.find(spread_from)
     for cell_index in range(cells.size()):
         var p: Vector2i = cells[cell_index]
-        var cell_started_at: float = started_at
+        var cell_started_at: float = started_at + spread_delay
         if spread_origin_index >= 0:
-            # A onda verde comeca na letra da saida e avanca uma casa por vez
-            # em ambas as direcoes ao longo da palavra confirmada.
-            cell_started_at += float(absi(cell_index - spread_origin_index)) * 0.075
+            # A onda verde parte da saida e avanca pelas letras vizinhas,
+            # mantendo cada bloco verde depois que a onda passa.
+            cell_started_at += float(absi(cell_index - spread_origin_index)) * 0.11
         var base_color: Color = BASE
         if board.has(p):
             var tile: MeshInstance3D = board[p]
@@ -2116,7 +2123,8 @@ func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool 
             "base": base_color,
             "base_skirt": base_skirt,
             "started_at": cell_started_at,
-            "until": cell_started_at + WORD_FLASH_DURATION
+            "until": cell_started_at + WORD_FLASH_DURATION,
+            "persistent": success_base and spread_origin_index >= 0
         }
     _refresh_board()
 
@@ -2507,7 +2515,8 @@ func _process(delta: float) -> void:
         _update_hud()
     # A câmera segue suavemente o centro da palavra selecionada.
     var desired_camera: Vector3 = camera_target + Vector3(camera_pan_offset.x, 0.0, camera_pan_offset.y)
-    camera.position = camera.position.lerp(desired_camera, minf(1.0, delta * 4.0))
+    var camera_follow_speed: float = 2.0 if game_over else 4.0
+    camera.position = camera.position.lerp(desired_camera, minf(1.0, delta * camera_follow_speed))
     _sync_visible_board()
     # Altura de cada bloco e persistente: nenhuma animacao e sobrescrita por outra.
     var start_cells: Array[Vector2i] = []
@@ -2533,7 +2542,7 @@ func _process(delta: float) -> void:
         var done: Array[Vector2i] = []
         for cell in flash_cells.keys():
             var flash_data: Dictionary = flash_cells[cell]
-            if elapsed >= float(flash_data["until"]):
+            if not bool(flash_data.get("persistent", false)) and elapsed >= float(flash_data["until"]):
                 done.append(cell)
                 continue
             if not board.has(cell) or not flash_data.has("base"):
