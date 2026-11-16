@@ -1601,24 +1601,37 @@ func _preview_default_direction(index: int) -> Vector2i:
 
 func _available_branch_directions(anchor_cell: Vector2i) -> Array[Vector2i]:
     var directions: Array[Vector2i] = []
-    var seen: Dictionary = {}
-    # A palavra atualmente engatilhada define primeiro a direção principal.
-    if preview_parent >= 0 and preview_parent < words.size():
-        if words[preview_parent]["state"] == "solved" and _cells(words[preview_parent]).has(anchor_cell):
-            var selected_direction: Vector2i = _preview_default_direction(preview_parent)
-            directions.append(selected_direction)
-            seen[selected_direction] = true
-    # As demais palavras que cruzam a mesma letra fornecem alternativas.
+    var crossing_words: Array[int] = []
     for word_index in range(words.size()):
-        if word_index == preview_parent or words[word_index]["state"] != "solved":
+        if words[word_index]["state"] != "solved":
             continue
-        if not _cells(words[word_index]).has(anchor_cell):
+        if _cells(words[word_index]).has(anchor_cell):
+            crossing_words.append(word_index)
+
+    if crossing_words.is_empty():
+        return directions
+
+    # Em uma letra pertencente a uma única palavra, os dois lados
+    # perpendiculares continuam disponíveis: principal e alternativa.
+    # Em cruzamentos, cada palavra que passa pela âncora fornece sua
+    # direção padrão, evitando criar quatro opções artificiais.
+    if crossing_words.size() == 1:
+        var only_direction: Vector2i = _preview_default_direction(crossing_words[0])
+        directions.append(only_direction)
+        directions.append(-only_direction)
+        return directions
+
+    # A palavra engatilhada vem primeiro para manter seu indicador principal.
+    if crossing_words.has(preview_parent):
+        var selected_direction: Vector2i = _preview_default_direction(preview_parent)
+        directions.append(selected_direction)
+
+    for word_index in crossing_words:
+        if word_index == preview_parent:
             continue
         var direction: Vector2i = _preview_default_direction(word_index)
-        if direction == Vector2i.ZERO or seen.has(direction):
-            continue
-        directions.append(direction)
-        seen[direction] = true
+        if direction != Vector2i.ZERO and not directions.has(direction):
+            directions.append(direction)
     return directions
 
 func _select_anchor(index: int, anchor: int) -> void:
@@ -2251,9 +2264,10 @@ func _refresh_board() -> void:
             # outras palavras cruzadas aparecem como alternativas distintas.
             for branch_direction in _available_branch_directions(crossing_cell):
                 var side_cell: Vector2i = crossing_cell + branch_direction
-                if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
-                    if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
-                        tile_state[side_cell] = "side_option_selected" if branch_direction == preview_dir else "side_option"
+                if board.has(side_cell) and not solved_cells.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
+                    # Os marcadores ficam acima do realce da prévia para
+                    # permanecerem visíveis e clicáveis durante a seleção.
+                    tile_state[side_cell] = "side_option_selected" if branch_direction == preview_dir else "side_option"
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
         var kind: String = tile_state.get(p, "base")
