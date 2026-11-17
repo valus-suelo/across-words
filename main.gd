@@ -1812,6 +1812,11 @@ func _submit() -> void:
         var parent: Dictionary = words[preview_parent]
         parent["spawned"] = true
         words[preview_parent] = parent
+        # Guarda a casa compartilhada para que ela continue iluminada
+        # depois da confirmacao, em vez de voltar ao lilas das letras resolvidas.
+        var parent_cells: Array[Vector2i] = _cells(parent)
+        if preview_anchor >= 0 and preview_anchor < parent_cells.size():
+            word["crossing_cell"] = parent_cells[preview_anchor]
         word["state"] = "solved"
         words.append(word)
         last_solved_word = words.size() - 1
@@ -2279,6 +2284,12 @@ func _refresh_board() -> void:
             for source_cell in _cells(source_word):
                 if board.has(source_cell) and tile_state.get(source_cell, "") == "solved":
                     tile_state[source_cell] = "current_word"
+            # A intersecao pela qual a palavra atual foi criada permanece
+            # em amarelo aceso, mesmo depois que a palavra anterior sai do foco.
+            if source_word.has("crossing_cell"):
+                var solved_crossing: Vector2i = source_word["crossing_cell"]
+                if board.has(solved_crossing):
+                    tile_state[solved_crossing] = "anchor_focus"
     # A letra de cruzamento da palavra antiga permanece iluminada,
     # mesmo quando a proxima letra da palavra nova esta em outra casa.
     if preview_parent >= 0 and preview_parent < words.size():
