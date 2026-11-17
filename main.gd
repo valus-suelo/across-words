@@ -1,6 +1,6 @@
 extends Node3D
 
-# Across-Words v0.10 — Godot 4.7, resposta única sincronizada entre teclado, slots e tabuleiro.
+# Across Words v0.10 — Godot 4.7, resposta única sincronizada entre teclado, slots e tabuleiro.
 const VISIBLE_RADIUS_X := 9
 const VISIBLE_RADIUS_Y := 15
 const GAP := 1.02 # passo entre colunas
@@ -324,7 +324,7 @@ func _load_word_bank() -> void:
         if not words_by_initial.has(initial):
             words_by_initial[initial] = []
         words_by_initial[initial].append(item)
-    print("Across-Words: %d palavras carregadas" % word_bank.size())
+    print("Across Words: %d palavras carregadas" % word_bank.size())
 
 func _word_difficulty_allowed(item: Dictionary) -> bool:
     if not level_mode:
@@ -550,7 +550,7 @@ func _make_ui() -> void:
     var top_column := VBoxContainer.new()
     top_column.add_theme_constant_override("separation", 3)
     top.add_child(top_column)
-    var title := _make_label("ACROSS-WORDS", 24)
+    var title := _make_label("ACROSS WORDS", 24)
     top_column.add_child(title)
     var indicators := HBoxContainer.new()
     indicators.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -739,7 +739,7 @@ func _make_ui() -> void:
     var menu_col := VBoxContainer.new()
     menu_col.add_theme_constant_override("separation", 22)
     menu_panel.add_child(menu_col)
-    var menu_title := _make_label("ACROSS-WORDS", 42)
+    var menu_title := _make_label("ACROSS WORDS", 42)
     hud_menu_title = menu_title
     menu_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     menu_col.add_child(menu_title)
