@@ -562,7 +562,7 @@ func _make_ui() -> void:
     indicators.add_child(time_label)
     indicators.add_child(crown_label)
     indicators.add_child(energy_label)
-    score_label = _make_label("PONTOS 0  |  ◈ 0  |  ✧ 0", 17)
+    score_label = _make_label("PONTOS 0  |  ◈ 0  |  COMBO 0", 17)
     top_column.add_child(score_label)
     var clue_panel := PanelContainer.new()
     clue_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.26, 0.31, 0.48, 0.38), Color(0.67, 0.72, 0.91, 0.45)))
@@ -956,7 +956,7 @@ func _toggle_pause() -> void:
     if pause_overlay.visible:
         _close_pause()
         return
-    pause_stats.text = "Modo: %s\nFase: %d\nPontos: %d  |  Moedas: %d\nPalavras: %d  |  Cruzamentos: %d\nCoroas: %d/3  |  Energia: %d/%d\nTempo: %d:%02d  |  Dicas: %d\nFases concluidas: %d" % ["Campanha" if level_mode else "Infinito", level_number, points, coins, _solved_count(), combo, crowns, energy, _energy_capacity(), int(elapsed) / 60, int(elapsed) % 60, hints_remaining, completed_levels.size()]
+    pause_stats.text = "Modo: %s\nFase: %d\nPontos: %d  |  ◈ %d\nPalavras: %d  |  Cruzamentos: %d\n♛ Coroas: %d/3  |  ⚡ Energia: %d/%d\n⧖ Tempo: %d:%02d  |  ✧ Dicas: %d\nFases concluidas: %d" % ["Campanha" if level_mode else "Infinito", level_number, points, coins, _solved_count(), combo, crowns, energy, _energy_capacity(), int(elapsed) / 60, int(elapsed) % 60, hints_remaining, completed_levels.size()]
     pause_overlay.show()
     if is_instance_valid(entry):
         entry.release_focus()
@@ -1027,7 +1027,7 @@ func _show_result(victory: bool, reason: String) -> void:
     result_title.text = "FASE CONCLUÍDA!" if victory else "GAME OVER"
     result_title.add_theme_color_override("font_color", Color("#f4d787") if victory else Color("#e97d9c"))
     if level_mode:
-        result_stats.text = "%s\n\nCoroas opcionais: %d/3 · Bônus: %d pontos\nEnergia restante: %d/%d · Bônus: %d pontos\nTempo: %d:%02d · Penalidade de tempo: %d pontos\n\n%s\n\nPalavras nesta fase: %d" % [reason, crowns, crowns * 500, energy, _energy_capacity(), _energy_finish_bonus(), int(elapsed) / 60, int(elapsed) % 60, int(elapsed) * (2 + level_number), _run_summary(), _solved_count()]
+        result_stats.text = "%s\n\n♛ Coroas opcionais: %d/3 · Bônus: %d pontos\n⚡ Energia restante: %d/%d · Bônus: %d pontos\n⧖ Tempo: %d:%02d · Penalidade de tempo: %d pontos\n\n%s\n\nPalavras nesta fase: %d" % [reason, crowns, crowns * 500, energy, _energy_capacity(), _energy_finish_bonus(), int(elapsed) / 60, int(elapsed) % 60, int(elapsed) * (2 + level_number), _run_summary(), _solved_count()]
     else:
         result_stats.text = "%s\n\nPontuação: %d\nPalavras: %d  ·  Combo: %d" % [reason, points, _solved_count(), combo]
     result_action.text = ("RECOMEÇAR CAMPANHA" if level_number >= CAMPAIGN_LEVELS else "PRÓXIMO NÍVEL") if victory and level_mode else ("NOVA PARTIDA" if not victory else "CONTINUAR")
@@ -2491,7 +2491,7 @@ func _update_hud() -> void:
     time_label.text = "⧖ %d:%02d" % [shown_seconds / 60, shown_seconds % 60]
     crown_label.text = "FASE %d  ·  ♛ %d/3" % [level_number, crowns] if level_mode else "INFINITO"
     energy_label.text = "⚡ %d/%d" % [energy, _energy_capacity()]
-    score_label.text = "PONTOS %d  |  ◈ %d  |  ✧ %d%s" % [points, coins, combo, "  |  ◉ %d" % map_vision_moves if map_vision_moves > 0 else ""]
+    score_label.text = "PONTOS %d  |  ◈ %d  |  COMBO %d%s" % [points, coins, combo, "  |  ◉ %d" % map_vision_moves if map_vision_moves > 0 else ""]
 
 func _message(value: String) -> void:
     message_label.text = value
