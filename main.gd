@@ -1812,11 +1812,6 @@ func _submit() -> void:
         var parent: Dictionary = words[preview_parent]
         parent["spawned"] = true
         words[preview_parent] = parent
-        # Guarda a casa compartilhada para que ela continue iluminada
-        # depois da confirmacao, em vez de voltar ao lilas das letras resolvidas.
-        var parent_cells: Array[Vector2i] = _cells(parent)
-        if preview_anchor >= 0 and preview_anchor < parent_cells.size():
-            word["crossing_cell"] = parent_cells[preview_anchor]
         word["state"] = "solved"
         words.append(word)
         last_solved_word = words.size() - 1
@@ -2284,20 +2279,21 @@ func _refresh_board() -> void:
             for source_cell in _cells(source_word):
                 if board.has(source_cell) and tile_state.get(source_cell, "") == "solved":
                     tile_state[source_cell] = "current_word"
-            # A intersecao pela qual a palavra atual foi criada permanece
-            # em amarelo aceso, mesmo depois que a palavra anterior sai do foco.
-            if source_word.has("crossing_cell"):
-                var solved_crossing: Vector2i = source_word["crossing_cell"]
-                if board.has(solved_crossing):
-                    tile_state[solved_crossing] = "anchor_focus"
-    # A letra de cruzamento da palavra antiga permanece iluminada,
-    # mesmo quando a proxima letra da palavra nova esta em outra casa.
-    if preview_parent >= 0 and preview_parent < words.size():
-        var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
-        if preview_anchor >= 0 and preview_anchor < parent_cells.size():
-            var crossing_cell: Vector2i = parent_cells[preview_anchor]
-            if board.has(crossing_cell):
-                tile_state[crossing_cell] = "anchor_focus"
+    # Durante a digitacao, ilumina somente as casas da palavra proposta
+    # que tambem pertencem a palavras ja resolvidas. A primeira letra nao
+    # recebe destaque especial so por ser a origem da palavra.
+    if not preview.is_empty():
+        var preview_cells: Array[Vector2i] = _cells(preview)
+        for preview_cell in preview_cells:
+            var is_crossing: bool = false
+            for solved_word in words:
+                if solved_word["state"] != "solved":
+                    continue
+                if _cells(solved_word).has(preview_cell):
+                    is_crossing = true
+                    break
+            if is_crossing and board.has(preview_cell):
+                tile_state[preview_cell] = "anchor_focus"
     if board.has(focus_cell):
         tile_state[focus_cell] = "focus"
     # O lado nao escolhido mostra um UNICO bloco oliva. O lado selecionado
