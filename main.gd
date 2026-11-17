@@ -174,6 +174,7 @@ var flash_started_at: float = 0.0
 var word_fade_cells: Dictionary = {}
 var direction_fade_cells: Dictionary = {}
 var direction_transition_cells: Dictionary = {}
+var direction_transition_order: Dictionary = {}
 var round_epoch: int = 0
 var last_expire_update: int = -1
 var map_vision_moves: int = 0
@@ -2388,25 +2389,49 @@ func _refresh_board() -> void:
             top_color = pending_fade.get("start_color", CURRENT_WORD)
             skirt_color = pending_fade.get("start_skirt_color", CURRENT_WORD_SIDE)
             target_height = 0.015
-        # Ao trocar a direcao, o bloco antigo afunda e apaga; o novo
-        # faz o movimento inverso, surgindo em gradiente e se elevando.
-        if previous_tile_state.get(p, "") == "side_option" and kind == "base":
+        # Captura a cor que esta realmente na tela antes de redesenhar.
+        # Assim o bloco aceso vai direto ao oliva, sem piscar azul no meio.
+        var previous_top: Color = BASE
+        var previous_skirt: Color = SIDE_EMPTY
+        var previous_material: Material = tile.get_surface_override_material(0)
+        if previous_material is StandardMaterial3D:
+            previous_top = (previous_material as StandardMaterial3D).albedo_color
+        var previous_skirt_material: Material = (tile.get_node("Skirt") as MeshInstance3D).material_override
+        if previous_skirt_material is StandardMaterial3D:
+            previous_skirt = (previous_skirt_material as StandardMaterial3D).albedo_color
+        var previous_kind: String = String(previous_tile_state.get(p, ""))
+        var transition_delay: float = 0.0
+        # A trilha antiga apaga rapidamente, do ultimo bloco para tras.
+        if direction_transition_order.has(p) and kind == "base":
+            transition_delay = float(direction_transition_order[p]) * 0.035
+        if direction_transition_order.has(p) and kind == "base":
             direction_transition_cells[p] = {
-                "start_at": elapsed, "duration": 0.32,
-                "from_color": Color("#999988"), "to_color": BASE,
-                "from_skirt": SIDE_PREVIEW, "to_skirt": SIDE_EMPTY,
+                "start_at": elapsed + transition_delay, "duration": 0.20,
+                "from_color": previous_top, "to_color": BASE,
+                "from_skirt": previous_skirt, "to_skirt": SIDE_EMPTY,
                 "from_height": tile.position.y, "to_height": 0.0
             }
-        elif previous_tile_state.get(p, "") != "side_option" and kind == "side_option":
+        elif kind == "side_option" and previous_kind != "side_option":
+            # A nova opcao lateral acende simultaneamente, partindo da cor
+            # anterior real da casa e subindo em um unico movimento.
             direction_transition_cells[p] = {
-                "start_at": elapsed, "duration": 0.32,
-                "from_color": BASE, "to_color": Color("#999988"),
-                "from_skirt": SIDE_EMPTY, "to_skirt": SIDE_PREVIEW,
+                "start_at": elapsed, "duration": 0.20,
+                "from_color": previous_top, "to_color": Color("#999988"),
+                "from_skirt": previous_skirt, "to_skirt": SIDE_PREVIEW,
                 "from_height": tile.position.y, "to_height": 0.055
+            }
+        elif previous_kind == "side_option" and kind == "base":
+            direction_transition_cells[p] = {
+                "start_at": elapsed, "duration": 0.20,
+                "from_color": previous_top, "to_color": BASE,
+                "from_skirt": previous_skirt, "to_skirt": SIDE_EMPTY,
+                "from_height": tile.position.y, "to_height": 0.0
             }
         if direction_transition_cells.has(p):
             var transition: Dictionary = direction_transition_cells[p]
             var transition_progress: float = clampf((elapsed - float(transition["start_at"])) / float(transition["duration"]), 0.0, 1.0)
+            if elapsed < float(transition["start_at"]):
+                transition_progress = 0.0
             var transition_eased: float = transition_progress * transition_progress * (3.0 - 2.0 * transition_progress)
             top_color = transition["from_color"].lerp(transition["to_color"], transition_eased)
             skirt_color = transition["from_skirt"].lerp(transition["to_skirt"], transition_eased)
@@ -2902,6 +2927,13 @@ func _apply_direction(direction: Vector2i) -> void:
         return
     if direction == preview_dir:
         return
+    # Guarda a trilha que esta saindo: ela apaga do ultimo bloco para o
+    # primeiro, enquanto a nova opcao lateral aparece de uma vez.
+    direction_transition_order.clear()
+    if not preview.is_empty():
+        var outgoing_cells: Array[Vector2i] = _cells(preview)
+        for i in range(outgoing_cells.size()):
+            direction_transition_order[outgoing_cells[i]] = outgoing_cells.size() - 1 - i
     # Manter a mesma palavra e a mesma ordem no LineEdit.
     # O array de casas muda de sentido, logo no tabuleiro ABELHA vira AHLEBA.
     _save_preview_draft()
