@@ -173,6 +173,7 @@ var flash_cells: Dictionary = {}
 var flash_started_at: float = 0.0
 var word_fade_cells: Dictionary = {}
 var direction_fade_cells: Dictionary = {}
+var direction_transition_cells: Dictionary = {}
 var round_epoch: int = 0
 var last_expire_update: int = -1
 var map_vision_moves: int = 0
@@ -1083,6 +1084,7 @@ func _new_game() -> void:
     flash_cells.clear()
     word_fade_cells.clear()
     direction_fade_cells.clear()
+    direction_transition_cells.clear()
     round_epoch += 1
     path_time = STORY_MAP_TIME if level_mode else INFINITE_MAP_TIME
     map_vision_moves = 0
@@ -2113,9 +2115,10 @@ func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool 
             var skirt_material: Material = skirt_node.material_override
             if skirt_material is StandardMaterial3D:
                 base_skirt = (skirt_material as StandardMaterial3D).albedo_color
-        if success_base:
-            # Ao terminar o flash, trechos externos ja ficam com a cor dos
-            # blocos bloqueados; a letra permanece visivel sobre eles.
+        if success_base and spread_origin_index < 0:
+            # Confirmacoes comuns terminam em dourado; na vitoria, a onda
+            # deve partir da cor iluminada que o bloco ja possui, sem voltar
+            # ao amarelo antes de receber o verde.
             base_color = CURRENT_WORD if _inside_level(p) else OUTER_TILE
             base_skirt = CURRENT_WORD_SIDE if _inside_level(p) else Color("#242936")
         flash_cells[p] = {
@@ -2340,7 +2343,7 @@ func _refresh_board() -> void:
             "side_option":
                 top_color = Color("#999988")
                 skirt_color = SIDE_PREVIEW
-                target_height = 0.0
+                target_height = 0.055
         if pickups.has(p) and kind == "base":
             top_color = GOLD if pickups[p] in ["coin", "crown"] else Color("#79bac8")
             skirt_color = Color("#a58b50") if pickups[p] in ["coin", "crown"] else Color("#436d7c")
@@ -2385,21 +2388,29 @@ func _refresh_board() -> void:
             top_color = pending_fade.get("start_color", CURRENT_WORD)
             skirt_color = pending_fade.get("start_skirt_color", CURRENT_WORD_SIDE)
             target_height = 0.015
-        # Quando o bloco oliva de direcao desaparece, ele apaga suavemente
-        # para a cor normal do tabuleiro em vez de trocar de cor de uma vez.
+        # Ao trocar a direcao, o bloco antigo afunda e apaga; o novo
+        # faz o movimento inverso, surgindo em gradiente e se elevando.
         if previous_tile_state.get(p, "") == "side_option" and kind == "base":
-            direction_fade_cells[p] = {"start_at": elapsed, "duration": 0.32}
-        if direction_fade_cells.has(p):
-            if kind == "base":
-                var direction_fade: Dictionary = direction_fade_cells[p]
-                var direction_progress: float = clampf((elapsed - float(direction_fade["start_at"])) / float(direction_fade["duration"]), 0.0, 1.0)
-                var direction_eased: float = direction_progress * direction_progress * (3.0 - 2.0 * direction_progress)
-                top_color = Color("#999988").lerp(BASE, direction_eased)
-                skirt_color = SIDE_PREVIEW.lerp(SIDE_EMPTY, direction_eased)
-                if direction_progress >= 1.0:
-                    direction_fade_cells.erase(p)
-            else:
-                direction_fade_cells.erase(p)
+            direction_transition_cells[p] = {
+                "start_at": elapsed, "duration": 0.32,
+                "from_color": Color("#999988"), "to_color": BASE,
+                "from_skirt": SIDE_PREVIEW, "to_skirt": SIDE_EMPTY,
+                "from_height": tile.position.y, "to_height": 0.0
+            }
+        elif previous_tile_state.get(p, "") != "side_option" and kind == "side_option":
+            direction_transition_cells[p] = {
+                "start_at": elapsed, "duration": 0.32,
+                "from_color": BASE, "to_color": Color("#999988"),
+                "from_skirt": SIDE_EMPTY, "to_skirt": SIDE_PREVIEW,
+                "from_height": tile.position.y, "to_height": 0.055
+            }
+        if direction_transition_cells.has(p):
+            var transition: Dictionary = direction_transition_cells[p]
+            var transition_progress: float = clampf((elapsed - float(transition["start_at"])) / float(transition["duration"]), 0.0, 1.0)
+            var transition_eased: float = transition_progress * transition_progress * (3.0 - 2.0 * transition_progress)
+            top_color = transition["from_color"].lerp(transition["to_color"], transition_eased)
+            skirt_color = transition["from_skirt"].lerp(transition["to_skirt"], transition_eased)
+            target_height = float(transition["to_height"])
         var mat_name: String = top_color.to_html()
         tile.set_surface_override_material(0, _material_cached("tile_top_" + mat_name, top_color))
         tile.set_surface_override_material(1, _material_cached("tile_edge_" + mat_name, top_color.darkened(0.22)))
@@ -2536,6 +2547,29 @@ func _process(delta: float) -> void:
         if start_cells.has(p) or (level_mode and p == exit_cell):
             goal += sin(elapsed * 2.0 + float(p.x) * 0.22 + float(p.y) * 0.19) * 0.008
         tile.position.y = move_toward(tile.position.y, goal, delta * 3.6)
+    # Transicoes independentes dos blocos de direcao: a altura e as duas
+    # camadas de cor avancam juntas, sem deixar um bloco antigo no tabuleiro.
+    if not direction_transition_cells.is_empty():
+        var finished_direction_transitions: Array[Vector2i] = []
+        for cell in direction_transition_cells.keys():
+            var transition: Dictionary = direction_transition_cells[cell]
+            var progress: float = clampf((elapsed - float(transition["start_at"])) / float(transition["duration"]), 0.0, 1.0)
+            var eased: float = progress * progress * (3.0 - 2.0 * progress)
+            if board.has(cell):
+                var shown_top: Color = transition["from_color"].lerp(transition["to_color"], eased)
+                var shown_skirt: Color = transition["from_skirt"].lerp(transition["to_skirt"], eased)
+                var transition_tile: MeshInstance3D = board[cell]
+                transition_tile.set_surface_override_material(0, _material_cached("tile_top_" + shown_top.to_html(), shown_top))
+                transition_tile.set_surface_override_material(1, _material_cached("tile_edge_" + shown_top.to_html(), shown_top.darkened(0.22)))
+                var transition_skirt: MeshInstance3D = transition_tile.get_node("Skirt") as MeshInstance3D
+                transition_skirt.material_override = _material_cached("skirt_" + shown_skirt.to_html(), shown_skirt)
+                var from_height: float = float(transition["from_height"])
+                var to_height: float = float(transition["to_height"])
+                transition_tile.position.y = lerpf(from_height, to_height, eased)
+            if progress >= 1.0:
+                finished_direction_transitions.append(cell)
+        for cell in finished_direction_transitions:
+            direction_transition_cells.erase(cell)
     if is_instance_valid(enemy_node):
         enemy_node.position.y = 0.7 + sin(elapsed * 3.0) * 0.10
     if not flash_cells.is_empty():
