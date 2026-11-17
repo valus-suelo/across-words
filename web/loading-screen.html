@@ -25,6 +25,21 @@
 <script>
 (function () {
   'use strict';
+  // O shell do Godot pode atualizar o titulo depois que a pagina inicia.
+  // Mantem a identidade publica consistente durante toda a execucao.
+  const pageTitle = 'Across Words';
+  function enforcePageTitle() {
+    if (document.title !== pageTitle) document.title = pageTitle;
+  }
+  enforcePageTitle();
+  if (document.head) {
+    new MutationObserver(enforcePageTitle).observe(document.head, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+  }
+  window.addEventListener('load', enforcePageTitle, { once: true });
   const overlay = document.getElementById('aw-loading');
   const bar = document.getElementById('aw-progress');
   const caption = document.getElementById('aw-caption');
