@@ -2414,8 +2414,8 @@ func _refresh_board() -> void:
         if direction_transition_order.has(p) and kind == "base":
             direction_transition_cells[p] = {
                 "start_at": elapsed + transition_delay, "duration": 0.20,
-                "from_color": previous_top, "to_color": BASE,
-                "from_skirt": previous_skirt, "to_skirt": SIDE_EMPTY,
+                "from_color": previous_top, "to_color": top_color,
+                "from_skirt": previous_skirt, "to_skirt": skirt_color,
                 "from_height": tile.position.y, "to_height": 0.0
             }
         elif kind == "side_option" and previous_kind != "side_option":
@@ -2430,8 +2430,8 @@ func _refresh_board() -> void:
         elif previous_kind == "side_option" and kind == "base":
             direction_transition_cells[p] = {
                 "start_at": elapsed, "duration": 0.20,
-                "from_color": previous_top, "to_color": BASE,
-                "from_skirt": previous_skirt, "to_skirt": SIDE_EMPTY,
+                "from_color": previous_top, "to_color": top_color,
+                "from_skirt": previous_skirt, "to_skirt": skirt_color,
                 "from_height": tile.position.y, "to_height": 0.0
             }
         if direction_transition_cells.has(p):
@@ -2936,6 +2936,10 @@ func _apply_direction(direction: Vector2i) -> void:
         return
     if direction == preview_dir:
         return
+    # Descarta animacoes antigas antes de iniciar outra mudanca. O
+    # _refresh_board vai capturar as cores que estao realmente na tela
+    # e criar somente as transicoes correspondentes a nova direcao.
+    direction_transition_cells.clear()
     # Guarda a trilha que esta saindo: ela apaga do ultimo bloco para o
     # primeiro, enquanto a nova opcao lateral aparece de uma vez.
     direction_transition_order.clear()
