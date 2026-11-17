@@ -297,7 +297,8 @@ func _load_word_bank() -> void:
         if parsed is Dictionary and parsed.has("words") and parsed["words"] is Array:
             for record in parsed["words"]:
                 if not record is Dictionary:
-                    continue                var answer: String = String(record.get("answer", "")).to_upper()
+                    continue
+                var answer: String = String(record.get("answer", "")).to_upper()
                 var clue: String = String(record.get("clue", "")).strip_edges()
                 if answer.length() < 2 or clue.is_empty():
                     continue
@@ -596,7 +597,8 @@ func _make_ui() -> void:
     column.add_child(selected_info)
     entry = LineEdit.new()
     entry.placeholder_text = "Entrada interna"
-    entry.virtual_keyboard_enabled = false    entry.max_length = 18
+    entry.virtual_keyboard_enabled = false
+    entry.max_length = 18
     entry.alignment = HORIZONTAL_ALIGNMENT_CENTER
     # Entrada interna: não é exibida como caixa de texto.
     # No Android, o botão de teclado pode focá-la para abrir o teclado nativo.
@@ -895,7 +897,8 @@ func _make_help_and_pause(layer: CanvasLayer) -> void:
     previous.custom_minimum_size = Vector2(58, 48)
     previous.pressed.connect(func() -> void: _change_help_page(-1))
     navigation.add_child(previous)
-    help_page_label = _make_label("1 / 6", 20)    navigation.add_child(help_page_label)
+    help_page_label = _make_label("1 / 6", 20)
+    navigation.add_child(help_page_label)
     var next := Button.new()
     next.text = ">"
     next.custom_minimum_size = Vector2(58, 48)
@@ -1194,7 +1197,8 @@ func _place_campaign_objectives() -> void:
         occupied[cell] = true
     for region in regions:
         var candidates: Array[Vector2i] = []
-        for y in range(-radius, radius + 1):            for x in range(-radius, radius + 1):
+        for y in range(-radius, radius + 1):
+            for x in range(-radius, radius + 1):
                 var cell: Vector2i = Vector2i(x, y)
                 if occupied.has(cell):
                     continue
@@ -1493,7 +1497,8 @@ func _locked_letters_for_preview() -> Dictionary:
     var cells: Array[Vector2i] = _cells(preview)
     for i in range(cells.size()):
         if occupied.has(cells[i]):
-            locked[i] = String(occupied[cells[i]])    return locked
+            locked[i] = String(occupied[cells[i]])
+    return locked
 
 func _fill_locked_letters(value: String) -> String:
     if preview.is_empty():
@@ -1792,7 +1797,8 @@ func _submit() -> void:
         combo = 0
         _message("Resposta incorreta. Você pode continuar editando sem perder o caminho.")
         _update_hud()
-        return    if committed_from_preview:
+        return
+    if committed_from_preview:
         # Revalida contra o tabuleiro no momento da confirmação.
         var options := _possible_children(preview_parent, preview_anchor, preview_dir)
         var still_valid := false
@@ -2091,7 +2097,8 @@ func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool 
     _refresh_board()
     var started_at: float = elapsed
     var spread_origin_index: int = cells.find(spread_from)
-    for cell_index in range(cells.size()):        var p: Vector2i = cells[cell_index]
+    for cell_index in range(cells.size()):
+        var p: Vector2i = cells[cell_index]
         var cell_started_at: float = started_at + spread_delay
         if spread_origin_index >= 0:
             # A onda verde parte da saida e avanca pelas letras vizinhas,
@@ -2390,7 +2397,8 @@ func _refresh_board() -> void:
             skirt_color = pending_fade.get("start_skirt_color", CURRENT_WORD_SIDE)
             target_height = 0.015
         # Captura a cor que esta realmente na tela antes de redesenhar.
-        # Assim o bloco aceso vai direto ao oliva, sem piscar azul no meio.        var previous_top: Color = BASE
+        # Assim o bloco aceso vai direto ao oliva, sem piscar azul no meio.
+        var previous_top: Color = BASE
         var previous_skirt: Color = SIDE_EMPTY
         var previous_material: Material = tile.get_surface_override_material(0)
         if previous_material is StandardMaterial3D:
@@ -2689,7 +2697,8 @@ func _navigate_to_solved_cell(direction: Vector2i) -> bool:
         var score: float = float(forward) + float(lateral) * 2.0
         if score < best_score:
             best_score = score
-            best_cell = cell    if best_score == INF:
+            best_cell = cell
+    if best_score == INF:
         return false
     last_navigation_arrow = direction
     _click_tile(best_cell)
@@ -2980,15 +2989,6 @@ func _sync_visible_board(force: bool = false) -> void:
                 needed[cell] = true
     for p in board.keys():
         if not needed.has(p):
-            board[p].queue_free()
-            board.erase(p)
-            tile_target_heights.erase(p)
-    for p in needed.keys():
-        if board.has(p):
-            continue
-        var tile := MeshInstance3D.new()
-        tile.mesh = shared_tile_mesh
-        tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
             board[p].queue_free()
             board.erase(p)
             tile_target_heights.erase(p)
