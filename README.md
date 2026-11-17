@@ -1,4 +1,4 @@
-# Across-Words v0.17 — Web e Android
+# Across Words v0.17 — Web e Android
 
 Este projeto inclui a versão v0.17 do jogo, a exportação Android e uma ação para publicar a versão Web no GitHub Pages.
 
