@@ -2989,3 +2989,25 @@ func _sync_visible_board(force: bool = false) -> void:
         var tile := MeshInstance3D.new()
         tile.mesh = shared_tile_mesh
         tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+            board[p].queue_free()
+            board.erase(p)
+            tile_target_heights.erase(p)
+    for p in needed.keys():
+        if board.has(p):
+            continue
+        var tile := MeshInstance3D.new()
+        tile.mesh = shared_tile_mesh
+        tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        tile.set_surface_override_material(0, _material_cached("tile_base", BASE))
+        tile.set_surface_override_material(1, _material_cached("tile_base_side", BASE.darkened(0.20)))
+        tile.position = Vector3(p.x * GAP, 0.0, p.y * ROW_GAP)
+        var skirt := MeshInstance3D.new()
+        skirt.name = "Skirt"
+        skirt.mesh = shared_skirt_mesh
+        skirt.position.y = -0.16
+        skirt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        skirt.material_override = _material_cached("side_empty", SIDE_EMPTY)
+        tile.add_child(skirt)
+        add_child(tile)
+        board[p] = tile
+    _refresh_board()
