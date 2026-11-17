@@ -2456,6 +2456,8 @@ func _refresh_board() -> void:
                 "vision": symbol = "V"
                 "hint": symbol = "?"
             _draw_text(p, symbol, TILE_LETTER, 0.50, 64)
+    # A ordem serve apenas para esta atualizacao do tabuleiro.
+    direction_transition_order.clear()
     _update_hud()
 
 func _update_hud() -> void:
