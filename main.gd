@@ -192,7 +192,7 @@ const HELP_PAGES := [
     ["COMO JOGAR", "Toque em qualquer letra da palavra atual para iniciar um novo caminho. Use as setas do teclado ou arraste o dedo para percorrer as letras dessa palavra. Somente a palavra mais recente pode gerar novas palavras. As setas ao lado da letra mudam o lado da nova palavra.\n\nA origem fica lilas, a letra escolhida e a nova palavra ficam creme. Os blocos sobem em ondas. Acertos piscam em verde; erros, em vermelho."],
     ["TEMPO", "CAMPANHA: o relogio conta para cima. Voce nao perde por demorar, mas cada segundo reduz a pontuacao final. O item de tempo desconta 12 segundos.\n\nINFINITO: o relogio conta para baixo; quando acaba, a partida termina."],
     ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nNa campanha, o limite cresce 2 por fase (10 a 28). Cada energia restante no portal vale 25 pontos extras. Colete itens para recuperar ate 3 pontos. No infinito, o limite e 10."],
-    ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por fase na campanha, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELOGIO: reduz o tempo na campanha.\nVISAO: amplia a area visivel.\nMOEDAS: aumentam a pontuacao.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
+    ["COLECIONAVEIS E INIMIGOS", "♛ COROAS: 3 por fase na campanha, opcionais e valendo pontos.\n⚡ ENERGIA: recupera raios.\n⧖ RELOGIO: reduz o tempo na campanha.\n◉ VISAO: amplia a area visivel.\n◈ MOEDAS: aumentam a pontuacao.\n✧ DICAS: recuperam usos do botao DICA.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
     ["DICAS", "O botao DICA, ao lado da definicao, permite trocar a palavra sugerida para a letra e direcao escolhidas.\n\nNa campanha, voce tem 3 trocas por fase, renovadas ao avancar de nivel. No modo infinito, colete itens de dica para recuperar usos (ate 3). O botao exige alternativas validas."]
 ]
 var mode_button: Button
@@ -297,8 +297,7 @@ func _load_word_bank() -> void:
         if parsed is Dictionary and parsed.has("words") and parsed["words"] is Array:
             for record in parsed["words"]:
                 if not record is Dictionary:
-                    continue
-                var answer: String = String(record.get("answer", "")).to_upper()
+                    continue                var answer: String = String(record.get("answer", "")).to_upper()
                 var clue: String = String(record.get("clue", "")).strip_edges()
                 if answer.length() < 2 or clue.is_empty():
                     continue
@@ -556,13 +555,13 @@ func _make_ui() -> void:
     indicators.alignment = BoxContainer.ALIGNMENT_CENTER
     indicators.add_theme_constant_override("separation", 10)
     top_column.add_child(indicators)
-    time_label = _make_label("TEMPO 0:38", 19)
-    crown_label = _make_label("COROAS 0/3", 19)
-    energy_label = _make_label("ENERGIA 10/10", 19)
+    time_label = _make_label("⧖ 0:38", 19)
+    crown_label = _make_label("♛ 0/3", 19)
+    energy_label = _make_label("⚡ 10/10", 19)
     indicators.add_child(time_label)
     indicators.add_child(crown_label)
     indicators.add_child(energy_label)
-    score_label = _make_label("PONTOS 0  |  MOEDAS 0  |  COMBO 0", 17)
+    score_label = _make_label("PONTOS 0  |  ◈ 0  |  ✧ 0", 17)
     top_column.add_child(score_label)
     var clue_panel := PanelContainer.new()
     clue_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.26, 0.31, 0.48, 0.38), Color(0.67, 0.72, 0.91, 0.45)))
@@ -576,7 +575,7 @@ func _make_ui() -> void:
     clue_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     clue_row.add_child(clue_label)
     next_clue_button = Button.new()
-    next_clue_button.text = "DICA 3"
+    next_clue_button.text = "✧ DICA 3"
     next_clue_button.focus_mode = Control.FOCUS_NONE
     next_clue_button.custom_minimum_size.x = 80.0
     next_clue_button.tooltip_text = "Trocar pista (3 por fase)"
@@ -597,8 +596,7 @@ func _make_ui() -> void:
     column.add_child(selected_info)
     entry = LineEdit.new()
     entry.placeholder_text = "Entrada interna"
-    entry.virtual_keyboard_enabled = false
-    entry.max_length = 18
+    entry.virtual_keyboard_enabled = false    entry.max_length = 18
     entry.alignment = HORIZONTAL_ALIGNMENT_CENTER
     # Entrada interna: não é exibida como caixa de texto.
     # No Android, o botão de teclado pode focá-la para abrir o teclado nativo.
@@ -897,8 +895,7 @@ func _make_help_and_pause(layer: CanvasLayer) -> void:
     previous.custom_minimum_size = Vector2(58, 48)
     previous.pressed.connect(func() -> void: _change_help_page(-1))
     navigation.add_child(previous)
-    help_page_label = _make_label("1 / 6", 20)
-    navigation.add_child(help_page_label)
+    help_page_label = _make_label("1 / 6", 20)    navigation.add_child(help_page_label)
     var next := Button.new()
     next.text = ">"
     next.custom_minimum_size = Vector2(58, 48)
@@ -1197,8 +1194,7 @@ func _place_campaign_objectives() -> void:
         occupied[cell] = true
     for region in regions:
         var candidates: Array[Vector2i] = []
-        for y in range(-radius, radius + 1):
-            for x in range(-radius, radius + 1):
+        for y in range(-radius, radius + 1):            for x in range(-radius, radius + 1):
                 var cell: Vector2i = Vector2i(x, y)
                 if occupied.has(cell):
                     continue
@@ -1497,8 +1493,7 @@ func _locked_letters_for_preview() -> Dictionary:
     var cells: Array[Vector2i] = _cells(preview)
     for i in range(cells.size()):
         if occupied.has(cells[i]):
-            locked[i] = String(occupied[cells[i]])
-    return locked
+            locked[i] = String(occupied[cells[i]])    return locked
 
 func _fill_locked_letters(value: String) -> String:
     if preview.is_empty():
@@ -1797,8 +1792,7 @@ func _submit() -> void:
         combo = 0
         _message("Resposta incorreta. Você pode continuar editando sem perder o caminho.")
         _update_hud()
-        return
-    if committed_from_preview:
+        return    if committed_from_preview:
         # Revalida contra o tabuleiro no momento da confirmação.
         var options := _possible_children(preview_parent, preview_anchor, preview_dir)
         var still_valid := false
@@ -2097,8 +2091,7 @@ func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool 
     _refresh_board()
     var started_at: float = elapsed
     var spread_origin_index: int = cells.find(spread_from)
-    for cell_index in range(cells.size()):
-        var p: Vector2i = cells[cell_index]
+    for cell_index in range(cells.size()):        var p: Vector2i = cells[cell_index]
         var cell_started_at: float = started_at + spread_delay
         if spread_origin_index >= 0:
             # A onda verde parte da saida e avanca pelas letras vizinhas,
@@ -2397,8 +2390,7 @@ func _refresh_board() -> void:
             skirt_color = pending_fade.get("start_skirt_color", CURRENT_WORD_SIDE)
             target_height = 0.015
         # Captura a cor que esta realmente na tela antes de redesenhar.
-        # Assim o bloco aceso vai direto ao oliva, sem piscar azul no meio.
-        var previous_top: Color = BASE
+        # Assim o bloco aceso vai direto ao oliva, sem piscar azul no meio.        var previous_top: Color = BASE
         var previous_skirt: Color = SIDE_EMPTY
         var previous_material: Material = tile.get_surface_override_material(0)
         if previous_material is StandardMaterial3D:
@@ -2455,13 +2447,13 @@ func _refresh_board() -> void:
         elif level_mode and p == exit_cell:
             pass  # O portal e identificado pelo verde, sem seta sobreposta.
         elif pickups.has(p):
-            var symbol: String = "$"
+            var symbol: String = "◈"
             match pickups[p]:
-                "energy": symbol = "+"
-                "time": symbol = "T"
-                "crown": symbol = "C"
-                "vision": symbol = "V"
-                "hint": symbol = "?"
+                "energy": symbol = "⚡"
+                "time": symbol = "⧖"
+                "crown": symbol = "♛"
+                "vision": symbol = "◉"
+                "hint": symbol = "✧"
             _draw_text(p, symbol, TILE_LETTER, 0.50, 64)
     # A ordem serve apenas para esta atualizacao do tabuleiro.
     direction_transition_order.clear()
@@ -2486,12 +2478,12 @@ func _update_hud() -> void:
     direction_right.visible = false
     next_clue_button.visible = true
     next_clue_button.disabled = preview_choices.size() <= 1 or hints_remaining <= 0 or game_over
-    next_clue_button.text = "DICA %d" % hints_remaining
+    next_clue_button.text = "✧ DICA %d" % hints_remaining
     var shown_seconds: int = maxi(0, int(elapsed)) if level_mode else seconds
-    time_label.text = "TEMPO %d:%02d" % [shown_seconds / 60, shown_seconds % 60]
-    crown_label.text = "FASE %d  ·  COROAS %d/3" % [level_number, crowns] if level_mode else "INFINITO"
-    energy_label.text = "ENERGIA %d/%d" % [energy, _energy_capacity()]
-    score_label.text = "PONTOS %d  |  MOEDAS %d  |  COMBO %d%s" % [points, coins, combo, "  |  VISAO %d" % map_vision_moves if map_vision_moves > 0 else ""]
+    time_label.text = "⧖ %d:%02d" % [shown_seconds / 60, shown_seconds % 60]
+    crown_label.text = "FASE %d  ·  ♛ %d/3" % [level_number, crowns] if level_mode else "INFINITO"
+    energy_label.text = "⚡ %d/%d" % [energy, _energy_capacity()]
+    score_label.text = "PONTOS %d  |  ◈ %d  |  ✧ %d%s" % [points, coins, combo, "  |  ◉ %d" % map_vision_moves if map_vision_moves > 0 else ""]
 
 func _message(value: String) -> void:
     message_label.text = value
@@ -2697,8 +2689,7 @@ func _navigate_to_solved_cell(direction: Vector2i) -> bool:
         var score: float = float(forward) + float(lateral) * 2.0
         if score < best_score:
             best_score = score
-            best_cell = cell
-    if best_score == INF:
+            best_cell = cell    if best_score == INF:
         return false
     last_navigation_arrow = direction
     _click_tile(best_cell)
@@ -2998,16 +2989,3 @@ func _sync_visible_board(force: bool = false) -> void:
         var tile := MeshInstance3D.new()
         tile.mesh = shared_tile_mesh
         tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-        tile.set_surface_override_material(0, _material_cached("tile_base", BASE))
-        tile.set_surface_override_material(1, _material_cached("tile_base_side", BASE.darkened(0.20)))
-        tile.position = Vector3(p.x * GAP, 0.0, p.y * ROW_GAP)
-        var skirt := MeshInstance3D.new()
-        skirt.name = "Skirt"
-        skirt.mesh = shared_skirt_mesh
-        skirt.position.y = -0.16
-        skirt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-        skirt.material_override = _material_cached("side_empty", SIDE_EMPTY)
-        tile.add_child(skirt)
-        add_child(tile)
-        board[p] = tile
-    _refresh_board()
