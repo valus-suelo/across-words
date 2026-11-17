@@ -1,7 +1,7 @@
 config_version=5
 
 [application]
-config/name="Across-Words"
+config/name="Across Words"
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
