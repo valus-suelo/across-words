@@ -2388,7 +2388,6 @@ func _advance_diary_stage() -> void:
     camera_pan_offset = Vector2.ZERO
     _focus_word(carried_word)
     camera_target = Vector3(0.0, 25.0, CAMERA_BACK_OFFSET)
-    camera.position = camera_target
     camera_zoom_factor = 1.0
     var screen: Vector2 = get_viewport().get_visible_rect().size
     var normal_size: float = 17.0 if screen.x > screen.y else 20.0
@@ -2435,6 +2434,26 @@ func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
             _apply_direction(side)
             return true
     return false
+
+func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
+    for cell in cells:
+        if not board.has(cell) or not _inside_level(cell):
+            continue
+        var tile: MeshInstance3D = board[cell]
+        var target_top: Color = BASE
+        var target_skirt: Color = SIDE_EMPTY
+        var top_material: Material = tile.get_surface_override_material(0)
+        if top_material is StandardMaterial3D:
+            target_top = (top_material as StandardMaterial3D).albedo_color
+        var skirt_material: Material = (tile.get_node("Skirt") as MeshInstance3D).material_override
+        if skirt_material is StandardMaterial3D:
+            target_skirt = (skirt_material as StandardMaterial3D).albedo_color
+        var target_height: float = float(tile_target_heights.get(cell, 0.0))
+        tile.set_surface_override_material(0, _material_cached("tile_stage_closed", OUTER_TILE))
+        tile.set_surface_override_material(1, _material_cached("tile_stage_closed_edge", OUTER_TILE.darkened(0.22)))
+        (tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_stage_closed", Color("#242936"))
+        stage_open_tiles.append({"node": tile, "cell": cell, "target_top": target_top, "target_skirt": target_skirt, "target_height": target_height})
+
 
 func _refresh_board() -> void:
     for node in visual_nodes:
@@ -2820,12 +2839,6 @@ func _process(delta: float) -> void:
         var kind: String = tile_state.get(p, "base")
         var goal: float = float(tile_target_heights.get(p, 0.0))
         var cell_distance: int = absi(p.x - wave_origin.x) + absi(p.y - wave_origin.y)
-        if stage_wave_active and _inside_level(p) and (absi(p.x) > stage_wave_previous_radius or absi(p.y) > stage_wave_previous_radius):
-            var stage_delay: float = minf(1.05, float(cell_distance) * 0.025)
-            var stage_progress: float = clampf((elapsed - wave_started_at - stage_delay) / 0.65, 0.0, 1.0)
-            var stage_eased: float = stage_progress * stage_progress * (3.0 - 2.0 * stage_progress)
-            tile.position.y = lerpf(-0.48, goal, stage_eased)
-            continue
         var wave_age: float = elapsed - wave_started_at - minf(0.55, float(cell_distance) * 0.055)
         # Efeito sequencial: a onda parte da letra escolhida e alcanca os demais blocos.
         if wave_age < 0.0:
@@ -3234,6 +3247,7 @@ func _sync_visible_board(force: bool = false) -> void:
         return
     visible_origin = center
     var needed: Dictionary = {}
+    var created_cells: Array[Vector2i] = []
     # A malha cobre toda a largura projetada da camera, mesmo em ultrawide.
     var view_size: Vector2 = get_viewport().get_visible_rect().size
     var aspect: float = view_size.x / maxf(1.0, view_size.y)
@@ -3257,7 +3271,7 @@ func _sync_visible_board(force: bool = false) -> void:
         tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
         tile.set_surface_override_material(0, _material_cached("tile_base", BASE))
         tile.set_surface_override_material(1, _material_cached("tile_base_side", BASE.darkened(0.20)))
-        tile.position = Vector3(p.x * GAP, -0.48 if stage_wave_active and _inside_level(p) and (absi(p.x) > stage_wave_previous_radius or absi(p.y) > stage_wave_previous_radius) else 0.0, p.y * ROW_GAP)
+        tile.position = Vector3(p.x * GAP, -0.48 if stage_wave_active and _inside_level(p) else 0.0, p.y * ROW_GAP)
         var skirt := MeshInstance3D.new()
         skirt.name = "Skirt"
         skirt.mesh = shared_skirt_mesh
@@ -3267,4 +3281,7 @@ func _sync_visible_board(force: bool = false) -> void:
         tile.add_child(skirt)
         add_child(tile)
         board[p] = tile
+        created_cells.append(p)
     _refresh_board()
+    if stage_wave_active:
+        _queue_stage_open_tiles(created_cells)
