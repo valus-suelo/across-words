@@ -2519,8 +2519,8 @@ func _refresh_board() -> void:
             continue
         tile_state[kept_cell] = "stage_blue"
         solved_cells[kept_cell] = true
-        # Somente a palavra-ancora atual conserva suas letras para o jogador
-        # continuar a partida. As palavras anteriores viram blocos azuis vazios.
+        # As letras podem continuar no estado logico para cruzamentos, mas
+        # nenhuma delas e desenhada enquanto a casa estiver azul.
     # Uma única orientação visual por âncora. Ao inverter, a prévia antiga desaparece.
     # Outros rascunhos (em outras letras) permanecem até uma confirmação.
     for key in drafts.keys():
@@ -2606,7 +2606,7 @@ func _refresh_board() -> void:
                     break
             if is_crossing and board.has(preview_cell):
                 tile_state[preview_cell] = "anchor_focus"
-    if board.has(focus_cell):
+    if board.has(focus_cell) and tile_state.get(focus_cell, "") != "stage_blue":
         tile_state[focus_cell] = "focus"
     # O lado nao escolhido mostra um UNICO bloco oliva. O lado selecionado
     # e representado pelos blocos da palavra proposta (sem setas flutuantes).
@@ -2765,7 +2765,7 @@ func _refresh_board() -> void:
         var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
         skirt.material_override = _material_cached("skirt_" + skirt_color.to_html(), skirt_color)
         tile_target_heights[p] = target_height
-        if letters.has(p):
+        if letters.has(p) and kind != "stage_blue":
             var letter_color: Color = Color("#34313a") if kind == "draft" else TILE_LETTER
             _draw_text(p, String(letters[p]), letter_color, 0.64)
         elif level_mode and p == exit_cell:
