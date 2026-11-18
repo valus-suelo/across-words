@@ -2298,6 +2298,10 @@ func _advance_diary_stage() -> void:
     var carried_word: Dictionary = words[last_solved_word].duplicate(true)
     carried_word["state"] = "solved"
     carried_word["spawned"] = false
+    # Reposiciona a palavra preservada no centro geometrico (0, 0) do novo mapa.
+    var original_cells: Array[Vector2i] = _cells(carried_word)
+    var original_midpoint: Vector2i = original_cells[original_cells.size() / 2]
+    carried_word["start"] = Vector2i(carried_word["start"]) - original_midpoint
     completed_levels.append({"level": level_number, "crowns": crowns, "points": points})
     var previous_radius: int = _level_half_size()
     var previous_capacity: int = _energy_capacity()
@@ -2360,14 +2364,23 @@ func _advance_diary_stage() -> void:
     stage_wave_remaining = 2.2
     camera_pan_offset = Vector2.ZERO
     _focus_word(carried_word)
+    camera_target = Vector3(0.0, 25.0, CAMERA_BACK_OFFSET)
+    camera.position = camera_target
     camera_zoom_factor = 1.0
     var screen: Vector2 = get_viewport().get_visible_rect().size
     var normal_size: float = 17.0 if screen.x > screen.y else 20.0
     camera.size = normal_size
-    var expanded_size: float = maxf(normal_size, float(_level_half_size() * 2 + 4) * ROW_GAP * 1.15)
+    # Considera a inclinacao da camera e a proporcao da tela para enquadrar
+    # toda a area desbloqueada, mantendo a palavra no centro do enquadramento.
+    var radius: float = float(_level_half_size())
+    var board_width: float = (radius * 2.0 + 1.0) * GAP
+    var board_depth_projected: float = (radius * 2.0 + 1.0) * ROW_GAP * cos(deg_to_rad(69.0))
+    var aspect: float = screen.x / maxf(1.0, screen.y)
+    var expanded_size: float = maxf(normal_size, maxf(board_depth_projected, board_width / maxf(0.5, aspect)) * 1.24)
     var camera_tween := create_tween()
-    camera_tween.tween_property(camera, "size", expanded_size, 0.42).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-    camera_tween.tween_property(camera, "size", normal_size, 0.65).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+    camera_tween.tween_property(camera, "size", expanded_size, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+    camera_tween.tween_interval(0.35)
+    camera_tween.tween_property(camera, "size", normal_size, 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
     _layout_hud()
     _sync_visible_board(true)
     for cell in board.keys():
