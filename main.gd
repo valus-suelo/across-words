@@ -3219,7 +3219,7 @@ func _sync_visible_board(force: bool = false) -> void:
         tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
         tile.set_surface_override_material(0, _material_cached("tile_base", BASE))
         tile.set_surface_override_material(1, _material_cached("tile_base_side", BASE.darkened(0.20)))
-        tile.position = Vector3(p.x * GAP, -0.48 if stage_wave_active and (absi(p.x) > stage_wave_previous_radius or absi(p.y) > stage_wave_previous_radius) else 0.0, p.y * ROW_GAP)
+        tile.position = Vector3(p.x * GAP, -0.48 if stage_wave_active and _inside_level(p) and (absi(p.x) > stage_wave_previous_radius or absi(p.y) > stage_wave_previous_radius) else 0.0, p.y * ROW_GAP)
         var skirt := MeshInstance3D.new()
         skirt.name = "Skirt"
         skirt.mesh = shared_skirt_mesh
