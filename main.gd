@@ -191,9 +191,9 @@ const HELP_PAGES := [
     ["MODOS DE JOGO", "DIÁRIO: avance por 5 níveis, formando palavras até encontrar a saída próxima aos cantos. As 3 coroas de cada nível são opcionais e aumentam sua pontuação.\n\nINFINITO: forme palavras, crie cruzamentos e sobreviva pelo maior tempo possivel, acumulando pontos."],
     ["COMO JOGAR", "Toque em qualquer letra da palavra atual para iniciar um novo caminho. Use as setas do teclado ou arraste o dedo para percorrer as letras dessa palavra. Somente a palavra mais recente pode gerar novas palavras. As setas ao lado da letra mudam o lado da nova palavra.\n\nA origem fica lilas, a letra escolhida e a nova palavra ficam creme. Os blocos sobem em ondas. Acertos piscam em verde; erros, em vermelho."],
     ["TEMPO", "DIÁRIO: o relógio conta para cima. Voce nao perde por demorar, mas cada segundo reduz a pontuacao final. O item de tempo desconta 12 segundos.\n\nINFINITO: o relogio conta para baixo; quando acaba, a partida termina."],
-    ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nNa campanha, o limite cresce 2 por fase (10 a 28). Cada energia restante no portal vale 25 pontos extras. Colete itens para recuperar ate 3 pontos. No infinito, o limite e 10."],
-    ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por nível no Diário, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELÓGIO: reduz o tempo no Diário.\nVISAO: amplia a area visivel.\nMOEDAS: aumentam a pontuacao.\nDICAS: recuperam usos do botao DICA.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
-    ["DICAS", "O botao DICA, ao lado da definicao, permite trocar a palavra sugerida para a letra e direcao escolhidas.\n\nNa campanha, voce tem 3 trocas por fase, renovadas ao avancar de nivel. No modo infinito, colete itens de dica para recuperar usos (ate 3). O botao exige alternativas validas."]
+    ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nNo Diário, o limite cresce conforme a progressão (10 a 28). Cada energia restante no portal vale 25 pontos extras. Colete itens para recuperar ate 3 pontos. No infinito, o limite e 10."],
+    ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por nível no Diário, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELÓGIO: reduz o tempo no Diário.\nVISAO: amplia a area visivel.\nMOEDAS: aumentam a pontuacao.\nDICAS: recuperam usos do botao DICA.\n\nNo penúltimo nível, inimigos aparecem no mapa desde o início e tornam o percurso mais perigoso."],
+    ["DICAS", "O botao DICA, ao lado da definicao, permite trocar a palavra sugerida para a letra e direcao escolhidas.\n\nNo Diário, você tem 3 trocas por nível, renovadas ao avançar. No modo infinito, colete itens de dica para recuperar usos (ate 3). O botao exige alternativas validas."]
 ]
 var mode_button: Button
 var typed_buffer: String = ""
@@ -1288,7 +1288,7 @@ func _place_level_resources() -> void:
             var cell: Vector2i = Vector2i(x, y)
             if pickups.has(cell) or cell == exit_cell or _cells(words[0]).has(cell):
                 continue
-            if absi(x) + absi(y) < 3 + level_number:
+            if absi(x) + absi(y) < 3 + _progression_level():
                 continue
             options.append(cell)
     options.shuffle()
@@ -1322,7 +1322,7 @@ func _plan_level() -> void:
                 var options: Array[Dictionary] = _possible_children(0, anchor, direction)
                 for option in options:
                     var cells: Array[Vector2i] = _cells(option)
-                    if cells.size() >= (7 if level_number == 1 else 8) and cells.size() <= (9 if level_number == 1 else 10):
+                    if cells.size() >= (7 if _progression_level() == 1 else 8) and cells.size() <= (9 if _progression_level() == 1 else 10):
                         possible.append({"word": option, "anchor": anchor, "direction": direction})
         if not possible.is_empty():
             var chosen_route: Dictionary = possible[rng.randi_range(0, possible.size() - 1)]
@@ -1339,7 +1339,7 @@ func _plan_level() -> void:
             exit_cell = route_cells.back()
             # Espalha as coroas ao longo da rota, sem tres casas consecutivas.
             # Fase 1: indices 1, 3 e 5; fase 2: 1, 4 e 6.
-            var crown_positions: Array[int] = [1, 3, 5] if level_number == 1 else [1, 4, 6]
+            var crown_positions: Array[int] = [1, 3, 5] if _progression_level() == 1 else [1, 4, 6]
             for crown_index in crown_positions:
                 _spawn_pickup(route_cells[crown_index], "crown")
             return
