@@ -2298,6 +2298,7 @@ func _advance_diary_stage() -> void:
     var carried_word: Dictionary = words[last_solved_word].duplicate(true)
     carried_word["state"] = "solved"
     carried_word["spawned"] = false
+    completed_levels.append({"level": level_number, "crowns": crowns, "points": points})
     var previous_radius: int = _level_half_size()
     var previous_capacity: int = _energy_capacity()
     for node in visual_nodes:
@@ -2371,7 +2372,8 @@ func _advance_diary_stage() -> void:
     _sync_visible_board(true)
     for cell in board.keys():
         if _inside_level(cell) and (absi(cell.x) > previous_radius or absi(cell.y) > previous_radius):
-            (board[cell] as MeshInstance3D).position.y = -0.48
+            var expanding_tile: MeshInstance3D = board[cell]
+            expanding_tile.position.y = -0.48
     _refresh_board()
     _message("Etapa %d: a jornada continua a partir de %s!" % [level_number, String(carried_word["answer"])])
 
