@@ -211,13 +211,14 @@ var level_mode: bool = false
 var exit_cell := Vector2i(0, -24)
 const LEVEL_SAFE_RADIUS := 35
 const CAMPAIGN_LEVELS := 5
-const LEVEL_HALO := 9
+const LEVEL_HALO := 40
 const LEVEL_INTRO_SECONDS := 3.4
 var level_intro_remaining: float = 0.0
 var level_intro_start_size: float = 18.0
 var stage_wave_active: bool = false
 var stage_wave_remaining: float = 0.0
 var stage_open_tiles: Array[Dictionary] = []
+var stage_kept_tiles: Dictionary = {} # Vector2i -> letra das pecas lilases de etapas anteriores
 var level_origin: Vector2i = Vector2i.ZERO
 
 func _progression_level() -> int:
@@ -1114,6 +1115,7 @@ func _new_game() -> void:
     level_origin = Vector2i.ZERO
     stage_open_tiles.clear()
     stage_wave_active = false
+    stage_kept_tiles.clear()
     for node in visual_nodes:
         if is_instance_valid(node): node.queue_free()
     visual_nodes.clear()
@@ -2314,8 +2316,18 @@ func _advance_diary_stage() -> void:
     completed_levels.append({"level": level_number, "crowns": crowns, "points": points})
     var previous_capacity: int = _energy_capacity()
 
+    # Guarda visualmente todas as palavras resolvidas: as pecas lilases
+    # permanecem nas mesmas coordenadas, mas deixam de participar da logica.
+    for previous_word in words:
+        if previous_word.get("state", "") != "solved":
+            continue
+        var previous_cells: Array[Vector2i] = _cells(previous_word)
+        var previous_answer: String = String(previous_word["answer"])
+        for letter_index in range(previous_cells.size()):
+            stage_kept_tiles[previous_cells[letter_index]] = previous_answer[letter_index]
+
     # A palavra permanece nas mesmas coordenadas. O novo limite cresce ao
-    # redor dela; os blocos existentes sao reaproveitados e reiniciados.
+    # redor dela; os blocos existentes sao reaproveitados sem apagar a memoria lilas.
     level_origin = carried_anchor
     stage_open_tiles.clear()
     if is_instance_valid(enemy_node):
@@ -2371,7 +2383,7 @@ func _advance_diary_stage() -> void:
     wave_started_at = elapsed
     wave_sequence += 1
     stage_wave_active = true
-    stage_wave_remaining = 2.2
+    stage_wave_remaining = 4.8
     camera_pan_offset = Vector2.ZERO
     _focus_word(carried_word)
     camera_zoom_factor = 1.0
@@ -2391,9 +2403,9 @@ func _advance_diary_stage() -> void:
     _sync_visible_board(true)
     camera.size = normal_size
     var camera_tween := create_tween()
-    camera_tween.tween_property(camera, "size", expanded_size, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-    camera_tween.tween_interval(0.35)
-    camera_tween.tween_property(camera, "size", normal_size, 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+    camera_tween.tween_property(camera, "size", expanded_size, 1.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+    camera_tween.tween_interval(1.45)
+    camera_tween.tween_property(camera, "size", normal_size, 2.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
     _layout_hud()
     var cells_to_reveal: Array[Vector2i] = []
     for cell in board.keys():
@@ -2476,6 +2488,14 @@ func _refresh_board() -> void:
                 letters[p] = answer[i]
             elif not tile_state.has(p):
                 tile_state[p] = "active"
+    # Pecas lilases de etapas anteriores permanecem no mundo como memoria visual.
+    # Elas nao entram em words e, portanto, nao podem gerar novos cruzamentos.
+    for kept_cell in stage_kept_tiles.keys():
+        if letters.has(kept_cell):
+            continue
+        tile_state[kept_cell] = "solved"
+        solved_cells[kept_cell] = true
+        letters[kept_cell] = String(stage_kept_tiles[kept_cell])
     # Uma única orientação visual por âncora. Ao inverter, a prévia antiga desaparece.
     # Outros rascunhos (em outras letras) permanecem até uma confirmação.
     for key in drafts.keys():
@@ -2856,8 +2876,8 @@ func _process(delta: float) -> void:
             continue
         var opening_cell: Vector2i = opening_data["cell"]
         var opening_distance: int = absi(opening_cell.x - wave_origin.x) + absi(opening_cell.y - wave_origin.y)
-        var opening_delay: float = minf(0.85, float(opening_distance) * 0.024)
-        var opening_progress: float = clampf((elapsed - wave_started_at - opening_delay) / 0.62, 0.0, 1.0)
+        var opening_delay: float = minf(1.8, float(opening_distance) * 0.045)
+        var opening_progress: float = clampf((elapsed - wave_started_at - opening_delay) / 1.05, 0.0, 1.0)
         var opening_eased: float = opening_progress * opening_progress * (3.0 - 2.0 * opening_progress)
         var opening_target_top: Color = opening_data["target_top"]
         var opening_target_skirt: Color = opening_data["target_skirt"]
