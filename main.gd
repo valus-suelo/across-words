@@ -188,11 +188,11 @@ var help_page_label: Label
 var help_index: int = 0
 var help_swipe_start: float = 0.0
 const HELP_PAGES := [
-    ["MODOS DE JOGO", "CAMPANHA: avance por 10 fases, formando palavras ate encontrar a saida proxima aos cantos. As 3 coroas de cada fase sao opcionais e aumentam sua pontuacao.\n\nINFINITO: forme palavras, crie cruzamentos e sobreviva pelo maior tempo possivel, acumulando pontos."],
+    ["MODOS DE JOGO", "DIÁRIO: avance por 5 níveis, formando palavras até encontrar a saída próxima aos cantos. As 3 coroas de cada nível são opcionais e aumentam sua pontuação.\n\nINFINITO: forme palavras, crie cruzamentos e sobreviva pelo maior tempo possivel, acumulando pontos."],
     ["COMO JOGAR", "Toque em qualquer letra da palavra atual para iniciar um novo caminho. Use as setas do teclado ou arraste o dedo para percorrer as letras dessa palavra. Somente a palavra mais recente pode gerar novas palavras. As setas ao lado da letra mudam o lado da nova palavra.\n\nA origem fica lilas, a letra escolhida e a nova palavra ficam creme. Os blocos sobem em ondas. Acertos piscam em verde; erros, em vermelho."],
-    ["TEMPO", "CAMPANHA: o relogio conta para cima. Voce nao perde por demorar, mas cada segundo reduz a pontuacao final. O item de tempo desconta 12 segundos.\n\nINFINITO: o relogio conta para baixo; quando acaba, a partida termina."],
+    ["TEMPO", "DIÁRIO: o relógio conta para cima. Voce nao perde por demorar, mas cada segundo reduz a pontuacao final. O item de tempo desconta 12 segundos.\n\nINFINITO: o relogio conta para baixo; quando acaba, a partida termina."],
     ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nNa campanha, o limite cresce 2 por fase (10 a 28). Cada energia restante no portal vale 25 pontos extras. Colete itens para recuperar ate 3 pontos. No infinito, o limite e 10."],
-    ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por fase na campanha, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELOGIO: reduz o tempo na campanha.\nVISAO: amplia a area visivel.\nMOEDAS: aumentam a pontuacao.\nDICAS: recuperam usos do botao DICA.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
+    ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por nível no Diário, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELÓGIO: reduz o tempo no Diário.\nVISAO: amplia a area visivel.\nMOEDAS: aumentam a pontuacao.\nDICAS: recuperam usos do botao DICA.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
     ["DICAS", "O botao DICA, ao lado da definicao, permite trocar a palavra sugerida para a letra e direcao escolhidas.\n\nNa campanha, voce tem 3 trocas por fase, renovadas ao avancar de nivel. No modo infinito, colete itens de dica para recuperar usos (ate 3). O botao exige alternativas validas."]
 ]
 var mode_button: Button
@@ -210,14 +210,19 @@ var pointer_pan: bool = false
 var level_mode: bool = false
 var exit_cell := Vector2i(0, -24)
 const LEVEL_SAFE_RADIUS := 35
-const CAMPAIGN_LEVELS := 10
+const CAMPAIGN_LEVELS := 5
 const LEVEL_HALO := 9
 const LEVEL_INTRO_SECONDS := 3.4
 var level_intro_remaining: float = 0.0
 var level_intro_start_size: float = 18.0
 
+func _progression_level() -> int:
+    # Mantem os marcos de progressao dos niveis originais 1, 2, 5, 7 e 10.
+    var progression: Array[int] = [1, 2, 5, 7, 10]
+    return progression[clampi(level_number, 1, CAMPAIGN_LEVELS) - 1]
+
 func _level_half_size() -> int:
-    return 5 + clampi(level_number, 1, CAMPAIGN_LEVELS) - 1
+    return 5 + _progression_level() - 1
 
 func _inside_level(cell: Vector2i) -> bool:
     if not level_mode:
@@ -330,11 +335,12 @@ func _load_word_bank() -> void:
 func _word_difficulty_allowed(item: Dictionary) -> bool:
     if not level_mode:
         return true
-    var allowed: int = 1 if level_number <= 2 else (2 if level_number <= 5 else 3)
+    var stage: int = _progression_level()
+    var allowed: int = 1 if stage <= 2 else (2 if stage <= 5 else 3)
     var difficulty: int = int(item.get("difficulty", 1))
-    if level_number >= 9:
+    if stage >= 9:
         return difficulty >= 2 and difficulty <= allowed
-    if level_number >= 7:
+    if stage >= 7:
         return difficulty <= allowed
     return difficulty <= allowed
 
@@ -344,9 +350,9 @@ func _choose_start_word() -> Dictionary:
         var length: int = String(item["answer"]).length()
         if length < 4 or length > 8 or not _word_difficulty_allowed(item):
             continue
-        if level_mode and level_number <= 2 and int(item["difficulty"]) != 1:
+        if level_mode and _progression_level() <= 2 and int(item["difficulty"]) != 1:
             continue
-        if level_mode and level_number >= 7 and int(item["difficulty"]) < 2:
+        if level_mode and _progression_level() >= 7 and int(item["difficulty"]) < 2:
             continue
         pool.append(item)
     if pool.is_empty():
@@ -784,7 +790,7 @@ func _make_ui() -> void:
     menu_col.add_child(subtitle)
     var story := Button.new()
     hud_story_button = story
-    story.text = "HISTÓRIA  ·  ENCONTRE A SAÍDA"
+    story.text = "DIÁRIO  ·  ENCONTRE A SAÍDA"
     story.custom_minimum_size.y = 80
     story.pressed.connect(func() -> void: _start_mode(true))
     menu_col.add_child(story)
@@ -799,7 +805,7 @@ func _make_ui() -> void:
     how_button.custom_minimum_size.y = 52
     how_button.pressed.connect(_show_help)
     menu_col.add_child(how_button)
-    var hint := _make_label("Campanha: encontre a saída. Infinito: sobreviva ao relógio.", 18)
+    var hint := _make_label("Diário: encontre a saída. Infinito: sobreviva ao relógio.", 18)
     hud_menu_hint = hint
     hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -1006,7 +1012,7 @@ func _toggle_pause() -> void:
     if pause_overlay.visible:
         _close_pause()
         return
-    pause_stats.text = "Modo: %s\nFase: %d\nPontos: %d  |  Moedas: %d\nPalavras: %d  |  Cruzamentos: %d\nCoroas: %d/3  |  Energia: %d/%d\nTempo: %d:%02d  |  Dicas: %d\nFases concluidas: %d" % ["Campanha" if level_mode else "Infinito", level_number, points, coins, _solved_count(), combo, crowns, energy, _energy_capacity(), int(elapsed) / 60, int(elapsed) % 60, hints_remaining, completed_levels.size()]
+    pause_stats.text = "Modo: %s\nFase: %d\nPontos: %d  |  Moedas: %d\nPalavras: %d  |  Cruzamentos: %d\nCoroas: %d/3  |  Energia: %d/%d\nTempo: %d:%02d  |  Dicas: %d\nFases concluidas: %d" % ["Diário" if level_mode else "Infinito", level_number, points, coins, _solved_count(), combo, crowns, energy, _energy_capacity(), int(elapsed) / 60, int(elapsed) % 60, hints_remaining, completed_levels.size()]
     pause_overlay.show()
     if is_instance_valid(entry):
         entry.release_focus()
@@ -1050,7 +1056,7 @@ func _start_mode(story: bool) -> void:
     _new_game()
     menu_overlay.hide()
     _analytics_event("game_start", {"level": level_number})
-    _message("HISTÓRIA: encontre a saída!" if story else "INFINITO: sobreviva e acumule pontos!")
+    _message("DIÁRIO: encontre a saída!" if story else "INFINITO: sobreviva e acumule pontos!")
 
 func _run_summary() -> String:
     var summary: String = "Fases concluídas: %d  |  Pontos totais: %d" % [completed_levels.size(), run_points + points]
@@ -1060,7 +1066,7 @@ func _run_summary() -> String:
     return summary
 
 func _energy_capacity() -> int:
-    return ENERGY_MAX + (level_number - 1) * ENERGY_PER_LEVEL if level_mode else ENERGY_MAX
+    return ENERGY_MAX + (_progression_level() - 1) * ENERGY_PER_LEVEL if level_mode else ENERGY_MAX
 
 func _energy_finish_bonus() -> int:
     return energy * ENERGY_FINISH_BONUS
@@ -1070,17 +1076,17 @@ func _show_result(victory: bool, reason: String) -> void:
         return
     game_over = true
     if victory and level_mode:
-        var time_penalty: int = int(elapsed) * (2 + level_number)
+        var time_penalty: int = int(elapsed) * (2 + _progression_level())
         points = maxi(0, points + _energy_finish_bonus() - time_penalty)
         completed_levels.append({"level": level_number, "crowns": mini(crowns, 3), "points": points})
     _analytics_event("level_complete" if victory and level_mode else "game_end", {"level": level_number, "score": points, "elapsed_seconds": int(elapsed), "crowns": crowns, "energy_remaining": energy, "words_solved": _solved_count(), "victory": victory})
     result_title.text = "FASE CONCLUÍDA!" if victory else "GAME OVER"
     result_title.add_theme_color_override("font_color", Color("#f4d787") if victory else Color("#e97d9c"))
     if level_mode:
-        result_stats.text = "%s\n\nCoroas opcionais: %d/3 · Bônus: %d pontos\nEnergia restante: %d/%d · Bônus: %d pontos\nTempo: %d:%02d · Penalidade de tempo: %d pontos\n\n%s\n\nPalavras nesta fase: %d" % [reason, crowns, crowns * 500, energy, _energy_capacity(), _energy_finish_bonus(), int(elapsed) / 60, int(elapsed) % 60, int(elapsed) * (2 + level_number), _run_summary(), _solved_count()]
+        result_stats.text = "%s\n\nCoroas opcionais: %d/3 · Bônus: %d pontos\nEnergia restante: %d/%d · Bônus: %d pontos\nTempo: %d:%02d · Penalidade de tempo: %d pontos\n\n%s\n\nPalavras nesta fase: %d" % [reason, crowns, crowns * 500, energy, _energy_capacity(), _energy_finish_bonus(), int(elapsed) / 60, int(elapsed) % 60, int(elapsed) * (2 + _progression_level()), _run_summary(), _solved_count()]
     else:
         result_stats.text = "%s\n\nPontuação: %d\nPalavras: %d  ·  Combo: %d" % [reason, points, _solved_count(), combo]
-    result_action.text = ("RECOMEÇAR CAMPANHA" if level_number >= CAMPAIGN_LEVELS else "PRÓXIMO NÍVEL") if victory and level_mode else ("NOVA PARTIDA" if not victory else "CONTINUAR")
+    result_action.text = ("RECOMEÇAR DIÁRIO" if level_number >= CAMPAIGN_LEVELS else "PRÓXIMO NÍVEL") if victory and level_mode else ("NOVA PARTIDA" if not victory else "CONTINUAR")
     result_overlay.show()
 
 func _result_continue() -> void:
@@ -1174,7 +1180,7 @@ func _new_game() -> void:
         _spawn_pickup(Vector2i(5, 3), "hint")
     else:
         _place_level_resources()
-        if level_number >= 7:
+        if _progression_level() >= 7:
             _spawn_enemy()
     if not level_mode:
         _spawn_pickup(Vector2i(3, 4), "crown")
@@ -1233,7 +1239,7 @@ func _place_campaign_objectives() -> void:
     corners.shuffle()
     var corner: Vector2i = corners[0]
     var exit_options: Array[Vector2i] = []
-    var inset: int = 1 if level_number <= 3 else 2
+    var inset: int = 1 if _progression_level() <= 3 else 2
     for dy in range(inset + 1):
         for dx in range(inset + 1):
             var candidate: Vector2i = corner + Vector2i(-signi(corner.x) * dx, -signi(corner.y) * dy)
@@ -1254,7 +1260,7 @@ func _place_campaign_objectives() -> void:
                     continue
                 if signi(x) != signi(region.x) or signi(y) != signi(region.y):
                     continue
-                if absi(x) + absi(y) < 3 + level_number:
+                if absi(x) + absi(y) < 3 + _progression_level():
                     continue
                 candidates.append(cell)
         if candidates.is_empty():
@@ -1287,13 +1293,14 @@ func _place_level_resources() -> void:
             options.append(cell)
     options.shuffle()
     var kinds: Array[String] = []
-    if level_number >= 3:
+    var stage: int = _progression_level()
+    if stage >= 3:
         kinds.append("energy")
-    if level_number >= 5:
+    if stage >= 5:
         kinds.append("time")
-    if level_number >= 6:
+    if stage >= 6:
         kinds.append("vision")
-    if level_number >= 9:
+    if stage >= 9:
         kinds.append("energy")
     for kind in kinds:
         if options.is_empty():
@@ -1302,10 +1309,10 @@ func _place_level_resources() -> void:
 
 func _plan_level() -> void:
     level_route.clear()
-    if level_number == 1:
+    if _progression_level() == 1:
         _place_first_level_objectives()
         return
-    if level_number == 2:
+    if _progression_level() == 2:
         # Tutorial: uma unica ramificacao, com saida e coroas perto da origem.
         var first: Dictionary = words[0]
         var possible: Array[Dictionary] = []
@@ -1345,7 +1352,8 @@ func _plan_advanced_level() -> void:
     var best_exit: Vector2i = Vector2i(0, -6)
     var best_distance: int = -1
     var best_pins: Dictionary = {}
-    var target_steps: int = mini(maxi(2, level_number), 10)
+    var stage: int = _progression_level()
+    var target_steps: int = mini(maxi(2, stage), 10)
     for attempt in range(28):
         words.resize(1)
         words[0] = first_word.duplicate(true)
@@ -1389,7 +1397,7 @@ func _plan_advanced_level() -> void:
                     best_exit = cell
                     best_route = route.duplicate()
                     best_pins = trial_pins.duplicate()
-        if best_distance >= 4 + level_number * 3:
+        if best_distance >= 4 + _progression_level() * 3:
             break
     words.resize(1)
     words[0] = first_word
@@ -1951,7 +1959,7 @@ func _submit() -> void:
             return
     _collect_pickups()
     # Apenas o alvo atual provoca derrota; os demais custam pontos.
-    if not level_mode or level_number >= 7:
+    if not level_mode or _progression_level() >= 7:
         _enemy_turn()
     if game_over:
         _refresh_board()
@@ -2009,11 +2017,11 @@ func _collect_pickups() -> void:
             var p := center + Vector2i(rng.randi_range(-6, 6), rng.randi_range(-6, 6))
             if (not level_mode or _inside_level(p)) and p != exit_cell and not solved_cells.has(p) and not pickups.has(p):
                 var kinds: Array[String] = ["coin"]
-                if not level_mode or level_number >= 3:
+                if not level_mode or _progression_level() >= 3:
                     kinds.append("energy")
-                if not level_mode or level_number >= 5:
+                if not level_mode or _progression_level() >= 5:
                     kinds.append("time")
-                if not level_mode or level_number >= 6:
+                if not level_mode or _progression_level() >= 6:
                     kinds.append("vision")
                 if not level_mode:
                     kinds.append("crown")
