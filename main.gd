@@ -2280,9 +2280,95 @@ func _finish_at_portal() -> void:
             animation.tween_property(tile, "scale", Vector3(1.08, 0.70, 1.08), 0.13).set_trans(Tween.TRANS_SINE)
             animation.tween_property(tile, "scale", Vector3.ONE, 0.30).set_delay(0.13).set_trans(Tween.TRANS_BACK)
     animation.tween_callback(func() -> void:
-        if round_epoch == current_epoch:
-            _show_result(true, "Você encontrou a saída da fase %d!" % level_number)
-    ).set_delay(0.98)
+        if round_epoch != current_epoch:
+            return
+        if level_number < CAMPAIGN_LEVELS:
+            _advance_diary_stage()
+        else:
+            _show_result(true, "Você concluiu a jornada do Diário!")
+    ).set_delay(2.15)
+
+func _advance_diary_stage() -> void:
+    if not level_mode or level_number >= CAMPAIGN_LEVELS or last_solved_word < 0 or last_solved_word >= words.size():
+        _show_result(true, "Você concluiu a jornada do Diário!")
+        return
+    var carried_word: Dictionary = words[last_solved_word].duplicate(true)
+    carried_word["state"] = "solved"
+    carried_word["spawned"] = false
+    var previous_radius: int = _level_half_size()
+    var previous_capacity: int = _energy_capacity()
+    for node in visual_nodes:
+        if is_instance_valid(node):
+            node.queue_free()
+    visual_nodes.clear()
+    if is_instance_valid(enemy_node):
+        enemy_node.queue_free()
+    enemy_node = null
+    level_number += 1
+    words.clear()
+    words.append(carried_word)
+    used.clear()
+    used[String(carried_word["answer"])] = true
+    pickups.clear()
+    fixed_branch_answers.clear()
+    drafts.clear()
+    preview.clear()
+    chosen = -1
+    last_solved_word = 0
+    preview_parent = -1
+    preview_anchor = -1
+    preview_dir = Vector2i.ZERO
+    preview_choices.clear()
+    preview_choice_index = 0
+    preferred_branch_direction = Vector2i.ZERO
+    last_navigation_arrow = Vector2i.ZERO
+    current_category = String(carried_word.get("category", "GERAL"))
+    crowns = 0
+    hints_remaining = HINTS_PER_LEVEL
+    energy = mini(_energy_capacity(), energy + maxi(1, _energy_capacity() - previous_capacity))
+    combo = 0
+    elapsed = 0.0
+    path_time = STORY_MAP_TIME
+    regen = 0.0
+    map_vision_moves = 0
+    typed_buffer = ""
+    _assign_entry("")
+    entry.release_focus()
+    flash_cells.clear()
+    word_fade_cells.clear()
+    direction_fade_cells.clear()
+    direction_transition_cells.clear()
+    direction_transition_order.clear()
+    tile_target_heights.clear()
+    round_epoch += 1
+    game_over = false
+    _plan_level()
+    _place_campaign_objectives()
+    _place_level_resources()
+    if _progression_level() >= 7:
+        _spawn_enemy()
+    var carried_cells: Array[Vector2i] = _cells(carried_word)
+    wave_origin = carried_cells[carried_cells.size() / 2]
+    wave_started_at = elapsed
+    wave_sequence += 1
+    stage_wave_previous_radius = previous_radius
+    stage_wave_active = true
+    stage_wave_remaining = 2.2
+    camera_pan_offset = Vector2.ZERO
+    _focus_word(carried_word)
+    camera_zoom_factor = 1.0
+    var screen: Vector2 = get_viewport().get_visible_rect().size
+    var normal_size: float = 17.0 if screen.x > screen.y else 20.0
+    camera.size = normal_size
+    var expanded_size: float = maxf(normal_size, float(_level_half_size() * 2 + 4) * ROW_GAP * 1.15)
+    var camera_tween := create_tween()
+    camera_tween.tween_property(camera, "size", expanded_size, 0.42).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+    camera_tween.tween_property(camera, "size", normal_size, 0.65).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+    _layout_hud()
+    _sync_visible_board(true)
+    _refresh_board()
+    _message("Etapa %d: a jornada continua a partir de %s!" % [level_number, String(carried_word["answer"])])
+
 
 func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
     if preview_parent < 0 or preview_parent >= words.size() or preview_anchor < 0:
