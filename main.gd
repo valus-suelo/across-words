@@ -242,6 +242,7 @@ var preview_choice_index: int = 0
 var direction_left: Button
 var direction_right: Button
 var next_clue_button: Button
+var hint_count_label: Label
 var input_syncing: bool = false
 var last_solved_word: int = -1  # palavra mais recente para navegação sem clique
 # Direção de ramificação e direção da última varredura de letras.
@@ -594,13 +595,27 @@ func _make_ui() -> void:
     clue_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     clue_row.add_child(clue_label)
     next_clue_button = Button.new()
-    next_clue_button.text = "3"
-    next_clue_button.icon = load("res://assets/icons/hint.svg") as Texture2D
-    next_clue_button.custom_minimum_size = Vector2(48.0, 34.0)
-    next_clue_button.add_theme_constant_override("h_separation", 3)
+    next_clue_button.custom_minimum_size = Vector2(44.0, 34.0)
     next_clue_button.focus_mode = Control.FOCUS_NONE
     next_clue_button.tooltip_text = "Trocar pista (3 por fase)"
     next_clue_button.pressed.connect(_next_preview_clue)
+    var hint_content := HBoxContainer.new()
+    hint_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    hint_content.alignment = BoxContainer.ALIGNMENT_CENTER
+    hint_content.add_theme_constant_override("separation", 3)
+    hint_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    var hint_icon := TextureRect.new()
+    hint_icon.texture = load("res://assets/icons/hint.svg") as Texture2D
+    hint_icon.custom_minimum_size = Vector2(12.0, 12.0)
+    hint_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    hint_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+    hint_icon.modulate = Color("#e9eafa")
+    hint_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hint_content.add_child(hint_icon)
+    hint_count_label = _make_label("3", 16)
+    hint_count_label.custom_minimum_size = Vector2(10.0, 0.0)
+    hint_content.add_child(hint_count_label)
+    next_clue_button.add_child(hint_content)
     clue_row.add_child(next_clue_button)
 
     var bottom := PanelContainer.new()
@@ -2533,7 +2548,7 @@ func _update_hud() -> void:
     direction_right.visible = false
     next_clue_button.visible = true
     next_clue_button.disabled = preview_choices.size() <= 1 or hints_remaining <= 0 or game_over
-    next_clue_button.text = "%d" % hints_remaining
+    hint_count_label.text = "%d" % hints_remaining
     var shown_seconds: int = maxi(0, int(elapsed)) if level_mode else seconds
     time_label.text = "TEMPO %d:%02d" % [shown_seconds / 60, shown_seconds % 60]
     crown_label.text = "FASE %d  ·  COROAS %d/3" % [level_number, crowns] if level_mode else "INFINITO"
