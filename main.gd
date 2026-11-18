@@ -804,13 +804,13 @@ func _make_ui() -> void:
     hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     menu_col.add_child(hint)
-    # Rodape do menu: autoria a esquerda e contatos a direita.
+    # Rodape do menu: autoria a esquerda e redes sociais com e-mail abaixo, a direita.
     var footer := HBoxContainer.new()
     footer.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
     footer.offset_left = 18.0
     footer.offset_right = -18.0
-    footer.offset_top = -58.0
-    footer.offset_bottom = -12.0
+    footer.offset_top = -82.0
+    footer.offset_bottom = -10.0
     footer.add_theme_constant_override("separation", 8)
     menu_overlay.add_child(footer)
     var author := _make_label("criado por valus_suelo", 15)
@@ -819,9 +819,24 @@ func _make_ui() -> void:
     author.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
     author.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
     footer.add_child(author)
-    _menu_social_button(footer, "@", "Gmail", "mailto:joao.valansuelo.abreu@gmail.com")
-    _menu_social_button(footer, "X", "Twitter / X", "https://x.com/valus_suelo")
-    _menu_social_button(footer, "◎", "Instagram", "https://www.instagram.com/valus_suelo/")
+
+    var contact_column := VBoxContainer.new()
+    contact_column.alignment = BoxContainer.ALIGNMENT_END
+    contact_column.add_theme_constant_override("separation", 2)
+    footer.add_child(contact_column)
+
+    var social_buttons := HBoxContainer.new()
+    social_buttons.alignment = BoxContainer.ALIGNMENT_END
+    social_buttons.add_theme_constant_override("separation", 8)
+    contact_column.add_child(social_buttons)
+    _menu_social_button(social_buttons, "X", "Twitter / X", "https://x.com/valus_suelo")
+    _menu_social_button(social_buttons, "◎", "Instagram", "https://www.instagram.com/sueloarts/")
+
+    var email_address := _make_label("joao.valansuelo.abreu@gmail.com", 11)
+    email_address.add_theme_color_override("font_color", Color("#bfc8e8"))
+    email_address.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    email_address.size_flags_horizontal = Control.SIZE_SHRINK_END
+    contact_column.add_child(email_address)
     _make_help_and_pause(menu_layer)
 
 func _menu_social_button(parent: HBoxContainer, symbol: String, service: String, url: String) -> void:
