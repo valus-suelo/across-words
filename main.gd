@@ -1081,7 +1081,7 @@ func _show_result(victory: bool, reason: String) -> void:
     if victory and level_mode:
         var time_penalty: int = int(elapsed) * (2 + _progression_level())
         points = maxi(0, points + _energy_finish_bonus() - time_penalty)
-        completed_levels.append({"level": level_number, "crowns": mini(crowns, 3), "points": points})
+        completed_levels.append({"level": level_number, "crowns": crowns, "points": points})
     _analytics_event("level_complete" if victory and level_mode else "game_end", {"level": level_number, "score": points, "elapsed_seconds": int(elapsed), "crowns": crowns, "energy_remaining": energy, "words_solved": _solved_count(), "victory": victory})
     result_title.text = "FASE CONCLUÍDA!" if victory else "GAME OVER"
     result_title.add_theme_color_override("font_color", Color("#f4d787") if victory else Color("#e97d9c"))
@@ -2369,6 +2369,9 @@ func _advance_diary_stage() -> void:
     camera_tween.tween_property(camera, "size", normal_size, 0.65).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
     _layout_hud()
     _sync_visible_board(true)
+    for cell in board.keys():
+        if _inside_level(cell) and (absi(cell.x) > previous_radius or absi(cell.y) > previous_radius):
+            (board[cell] as MeshInstance3D).position.y = -0.48
     _refresh_board()
     _message("Etapa %d: a jornada continua a partir de %s!" % [level_number, String(carried_word["answer"])])
 
@@ -2779,7 +2782,7 @@ func _process(delta: float) -> void:
         var kind: String = tile_state.get(p, "base")
         var goal: float = float(tile_target_heights.get(p, 0.0))
         var cell_distance: int = absi(p.x - wave_origin.x) + absi(p.y - wave_origin.y)
-        if stage_wave_active and (absi(p.x) > stage_wave_previous_radius or absi(p.y) > stage_wave_previous_radius):
+        if stage_wave_active and _inside_level(p) and (absi(p.x) > stage_wave_previous_radius or absi(p.y) > stage_wave_previous_radius):
             var stage_delay: float = minf(1.05, float(cell_distance) * 0.025)
             var stage_progress: float = clampf((elapsed - wave_started_at - stage_delay) / 0.65, 0.0, 1.0)
             var stage_eased: float = stage_progress * stage_progress * (3.0 - 2.0 * stage_progress)
