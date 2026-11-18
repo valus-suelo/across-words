@@ -1942,7 +1942,7 @@ func _submit() -> void:
             camera_target = Vector3(float(exit_cell.x) * GAP, 25.0, float(exit_cell.y) * ROW_GAP + CAMERA_BACK_OFFSET)
             # O pequeno atraso permite perceber o salto inicial da saida antes
             # de a cor verde se propagar, letra por letra.
-            _flash_word(confirmed_cells, Color("#67cf76"), true, exit_cell, 0.38)
+            _flash_word(solved_cells, Color("#67cf76"), true, exit_cell, 0.38)
             _finish_at_portal()
             return
     _collect_pickups()
