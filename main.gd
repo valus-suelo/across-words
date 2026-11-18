@@ -2458,8 +2458,9 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
         if not board.has(cell):
             continue
         var tile: MeshInstance3D = board[cell]
-        var target_top: Color = BASE if _inside_level(cell) else OUTER_TILE
-        var target_skirt: Color = SIDE_EMPTY if _inside_level(cell) else Color("#242936")
+        var is_carried_word_cell: bool = not words.is_empty() and words[0].get("state", "") == "solved" and _cells(words[0]).has(cell)
+        var target_top: Color = CURRENT_WORD if is_carried_word_cell else (BASE if _inside_level(cell) else OUTER_TILE)
+        var target_skirt: Color = CURRENT_WORD_SIDE if is_carried_word_cell else (SIDE_EMPTY if _inside_level(cell) else Color("#242936"))
         var target_height: float = float(tile_target_heights.get(cell, 0.0))
         var from_top: Color = target_top
         var from_skirt: Color = target_skirt
