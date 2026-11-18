@@ -2385,13 +2385,16 @@ func _advance_diary_stage() -> void:
     var board_depth_projected: float = (radius * 2.0 + 1.0) * ROW_GAP * sin(deg_to_rad(69.0))
     var aspect: float = screen.x / maxf(1.0, screen.y)
     var expanded_size: float = maxf(normal_size, maxf(board_depth_projected, board_width / maxf(0.5, aspect)) * 1.24)
+    # Carrega a malha inteira enquanto a camera esta afastada; depois ela
+    # volta ao zoom normal sem descartar os blocos que acabou de revelar.
+    camera.size = expanded_size
+    _sync_visible_board(true)
+    camera.size = normal_size
     var camera_tween := create_tween()
     camera_tween.tween_property(camera, "size", expanded_size, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
     camera_tween.tween_interval(0.35)
     camera_tween.tween_property(camera, "size", normal_size, 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
     _layout_hud()
-    _sync_visible_board(true)
-    _refresh_board()
     var cells_to_reveal: Array[Vector2i] = []
     for cell in board.keys():
         if _inside_level(cell):
