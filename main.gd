@@ -218,7 +218,8 @@ var level_intro_start_size: float = 18.0
 var stage_wave_active: bool = false
 var stage_wave_remaining: float = 0.0
 var stage_open_tiles: Array[Dictionary] = []
-var stage_kept_tiles: Dictionary = {} # Vector2i -> letra das pecas lilases de etapas anteriores
+var stage_wave_start_colors: Dictionary = {} # Aparencia exibida antes da transicao entre etapas
+var stage_blue_tiles: Dictionary = {} # Vector2i -> letras anteriores sobre blocos azuis
 var level_origin: Vector2i = Vector2i.ZERO
 
 func _progression_level() -> int:
@@ -1115,7 +1116,7 @@ func _new_game() -> void:
     level_origin = Vector2i.ZERO
     stage_open_tiles.clear()
     stage_wave_active = false
-    stage_kept_tiles.clear()
+    stage_blue_tiles.clear()
     for node in visual_nodes:
         if is_instance_valid(node): node.queue_free()
     visual_nodes.clear()
@@ -2316,18 +2317,30 @@ func _advance_diary_stage() -> void:
     completed_levels.append({"level": level_number, "crowns": crowns, "points": points})
     var previous_capacity: int = _energy_capacity()
 
-    # Guarda visualmente todas as palavras resolvidas: as pecas lilases
-    # permanecem nas mesmas coordenadas, mas deixam de participar da logica.
+    # Guarda as letras anteriores, mas elas deixam de ser lilases e passam a
+    # ocupar blocos azuis. Captura a aparencia real para a transicao direta.
+    stage_wave_start_colors.clear()
+    for existing_cell in board.keys():
+        var existing_tile: MeshInstance3D = board[existing_cell]
+        var existing_top: Color = BASE
+        var existing_skirt: Color = SIDE_EMPTY
+        var existing_top_material: Material = existing_tile.get_surface_override_material(0)
+        var existing_skirt_material: Material = (existing_tile.get_node("Skirt") as MeshInstance3D).material_override
+        if existing_top_material is StandardMaterial3D:
+            existing_top = (existing_top_material as StandardMaterial3D).albedo_color
+        if existing_skirt_material is StandardMaterial3D:
+            existing_skirt = (existing_skirt_material as StandardMaterial3D).albedo_color
+        stage_wave_start_colors[existing_cell] = {"top": existing_top, "skirt": existing_skirt, "height": existing_tile.position.y}
     for previous_word in words:
         if previous_word.get("state", "") != "solved":
             continue
         var previous_cells: Array[Vector2i] = _cells(previous_word)
         var previous_answer: String = String(previous_word["answer"])
         for letter_index in range(previous_cells.size()):
-            stage_kept_tiles[previous_cells[letter_index]] = previous_answer[letter_index]
+            stage_blue_tiles[previous_cells[letter_index]] = previous_answer[letter_index]
 
-    # A palavra permanece nas mesmas coordenadas. O novo limite cresce ao
-    # redor dela; os blocos existentes sao reaproveitados sem apagar a memoria lilas.
+    # A palavra-ancora permanece nas mesmas coordenadas; as palavras anteriores
+    # ficam azuis e o novo limite cresce ao redor dela.
     level_origin = carried_anchor
     stage_open_tiles.clear()
     if is_instance_valid(enemy_node):
@@ -2409,8 +2422,7 @@ func _advance_diary_stage() -> void:
     _layout_hud()
     var cells_to_reveal: Array[Vector2i] = []
     for cell in board.keys():
-        if _inside_level(cell):
-            cells_to_reveal.append(cell)
+        cells_to_reveal.append(cell)
     _queue_stage_open_tiles(cells_to_reveal)
     _message("Etapa %d: a jornada continua a partir de %s!" % [level_number, String(carried_word["answer"])])
 
@@ -2438,30 +2450,31 @@ func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
     return false
 
 func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
+    # Todos os blocos seguem a mesma onda, dentro e fora da nova area.
+    # O destino e azul dentro e preto fora. Blocos azuis vazios mantem a cor
+    # e recebem somente o movimento da onda, sem efeito de reset.
+    stage_open_tiles.clear()
     for cell in cells:
-        if not board.has(cell) or not _inside_level(cell):
+        if not board.has(cell):
             continue
         var tile: MeshInstance3D = board[cell]
-        var target_top: Color = BASE
-        var target_skirt: Color = SIDE_EMPTY
-        var top_material: Material = tile.get_surface_override_material(0)
-        if top_material is StandardMaterial3D:
-            target_top = (top_material as StandardMaterial3D).albedo_color
-        var skirt_material: Material = (tile.get_node("Skirt") as MeshInstance3D).material_override
-        if skirt_material is StandardMaterial3D:
-            target_skirt = (skirt_material as StandardMaterial3D).albedo_color
+        var target_top: Color = BASE if _inside_level(cell) else OUTER_TILE
+        var target_skirt: Color = SIDE_EMPTY if _inside_level(cell) else Color("#242936")
         var target_height: float = float(tile_target_heights.get(cell, 0.0))
-        tile.set_surface_override_material(0, _material_cached("tile_stage_closed", OUTER_TILE))
-        tile.set_surface_override_material(1, _material_cached("tile_stage_closed_edge", OUTER_TILE.darkened(0.22)))
-        (tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_stage_closed", Color("#242936"))
-        var already_queued: bool = false
-        for queued in stage_open_tiles:
-            if queued["node"] == tile:
-                already_queued = true
-                break
-        if already_queued:
-            continue
-        stage_open_tiles.append({"node": tile, "cell": cell, "target_top": target_top, "target_skirt": target_skirt, "target_height": target_height})
+        var from_top: Color = target_top
+        var from_skirt: Color = target_skirt
+        var from_height: float = tile.position.y
+        if stage_wave_start_colors.has(cell):
+            var start_data: Dictionary = stage_wave_start_colors[cell]
+            from_top = start_data.get("top", target_top)
+            from_skirt = start_data.get("skirt", target_skirt)
+            from_height = float(start_data.get("height", tile.position.y))
+        stage_open_tiles.append({
+            "node": tile, "cell": cell,
+            "from_top": from_top, "from_skirt": from_skirt, "from_height": from_height,
+            "target_top": target_top, "target_skirt": target_skirt, "target_height": target_height
+        })
+    stage_wave_start_colors.clear()
 
 
 func _refresh_board() -> void:
@@ -2490,12 +2503,12 @@ func _refresh_board() -> void:
                 tile_state[p] = "active"
     # Pecas lilases de etapas anteriores permanecem no mundo como memoria visual.
     # Elas nao entram em words e, portanto, nao podem gerar novos cruzamentos.
-    for kept_cell in stage_kept_tiles.keys():
+    for kept_cell in stage_blue_tiles.keys():
         if letters.has(kept_cell):
             continue
-        tile_state[kept_cell] = "solved"
+        tile_state[kept_cell] = "stage_blue"
         solved_cells[kept_cell] = true
-        letters[kept_cell] = String(stage_kept_tiles[kept_cell])
+        letters[kept_cell] = String(stage_blue_tiles[kept_cell])
     # Uma única orientação visual por âncora. Ao inverter, a prévia antiga desaparece.
     # Outros rascunhos (em outras letras) permanecem até uma confirmação.
     for key in drafts.keys():
@@ -2607,6 +2620,10 @@ func _refresh_board() -> void:
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
                 target_height = 0.015
+            "stage_blue":
+                top_color = BASE
+                skirt_color = SIDE_EMPTY
+                target_height = 0.0
             "blocked_outer":
                 top_color = OUTER_TILE
                 skirt_color = Color("#242936")
@@ -2646,13 +2663,13 @@ func _refresh_board() -> void:
         # Uma casa que pertence a palavra concluida sempre termina na cor
         # resolvida, mesmo se tambem for foco ou ancora do proximo ramo.
         # O destaque temporario verde continua sendo aplicado pelo flash abaixo.
-        if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "blocked_outer"]:
+        if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "blocked_outer", "stage_blue"]:
             top_color = SOLVED
             skirt_color = SIDE_SOLVED
             target_height = 0.015
         if level_mode and not _inside_level(p):
             # O dourado escuro fica reservado aos trechos ainda em digitacao.
-            if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "blocked_outer"]:
+            if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "blocked_outer", "stage_blue"]:
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
                 target_height = 0.015
@@ -2865,9 +2882,9 @@ func _process(delta: float) -> void:
         if start_cells.has(p) or (level_mode and p == exit_cell):
             goal += sin(elapsed * 2.0 + float(p.x) * 0.22 + float(p.y) * 0.19) * 0.008
         tile.position.y = move_toward(tile.position.y, goal, delta * 3.6)
-    # Os proprios blocos do tabuleiro sao reiniciados em onda a partir
-    # da palavra preservada. Letras e icones acompanham a propagacao.
-    var carried_cells_for_wave: Array[Vector2i] = _cells(words[0]) if not words.is_empty() else []
+    # A onda transita diretamente da cor exibida para o destino final.
+    # Nao ha fechamento previo, sumico de letras ou fade de icones.
+    # Blocos que ja estao azuis apenas acompanham o movimento da onda.
     for i in range(stage_open_tiles.size() - 1, -1, -1):
         var opening_data: Dictionary = stage_open_tiles[i]
         var opening_tile: MeshInstance3D = opening_data["node"]
@@ -2879,20 +2896,13 @@ func _process(delta: float) -> void:
         var opening_delay: float = minf(1.8, float(opening_distance) * 0.045)
         var opening_progress: float = clampf((elapsed - wave_started_at - opening_delay) / 1.05, 0.0, 1.0)
         var opening_eased: float = opening_progress * opening_progress * (3.0 - 2.0 * opening_progress)
-        var opening_target_top: Color = opening_data["target_top"]
-        var opening_target_skirt: Color = opening_data["target_skirt"]
-        var opening_top: Color = OUTER_TILE.lerp(opening_target_top, opening_eased)
-        var opening_skirt: Color = Color("#242936").lerp(opening_target_skirt, opening_eased)
+        var opening_top: Color = opening_data["from_top"].lerp(opening_data["target_top"], opening_eased)
+        var opening_skirt: Color = opening_data["from_skirt"].lerp(opening_data["target_skirt"], opening_eased)
         opening_tile.set_surface_override_material(0, _material_cached("tile_open_" + opening_top.to_html(), opening_top))
         opening_tile.set_surface_override_material(1, _material_cached("tile_open_edge_" + opening_top.to_html(), opening_top.darkened(0.22)))
         (opening_tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_open_" + opening_skirt.to_html(), opening_skirt)
-        opening_tile.position.y = lerpf(-0.48, float(opening_data["target_height"]), opening_eased)
-        var is_carried_letter: bool = carried_cells_for_wave.has(opening_cell)
-        for new_child in opening_tile.get_children():
-            if new_child is Label3D:
-                (new_child as Label3D).modulate.a = 1.0 if is_carried_letter else opening_eased
-            elif new_child is Sprite3D:
-                (new_child as Sprite3D).modulate.a = opening_eased
+        var wave_bump: float = sin(opening_eased * PI) * 0.12
+        opening_tile.position.y = lerpf(float(opening_data["from_height"]), float(opening_data["target_height"]), opening_eased) + wave_bump
         if opening_progress >= 1.0:
             stage_open_tiles.remove_at(i)
     # Transicoes independentes dos blocos de direcao: a altura e as duas
