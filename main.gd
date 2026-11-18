@@ -188,12 +188,12 @@ var help_page_label: Label
 var help_index: int = 0
 var help_swipe_start: float = 0.0
 const HELP_PAGES := [
-    ["MODOS DE JOGO", "DIÁRIO: avance por 5 níveis, formando palavras até encontrar a saída próxima aos cantos. As 3 coroas de cada nível são opcionais e aumentam sua pontuação.\n\nINFINITO: forme palavras, crie cruzamentos e sobreviva pelo maior tempo possivel, acumulando pontos."],
+    ["MODOS DE JOGO", "DIÁRIO: avance por 5 etapas contínuas, formando palavras até encontrar a saída. A cada transição, a última palavra permanece e o tabuleiro se expande. Coroas são opcionais e aumentam sua pontuação.\n\nINFINITO: forme palavras, crie cruzamentos e sobreviva pelo maior tempo possivel, acumulando pontos."],
     ["COMO JOGAR", "Toque em qualquer letra da palavra atual para iniciar um novo caminho. Use as setas do teclado ou arraste o dedo para percorrer as letras dessa palavra. Somente a palavra mais recente pode gerar novas palavras. As setas ao lado da letra mudam o lado da nova palavra.\n\nA origem fica lilas, a letra escolhida e a nova palavra ficam creme. Os blocos sobem em ondas. Acertos piscam em verde; erros, em vermelho."],
     ["TEMPO", "DIÁRIO: o relógio conta para cima. Voce nao perde por demorar, mas cada segundo reduz a pontuacao final. O item de tempo desconta 12 segundos.\n\nINFINITO: o relogio conta para baixo; quando acaba, a partida termina."],
-    ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nNo Diário, o limite cresce conforme a progressão (10 a 28). Cada energia restante no portal vale 25 pontos extras. Colete itens para recuperar ate 3 pontos. No infinito, o limite e 10."],
-    ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por nível no Diário, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELÓGIO: reduz o tempo no Diário.\nVISAO: amplia a area visivel.\nMOEDAS: aumentam a pontuacao.\nDICAS: recuperam usos do botao DICA.\n\nNo penúltimo nível, inimigos aparecem no mapa desde o início e tornam o percurso mais perigoso."],
-    ["DICAS", "O botao DICA, ao lado da definicao, permite trocar a palavra sugerida para a letra e direcao escolhidas.\n\nNo Diário, você tem 3 trocas por nível, renovadas ao avançar. No modo infinito, colete itens de dica para recuperar usos (ate 3). O botao exige alternativas validas."]
+    ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nNo Diário, a capacidade cresce conforme a progressão (10 a 28). Ao avançar, você mantém a energia restante e recebe energia adicional. Cada energia restante no portal vale 25 pontos extras. No infinito, o limite e 10."],
+    ["COLECIONAVEIS E INIMIGOS", "COROAS: aparecem pelo tabuleiro, são opcionais e valem pontos; não há limite de coleta.\nENERGIA: recupera raios.\nRELÓGIO: reduz o tempo no Diário.\nVISAO: amplia a area visivel.\nMOEDAS: aumentam a pontuacao.\nDICAS: recuperam usos do botao DICA.\n\nNo penúltimo nível, inimigos aparecem no mapa desde o início e tornam o percurso mais perigoso."],
+    ["DICAS", "O botao DICA, ao lado da definicao, permite trocar a palavra sugerida para a letra e direcao escolhidas.\n\nNo Diário, você tem 3 trocas por etapa, renovadas ao avançar. No modo infinito, colete itens de dica para recuperar usos (ate 3). O botao exige alternativas validas."]
 ]
 var mode_button: Button
 var typed_buffer: String = ""
@@ -215,9 +215,6 @@ const LEVEL_HALO := 9
 const LEVEL_INTRO_SECONDS := 3.4
 var level_intro_remaining: float = 0.0
 var level_intro_start_size: float = 18.0
-var stage_wave_active: bool = false
-var stage_wave_remaining: float = 0.0
-var stage_wave_previous_radius: int = 5
 var stage_wave_active: bool = false
 var stage_wave_remaining: float = 0.0
 var stage_wave_previous_radius: int = 5
@@ -579,7 +576,7 @@ func _make_ui() -> void:
     indicators.add_theme_constant_override("separation", 10)
     top_column.add_child(indicators)
     time_label = _make_label("TEMPO 0:38", 19)
-    crown_label = _make_label("FASE 0/3", 19)
+    crown_label = _make_label("ETAPA 1/5", 19)
     energy_label = _make_label("ENERGIA 10/10", 19)
     var time_icon := _make_hud_icon("res://assets/icons/time.svg", 22)
     time_icon.modulate = Color("#e9eafa")
