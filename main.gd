@@ -217,10 +217,8 @@ var level_intro_remaining: float = 0.0
 var level_intro_start_size: float = 18.0
 var stage_wave_active: bool = false
 var stage_wave_remaining: float = 0.0
-var stage_wave_previous_radius: int = 5
-var stage_closing_origin: Vector2i = Vector2i.ZERO
-var stage_closing_tiles: Array[Dictionary] = []
 var stage_open_tiles: Array[Dictionary] = []
+var level_origin: Vector2i = Vector2i.ZERO
 
 func _progression_level() -> int:
     # Mantem os marcos de progressao dos niveis originais 1, 2, 5, 7 e 10.
@@ -234,13 +232,15 @@ func _inside_level(cell: Vector2i) -> bool:
     if not level_mode:
         return true
     var radius: int = _level_half_size()
-    return absi(cell.x) <= radius and absi(cell.y) <= radius
+    var relative: Vector2i = cell - level_origin
+    return absi(relative.x) <= radius and absi(relative.y) <= radius
 
 func _inside_level_halo(cell: Vector2i) -> bool:
     if not level_mode:
         return true
     var radius: int = _level_half_size() + LEVEL_HALO
-    return absi(cell.x) <= radius and absi(cell.y) <= radius
+    var relative: Vector2i = cell - level_origin
+    return absi(relative.x) <= radius and absi(relative.y) <= radius
 
 # Uma tentativa não altera words, used nem o tabuleiro permanente.
 var preview: Dictionary = {}
@@ -1111,6 +1111,9 @@ func _result_continue() -> void:
     _analytics_event("game_start" if not level_mode else "level_start", {"level": level_number})
 
 func _new_game() -> void:
+    level_origin = Vector2i.ZERO
+    stage_open_tiles.clear()
+    stage_wave_active = false
     for node in visual_nodes:
         if is_instance_valid(node): node.queue_free()
     visual_nodes.clear()
@@ -1239,8 +1242,8 @@ func _place_campaign_objectives() -> void:
     var radius: int = _level_half_size()
     var start_cells: Array[Vector2i] = _cells(words[0])
     var corners: Array[Vector2i] = [
-        Vector2i(-radius, -radius), Vector2i(radius, -radius),
-        Vector2i(-radius, radius), Vector2i(radius, radius)
+        level_origin + Vector2i(-radius, -radius), level_origin + Vector2i(radius, -radius),
+        level_origin + Vector2i(-radius, radius), level_origin + Vector2i(radius, radius)
     ]
     corners.shuffle()
     var corner: Vector2i = corners[0]
@@ -1248,7 +1251,8 @@ func _place_campaign_objectives() -> void:
     var inset: int = 1 if _progression_level() <= 3 else 2
     for dy in range(inset + 1):
         for dx in range(inset + 1):
-            var candidate: Vector2i = corner + Vector2i(-signi(corner.x) * dx, -signi(corner.y) * dy)
+            var relative_corner: Vector2i = corner - level_origin
+            var candidate: Vector2i = corner + Vector2i(-signi(relative_corner.x) * dx, -signi(relative_corner.y) * dy)
             if not start_cells.has(candidate):
                 exit_options.append(candidate)
     exit_cell = exit_options[rng.randi_range(0, exit_options.size() - 1)]
@@ -1259,14 +1263,16 @@ func _place_campaign_objectives() -> void:
         occupied[cell] = true
     for region in regions:
         var candidates: Array[Vector2i] = []
-        for y in range(-radius, radius + 1):
-            for x in range(-radius, radius + 1):
+        for y in range(level_origin.y - radius, level_origin.y + radius + 1):
+            for x in range(level_origin.x - radius, level_origin.x + radius + 1):
                 var cell: Vector2i = Vector2i(x, y)
+                var relative_cell: Vector2i = cell - level_origin
+                var relative_region: Vector2i = region - level_origin
                 if occupied.has(cell):
                     continue
-                if signi(x) != signi(region.x) or signi(y) != signi(region.y):
+                if signi(relative_cell.x) != signi(relative_region.x) or signi(relative_cell.y) != signi(relative_region.y):
                     continue
-                if absi(x) + absi(y) < 3 + _progression_level():
+                if absi(relative_cell.x) + absi(relative_cell.y) < 3 + _progression_level():
                     continue
                 candidates.append(cell)
         if candidates.is_empty():
@@ -1276,8 +1282,8 @@ func _place_campaign_objectives() -> void:
         occupied[chosen] = true
     # Reserva para o caso de alguma regiao nao ter candidatos.
     var fallback: Array[Vector2i] = []
-    for y in range(-radius, radius + 1):
-        for x in range(-radius, radius + 1):
+    for y in range(level_origin.y - radius, level_origin.y + radius + 1):
+        for x in range(level_origin.x - radius, level_origin.x + radius + 1):
             var cell: Vector2i = Vector2i(x, y)
             if not occupied.has(cell):
                 fallback.append(cell)
@@ -1289,12 +1295,13 @@ func _place_campaign_objectives() -> void:
 func _place_level_resources() -> void:
     # Distribui recursos em casas diferentes das coroas, da saida e da origem.
     var options: Array[Vector2i] = []
-    for y in range(-_level_half_size(), _level_half_size() + 1):
-        for x in range(-_level_half_size(), _level_half_size() + 1):
+    for y in range(level_origin.y - _level_half_size(), level_origin.y + _level_half_size() + 1):
+        for x in range(level_origin.x - _level_half_size(), level_origin.x + _level_half_size() + 1):
             var cell: Vector2i = Vector2i(x, y)
             if pickups.has(cell) or cell == exit_cell or _cells(words[0]).has(cell):
                 continue
-            if absi(x) + absi(y) < 3 + _progression_level():
+            var relative_cell: Vector2i = cell - level_origin
+            if absi(relative_cell.x) + absi(relative_cell.y) < 3 + _progression_level():
                 continue
             options.append(cell)
     options.shuffle()
@@ -1355,7 +1362,7 @@ func _plan_advanced_level() -> void:
     level_route.clear()
     var first_word: Dictionary = words[0].duplicate(true)
     var best_route: Array[Vector2i] = []
-    var best_exit: Vector2i = Vector2i(0, -6)
+    var best_exit: Vector2i = level_origin + Vector2i(0, -6)
     var best_distance: int = -1
     var best_pins: Dictionary = {}
     var stage: int = _progression_level()
@@ -1397,7 +1404,8 @@ func _plan_advanced_level() -> void:
             for cell in _cells(words.back()):
                 if start_cells.has(cell):
                     continue
-                var distance: int = absi(cell.x) + absi(cell.y)
+                var relative_cell: Vector2i = cell - level_origin
+                var distance: int = absi(relative_cell.x) + absi(relative_cell.y)
                 if _inside_level(cell) and distance > best_distance:
                     best_distance = distance
                     best_exit = cell
@@ -2053,15 +2061,15 @@ func _spawn_enemy() -> void:
     enemy_cell = target + Vector2i(4, 4)
     if level_mode:
         var radius: int = _level_half_size()
-        var candidates: Array[Vector2i] = [Vector2i(-radius, -radius), Vector2i(radius, -radius), Vector2i(-radius, radius), Vector2i(radius, radius)]
+        var candidates: Array[Vector2i] = [level_origin + Vector2i(-radius, -radius), level_origin + Vector2i(radius, -radius), level_origin + Vector2i(-radius, radius), level_origin + Vector2i(radius, radius)]
         candidates.shuffle()
         for candidate in candidates:
             if candidate != exit_cell and not pickups.has(candidate) and not targets.has(candidate):
                 enemy_cell = candidate
                 break
     if level_mode:
-        enemy_cell.x = clampi(enemy_cell.x, -_level_half_size(), _level_half_size())
-        enemy_cell.y = clampi(enemy_cell.y, -_level_half_size(), _level_half_size())
+        enemy_cell.x = clampi(enemy_cell.x, level_origin.x - _level_half_size(), level_origin.x + _level_half_size())
+        enemy_cell.y = clampi(enemy_cell.y, level_origin.y - _level_half_size(), level_origin.y + _level_half_size())
     enemy_node = MeshInstance3D.new()
     var mesh := BoxMesh.new()
     mesh.size = Vector3(0.72, 0.40, 0.72)
@@ -2301,37 +2309,15 @@ func _advance_diary_stage() -> void:
     var carried_word: Dictionary = words[last_solved_word].duplicate(true)
     carried_word["state"] = "solved"
     carried_word["spawned"] = false
-    # Reposiciona a palavra preservada no centro geometrico (0, 0) do novo mapa.
-    var original_cells: Array[Vector2i] = _cells(carried_word)
-    var original_midpoint: Vector2i = original_cells[original_cells.size() / 2]
-    carried_word["start"] = Vector2i(carried_word["start"]) - original_midpoint
+    var carried_cells: Array[Vector2i] = _cells(carried_word)
+    var carried_anchor: Vector2i = carried_cells[carried_cells.size() / 2]
     completed_levels.append({"level": level_number, "crowns": crowns, "points": points})
-    var previous_radius: int = _level_half_size()
     var previous_capacity: int = _energy_capacity()
-    # O mapa antigo fecha em onda enquanto a malha nova nasce centralizada.
-    stage_closing_tiles.clear()
+
+    # A palavra permanece nas mesmas coordenadas. O novo limite cresce ao
+    # redor dela; os blocos existentes sao reaproveitados e reiniciados.
+    level_origin = carried_anchor
     stage_open_tiles.clear()
-    stage_closing_origin = original_midpoint
-    for old_cell in board.keys():
-        var old_tile: MeshInstance3D = board[old_cell]
-        var old_top: Color = OUTER_TILE
-        var old_skirt: Color = Color("#242936")
-        var old_top_material: Material = old_tile.get_surface_override_material(0)
-        if old_top_material is StandardMaterial3D:
-            old_top = (old_top_material as StandardMaterial3D).albedo_color
-        var old_skirt_material: Material = (old_tile.get_node("Skirt") as MeshInstance3D).material_override
-        if old_skirt_material is StandardMaterial3D:
-            old_skirt = (old_skirt_material as StandardMaterial3D).albedo_color
-        stage_closing_tiles.append({
-            "node": old_tile, "cell": Vector2i(old_cell),
-            "start_top": old_top, "start_skirt": old_skirt,
-            "start_height": old_tile.position.y
-        })
-    board.clear()
-    tile_state.clear()
-    tile_target_heights.clear()
-    tile_pedestals.clear()
-    visual_nodes.clear()
     if is_instance_valid(enemy_node):
         enemy_node.queue_free()
     enemy_node = null
@@ -2370,7 +2356,9 @@ func _advance_diary_stage() -> void:
     direction_fade_cells.clear()
     direction_transition_cells.clear()
     direction_transition_order.clear()
+    tile_state.clear()
     tile_target_heights.clear()
+    tile_pedestals.clear()
     round_epoch += 1
     game_over = false
     _plan_level()
@@ -2378,22 +2366,20 @@ func _advance_diary_stage() -> void:
     _place_level_resources()
     if _progression_level() >= 7:
         _spawn_enemy()
-    var carried_cells: Array[Vector2i] = _cells(carried_word)
-    wave_origin = carried_cells[carried_cells.size() / 2]
+
+    wave_origin = carried_anchor
     wave_started_at = elapsed
     wave_sequence += 1
-    stage_wave_previous_radius = previous_radius
     stage_wave_active = true
     stage_wave_remaining = 2.2
     camera_pan_offset = Vector2.ZERO
     _focus_word(carried_word)
-    camera_target = Vector3(0.0, 25.0, CAMERA_BACK_OFFSET)
     camera_zoom_factor = 1.0
     var screen: Vector2 = get_viewport().get_visible_rect().size
     var normal_size: float = 17.0 if screen.x > screen.y else 20.0
     camera.size = normal_size
-    # Considera a inclinacao da camera e a proporcao da tela para enquadrar
-    # toda a area desbloqueada, mantendo a palavra no centro do enquadramento.
+    # A camera se afasta para mostrar o novo limite e retorna, sempre
+    # mantendo a palavra como ancora espacial.
     var radius: float = float(_level_half_size())
     var board_width: float = (radius * 2.0 + 1.0) * GAP
     var board_depth_projected: float = (radius * 2.0 + 1.0) * ROW_GAP * sin(deg_to_rad(69.0))
@@ -2405,11 +2391,12 @@ func _advance_diary_stage() -> void:
     camera_tween.tween_property(camera, "size", normal_size, 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
     _layout_hud()
     _sync_visible_board(true)
-    for cell in board.keys():
-        if _inside_level(cell) and (absi(cell.x) > previous_radius or absi(cell.y) > previous_radius):
-            var expanding_tile: MeshInstance3D = board[cell]
-            expanding_tile.position.y = -0.48
     _refresh_board()
+    var cells_to_reveal: Array[Vector2i] = []
+    for cell in board.keys():
+        if _inside_level(cell):
+            cells_to_reveal.append(cell)
+    _queue_stage_open_tiles(cells_to_reveal)
     _message("Etapa %d: a jornada continua a partir de %s!" % [level_number, String(carried_word["answer"])])
 
 
@@ -2452,6 +2439,13 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
         tile.set_surface_override_material(0, _material_cached("tile_stage_closed", OUTER_TILE))
         tile.set_surface_override_material(1, _material_cached("tile_stage_closed_edge", OUTER_TILE.darkened(0.22)))
         (tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_stage_closed", Color("#242936"))
+        var already_queued: bool = false
+        for queued in stage_open_tiles:
+            if queued["node"] == tile:
+                already_queued = true
+                break
+        if already_queued:
+            continue
         stage_open_tiles.append({"node": tile, "cell": cell, "target_top": target_top, "target_skirt": target_skirt, "target_height": target_height})
 
 
@@ -2848,38 +2842,9 @@ func _process(delta: float) -> void:
         if start_cells.has(p) or (level_mode and p == exit_cell):
             goal += sin(elapsed * 2.0 + float(p.x) * 0.22 + float(p.y) * 0.19) * 0.008
         tile.position.y = move_toward(tile.position.y, goal, delta * 3.6)
-    # O mapa anterior se fecha em uma onda que parte da antiga posicao
-    # da palavra. Letras e icones acompanham o fechamento e perdem opacidade.
-    for i in range(stage_closing_tiles.size() - 1, -1, -1):
-        var closing_data: Dictionary = stage_closing_tiles[i]
-        var closing_tile: MeshInstance3D = closing_data["node"]
-        if not is_instance_valid(closing_tile):
-            stage_closing_tiles.remove_at(i)
-            continue
-        var closing_cell: Vector2i = closing_data["cell"]
-        var closing_distance: int = absi(closing_cell.x - stage_closing_origin.x) + absi(closing_cell.y - stage_closing_origin.y)
-        var closing_delay: float = minf(0.8, float(closing_distance) * 0.022)
-        var closing_progress: float = clampf((elapsed - wave_started_at - closing_delay) / 0.58, 0.0, 1.0)
-        var closing_eased: float = closing_progress * closing_progress * (3.0 - 2.0 * closing_progress)
-        var closing_start_top: Color = closing_data["start_top"]
-        var closing_start_skirt: Color = closing_data["start_skirt"]
-        var closing_top: Color = closing_start_top.lerp(OUTER_TILE, closing_eased)
-        var closing_skirt: Color = closing_start_skirt.lerp(Color("#242936"), closing_eased)
-        closing_tile.set_surface_override_material(0, _material_cached("tile_closing_" + closing_top.to_html(), closing_top))
-        closing_tile.set_surface_override_material(1, _material_cached("tile_closing_edge_" + closing_top.to_html(), closing_top.darkened(0.22)))
-        (closing_tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_closing_" + closing_skirt.to_html(), closing_skirt)
-        closing_tile.position.y = lerpf(float(closing_data["start_height"]), -0.55, closing_eased)
-        closing_tile.scale = Vector3.ONE.lerp(Vector3(0.78, 0.45, 0.78), closing_eased)
-        for old_child in closing_tile.get_children():
-            if old_child is Label3D:
-                (old_child as Label3D).modulate.a = 1.0 - closing_eased
-            elif old_child is Sprite3D:
-                (old_child as Sprite3D).modulate.a = 1.0 - closing_eased
-        if closing_progress >= 1.0:
-            closing_tile.queue_free()
-            stage_closing_tiles.remove_at(i)
-    # O novo tabuleiro emerge do escuro a partir da palavra central. Cor,
-    # altura e destaque das letras chegam juntos ao estado final.
+    # Os proprios blocos do tabuleiro sao reiniciados em onda a partir
+    # da palavra preservada. Letras e icones acompanham a propagacao.
+    var carried_cells_for_wave: Array[Vector2i] = _cells(words[0]) if not words.is_empty() else []
     for i in range(stage_open_tiles.size() - 1, -1, -1):
         var opening_data: Dictionary = stage_open_tiles[i]
         var opening_tile: MeshInstance3D = opening_data["node"]
@@ -2899,6 +2864,12 @@ func _process(delta: float) -> void:
         opening_tile.set_surface_override_material(1, _material_cached("tile_open_edge_" + opening_top.to_html(), opening_top.darkened(0.22)))
         (opening_tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_open_" + opening_skirt.to_html(), opening_skirt)
         opening_tile.position.y = lerpf(-0.48, float(opening_data["target_height"]), opening_eased)
+        var is_carried_letter: bool = carried_cells_for_wave.has(opening_cell)
+        for new_child in opening_tile.get_children():
+            if new_child is Label3D:
+                (new_child as Label3D).modulate.a = 1.0 if is_carried_letter else opening_eased
+            elif new_child is Sprite3D:
+                (new_child as Sprite3D).modulate.a = opening_eased
         if opening_progress >= 1.0:
             stage_open_tiles.remove_at(i)
     # Transicoes independentes dos blocos de direcao: a altura e as duas
