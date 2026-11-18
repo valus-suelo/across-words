@@ -2110,6 +2110,7 @@ func _set_pickup_icon_color(cell: Vector2i, icon_color: Color) -> void:
     if is_instance_valid(icon):
         icon.modulate = icon_color
 
+# Os SVGs usam branco neutro; modulate aplica a cor atual da lateral do bloco.
 func _draw_pickup_icon(p: Vector2i, kind: String, icon_color: Color) -> void:
     var icon_paths := {
         "coin": "res://assets/icons/coin.svg",
