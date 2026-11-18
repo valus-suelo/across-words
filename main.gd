@@ -568,11 +568,17 @@ func _make_ui() -> void:
     time_label = _make_label("TEMPO 0:38", 19)
     crown_label = _make_label("FASE 0/3", 19)
     energy_label = _make_label("ENERGIA 10/10", 19)
-    indicators.add_child(_make_hud_icon("res://assets/icons/time.svg", 22))
+    var time_icon := _make_hud_icon("res://assets/icons/time.svg", 22)
+    time_icon.modulate = Color("#e9eafa")
+    indicators.add_child(time_icon)
     indicators.add_child(time_label)
-    indicators.add_child(_make_hud_icon("res://assets/icons/crown.svg", 22))
+    var crown_icon := _make_hud_icon("res://assets/icons/crown.svg", 22)
+    crown_icon.modulate = Color("#e9eafa")
+    indicators.add_child(crown_icon)
     indicators.add_child(crown_label)
-    indicators.add_child(_make_hud_icon("res://assets/icons/energy.svg", 22))
+    var energy_icon := _make_hud_icon("res://assets/icons/energy.svg", 22)
+    energy_icon.modulate = Color("#e9eafa")
+    indicators.add_child(energy_icon)
     indicators.add_child(energy_label)
     score_label = _make_label("PONTOS 0  |  0 MOEDAS  |  COMBO 0", 17)
     top_column.add_child(score_label)
@@ -588,8 +594,11 @@ func _make_ui() -> void:
     clue_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     clue_row.add_child(clue_label)
     next_clue_button = Button.new()
-    next_clue_button.text = "DICA 3"
+    next_clue_button.text = "3"
     next_clue_button.icon = load("res://assets/icons/hint.svg") as Texture2D
+    next_clue_button.icon_max_width = 14
+    next_clue_button.custom_minimum_size = Vector2(48.0, 34.0)
+    next_clue_button.add_theme_constant_override("h_separation", 3)
     next_clue_button.focus_mode = Control.FOCUS_NONE
     next_clue_button.custom_minimum_size.x = 80.0
     next_clue_button.tooltip_text = "Trocar pista (3 por fase)"
@@ -2080,7 +2089,15 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
         add_child(label)
     visual_nodes.append(label)
 
-func _draw_pickup_icon(p: Vector2i, kind: String) -> void:
+func _set_pickup_icon_color(cell: Vector2i, icon_color: Color) -> void:
+    if not board.has(cell):
+        return
+    var tile: MeshInstance3D = board[cell]
+    var icon := tile.get_node_or_null("PickupIcon") as Sprite3D
+    if is_instance_valid(icon):
+        icon.modulate = icon_color
+
+func _draw_pickup_icon(p: Vector2i, kind: String, icon_color: Color) -> void:
     var icon_paths := {
         "coin": "res://assets/icons/coin.svg",
         "energy": "res://assets/icons/energy.svg",
@@ -2095,11 +2112,12 @@ func _draw_pickup_icon(p: Vector2i, kind: String) -> void:
     sprite.texture = load(String(icon_paths[kind])) as Texture2D
     if sprite.texture == null:
         return
-    sprite.pixel_size = 0.004
+    sprite.name = "PickupIcon"
+    sprite.pixel_size = 0.0035
     sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     sprite.no_depth_test = true
     sprite.shaded = false
-    sprite.modulate = TILE_LETTER
+    sprite.modulate = icon_color
     var tile: MeshInstance3D = board[p]
     tile.add_child(sprite)
     sprite.position = Vector3(0.0, 0.16, 0.0)
@@ -2493,7 +2511,7 @@ func _refresh_board() -> void:
         elif level_mode and p == exit_cell:
             pass  # O portal e identificado pelo verde, sem seta sobreposta.
         elif pickups.has(p):
-            _draw_pickup_icon(p, String(pickups[p]))
+            _draw_pickup_icon(p, String(pickups[p]), skirt_color)
     # A ordem serve apenas para esta atualizacao do tabuleiro.
     direction_transition_order.clear()
     _update_hud()
@@ -2517,7 +2535,7 @@ func _update_hud() -> void:
     direction_right.visible = false
     next_clue_button.visible = true
     next_clue_button.disabled = preview_choices.size() <= 1 or hints_remaining <= 0 or game_over
-    next_clue_button.text = "DICA %d" % hints_remaining
+    next_clue_button.text = "%d" % hints_remaining
     var shown_seconds: int = maxi(0, int(elapsed)) if level_mode else seconds
     time_label.text = "TEMPO %d:%02d" % [shown_seconds / 60, shown_seconds % 60]
     crown_label.text = "FASE %d  ·  COROAS %d/3" % [level_number, crowns] if level_mode else "INFINITO"
@@ -2628,6 +2646,7 @@ func _process(delta: float) -> void:
                 transition_tile.set_surface_override_material(1, _material_cached("tile_edge_" + shown_top.to_html(), shown_top.darkened(0.22)))
                 var transition_skirt: MeshInstance3D = transition_tile.get_node("Skirt") as MeshInstance3D
                 transition_skirt.material_override = _material_cached("skirt_" + shown_skirt.to_html(), shown_skirt)
+                _set_pickup_icon_color(cell, shown_skirt)
                 var from_height: float = float(transition["from_height"])
                 var to_height: float = float(transition["to_height"])
                 transition_tile.position.y = lerpf(from_height, to_height, eased)
@@ -2658,6 +2677,7 @@ func _process(delta: float) -> void:
             tile.set_surface_override_material(1, _material_cached("tile_edge_" + shown_color.to_html(), shown_color.darkened(0.22)))
             var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
             skirt.material_override = _material_cached("skirt_" + shown_skirt_color.to_html(), shown_skirt_color)
+            _set_pickup_icon_color(cell, shown_skirt_color)
         if not done.is_empty():
             for cell in done:
                 flash_cells.erase(cell)
@@ -2680,6 +2700,7 @@ func _process(delta: float) -> void:
                 fade_tile.set_surface_override_material(1, _material_cached("tile_edge_" + fade_color.to_html(), fade_color.darkened(0.22)))
                 var fade_skirt: MeshInstance3D = fade_tile.get_node("Skirt") as MeshInstance3D
                 fade_skirt.material_override = _material_cached("skirt_" + fade_skirt_color.to_html(), fade_skirt_color)
+                _set_pickup_icon_color(cell, fade_skirt_color)
             if progress >= 1.0:
                 faded.append(cell)
         if not faded.is_empty():
