@@ -215,6 +215,9 @@ const LEVEL_HALO := 9
 const LEVEL_INTRO_SECONDS := 3.4
 var level_intro_remaining: float = 0.0
 var level_intro_start_size: float = 18.0
+var stage_wave_active: bool = false
+var stage_wave_remaining: float = 0.0
+var stage_wave_previous_radius: int = 5
 
 func _progression_level() -> int:
     # Mantem os marcos de progressao dos niveis originais 1, 2, 5, 7 e 10.
@@ -1012,7 +1015,7 @@ func _toggle_pause() -> void:
     if pause_overlay.visible:
         _close_pause()
         return
-    pause_stats.text = "Modo: %s\nFase: %d\nPontos: %d  |  Moedas: %d\nPalavras: %d  |  Cruzamentos: %d\nCoroas: %d/3  |  Energia: %d/%d\nTempo: %d:%02d  |  Dicas: %d\nFases concluidas: %d" % ["Diário" if level_mode else "Infinito", level_number, points, coins, _solved_count(), combo, crowns, energy, _energy_capacity(), int(elapsed) / 60, int(elapsed) % 60, hints_remaining, completed_levels.size()]
+    pause_stats.text = "Modo: %s\nFase: %d\nPontos: %d  |  Moedas: %d\nPalavras: %d  |  Cruzamentos: %d\nCoroas: %d  |  Energia: %d/%d\nTempo: %d:%02d  |  Dicas: %d\nFases concluidas: %d" % ["Diário" if level_mode else "Infinito", level_number, points, coins, _solved_count(), combo, crowns, energy, _energy_capacity(), int(elapsed) / 60, int(elapsed) % 60, hints_remaining, completed_levels.size()]
     pause_overlay.show()
     if is_instance_valid(entry):
         entry.release_focus()
@@ -1062,7 +1065,7 @@ func _run_summary() -> String:
     var summary: String = "Fases concluídas: %d  |  Pontos totais: %d" % [completed_levels.size(), run_points + points]
     if level_mode:
         for record in completed_levels:
-            summary += "\nFase %d: %d/3 coroas · %d pontos" % [record["level"], record["crowns"], record["points"]]
+            summary += "\nEtapa %d: %d coroas · %d pontos" % [record["level"], record["crowns"], record["points"]]
     return summary
 
 func _energy_capacity() -> int:
@@ -1083,7 +1086,7 @@ func _show_result(victory: bool, reason: String) -> void:
     result_title.text = "FASE CONCLUÍDA!" if victory else "GAME OVER"
     result_title.add_theme_color_override("font_color", Color("#f4d787") if victory else Color("#e97d9c"))
     if level_mode:
-        result_stats.text = "%s\n\nCoroas opcionais: %d/3 · Bônus: %d pontos\nEnergia restante: %d/%d · Bônus: %d pontos\nTempo: %d:%02d · Penalidade de tempo: %d pontos\n\n%s\n\nPalavras nesta fase: %d" % [reason, crowns, crowns * 500, energy, _energy_capacity(), _energy_finish_bonus(), int(elapsed) / 60, int(elapsed) % 60, int(elapsed) * (2 + _progression_level()), _run_summary(), _solved_count()]
+        result_stats.text = "%s\n\nCoroas coletadas: %d · Bônus: %d pontos\nEnergia restante: %d/%d · Bônus: %d pontos\nTempo: %d:%02d · Penalidade de tempo: %d pontos\n\n%s\n\nPalavras nesta fase: %d" % [reason, crowns, crowns * 500, energy, _energy_capacity(), _energy_finish_bonus(), int(elapsed) / 60, int(elapsed) % 60, int(elapsed) * (2 + _progression_level()), _run_summary(), _solved_count()]
     else:
         result_stats.text = "%s\n\nPontuação: %d\nPalavras: %d  ·  Combo: %d" % [reason, points, _solved_count(), combo]
     result_action.text = ("RECOMEÇAR DIÁRIO" if level_number >= CAMPAIGN_LEVELS else "PRÓXIMO NÍVEL") if victory and level_mode else ("NOVA PARTIDA" if not victory else "CONTINUAR")
@@ -1992,7 +1995,7 @@ func _collect_pickups() -> void:
                 points += 50
             "crown":
                 if level_mode:
-                    crowns = mini(3, crowns + 1)
+                    crowns += 1
                 points += 500
             "energy":
                 energy = mini(_energy_capacity(), energy + 3)
@@ -2689,7 +2692,7 @@ func _update_hud() -> void:
     hint_count_label.text = "%d" % hints_remaining
     var shown_seconds: int = maxi(0, int(elapsed)) if level_mode else seconds
     time_label.text = "TEMPO %d:%02d" % [shown_seconds / 60, shown_seconds % 60]
-    crown_label.text = "FASE %d  ·  COROAS %d/3" % [level_number, crowns] if level_mode else "INFINITO"
+    crown_label.text = "ETAPA %d/5  ·  COROAS %d" % [level_number, crowns] if level_mode else "INFINITO"
     energy_label.text = "ENERGIA %d/%d" % [energy, _energy_capacity()]
     score_label.text = "PONTOS %d  |  %d MOEDAS  |  COMBO %d%s" % [points, coins, combo, "  |  VISAO %d" % map_vision_moves if map_vision_moves > 0 else ""]
 
@@ -3203,7 +3206,7 @@ func _sync_visible_board(force: bool = false) -> void:
         tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
         tile.set_surface_override_material(0, _material_cached("tile_base", BASE))
         tile.set_surface_override_material(1, _material_cached("tile_base_side", BASE.darkened(0.20)))
-        tile.position = Vector3(p.x * GAP, 0.0, p.y * ROW_GAP)
+        tile.position = Vector3(p.x * GAP, -0.48 if stage_wave_active and (absi(p.x) > stage_wave_previous_radius or absi(p.y) > stage_wave_previous_radius) else 0.0, p.y * ROW_GAP)
         var skirt := MeshInstance3D.new()
         skirt.name = "Skirt"
         skirt.mesh = shared_skirt_mesh
