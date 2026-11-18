@@ -2214,7 +2214,7 @@ func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool 
         if spread_origin_index >= 0:
             # A onda verde parte da saida e avanca pelas letras vizinhas,
             # mantendo cada bloco verde depois que a onda passa.
-            cell_started_at += float(absi(cell_index - spread_origin_index)) * 0.24
+            cell_started_at += float(absi(cell_index - spread_origin_index)) * 0.20
         var base_color: Color = BASE
         var base_skirt: Color = SIDE_EMPTY
         if preserve_lit_base and preserved_colors.has(p):
@@ -2240,7 +2240,7 @@ func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool 
             "base_skirt": base_skirt,
             "started_at": cell_started_at,
             "until": cell_started_at + WORD_FLASH_DURATION,
-            "arrival_duration": 0.28,
+            "arrival_duration": 0.23,
             "persistent": success_base and spread_origin_index >= 0
         }
     _refresh_board()
