@@ -1115,6 +1115,7 @@ func _result_continue() -> void:
 func _new_game() -> void:
     level_origin = Vector2i.ZERO
     stage_open_tiles.clear()
+    stage_wave_start_colors.clear()
     stage_wave_active = false
     stage_blue_tiles.clear()
     for node in visual_nodes:
@@ -2504,11 +2505,16 @@ func _refresh_board() -> void:
     # Pecas lilases de etapas anteriores permanecem no mundo como memoria visual.
     # Elas nao entram em words e, portanto, nao podem gerar novos cruzamentos.
     for kept_cell in stage_blue_tiles.keys():
-        if letters.has(kept_cell):
+        # A palavra-ancora da etapa tambem vira azul, mas continua disponivel
+        # como origem logica. Outras palavras atuais tem prioridade se cruzarem
+        # uma coordenada que ja pertencia ao desenho visual anterior.
+        var is_carried_anchor: bool = not words.is_empty() and _cells(words[0]).has(kept_cell)
+        if letters.has(kept_cell) and not is_carried_anchor:
             continue
         tile_state[kept_cell] = "stage_blue"
         solved_cells[kept_cell] = true
-        letters[kept_cell] = String(stage_blue_tiles[kept_cell])
+        if not letters.has(kept_cell):
+            letters[kept_cell] = String(stage_blue_tiles[kept_cell])
     # Uma única orientação visual por âncora. Ao inverter, a prévia antiga desaparece.
     # Outros rascunhos (em outras letras) permanecem até uma confirmação.
     for key in drafts.keys():
@@ -2901,6 +2907,7 @@ func _process(delta: float) -> void:
         opening_tile.set_surface_override_material(0, _material_cached("tile_open_" + opening_top.to_html(), opening_top))
         opening_tile.set_surface_override_material(1, _material_cached("tile_open_edge_" + opening_top.to_html(), opening_top.darkened(0.22)))
         (opening_tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_open_" + opening_skirt.to_html(), opening_skirt)
+        _set_pickup_icon_color(opening_cell, opening_skirt)
         var wave_bump: float = sin(opening_eased * PI) * 0.12
         opening_tile.position.y = lerpf(float(opening_data["from_height"]), float(opening_data["target_height"]), opening_eased) + wave_bump
         if opening_progress >= 1.0:
