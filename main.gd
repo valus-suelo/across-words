@@ -192,7 +192,7 @@ const HELP_PAGES := [
     ["COMO JOGAR", "Toque em qualquer letra da palavra atual para iniciar um novo caminho. Use as setas do teclado ou arraste o dedo para percorrer as letras dessa palavra. Somente a palavra mais recente pode gerar novas palavras. As setas ao lado da letra mudam o lado da nova palavra.\n\nA origem fica lilas, a letra escolhida e a nova palavra ficam creme. Os blocos sobem em ondas. Acertos piscam em verde; erros, em vermelho."],
     ["TEMPO", "CAMPANHA: o relogio conta para cima. Voce nao perde por demorar, mas cada segundo reduz a pontuacao final. O item de tempo desconta 12 segundos.\n\nINFINITO: o relogio conta para baixo; quando acaba, a partida termina."],
     ["ENERGIA", "Cada palavra confirmada consome 1 ponto de energia. Se a energia acabar, a partida termina.\n\nNa campanha, o limite cresce 2 por fase (10 a 28). Cada energia restante no portal vale 25 pontos extras. Colete itens para recuperar ate 3 pontos. No infinito, o limite e 10."],
-    ["COLECIONAVEIS E INIMIGOS", "♛ COROAS: 3 por fase na campanha, opcionais e valendo pontos.\n⚡ ENERGIA: recupera raios.\n⧖ RELOGIO: reduz o tempo na campanha.\n◉ VISAO: amplia a area visivel.\n◈ MOEDAS: aumentam a pontuacao.\n✧ DICAS: recuperam usos do botao DICA.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
+    ["COLECIONAVEIS E INIMIGOS", "COROAS: 3 por fase na campanha, opcionais e valendo pontos.\nENERGIA: recupera raios.\nRELOGIO: reduz o tempo na campanha.\nVISAO: amplia a area visivel.\nMOEDAS: aumentam a pontuacao.\nDICAS: recuperam usos do botao DICA.\n\nA partir da fase 7, inimigos aparecem no mapa desde o inicio e tornam o percurso mais perigoso."],
     ["DICAS", "O botao DICA, ao lado da definicao, permite trocar a palavra sugerida para a letra e direcao escolhidas.\n\nNa campanha, voce tem 3 trocas por fase, renovadas ao avancar de nivel. No modo infinito, colete itens de dica para recuperar usos (ate 3). O botao exige alternativas validas."]
 ]
 var mode_button: Button
@@ -478,6 +478,15 @@ func _make_label(text_value: String, size: int = 23) -> Label:
     label.add_theme_color_override("font_color", Color("#e9eafa"))
     return label
 
+func _make_hud_icon(path: String, icon_size: float) -> TextureRect:
+    var icon := TextureRect.new()
+    icon.texture = load(path) as Texture2D
+    icon.custom_minimum_size = Vector2(icon_size, icon_size)
+    icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+    icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    return icon
+
 func _layout_hud() -> void:
     if not is_instance_valid(hud_top) or not is_instance_valid(hud_bottom):
         return
@@ -556,13 +565,16 @@ func _make_ui() -> void:
     indicators.alignment = BoxContainer.ALIGNMENT_CENTER
     indicators.add_theme_constant_override("separation", 10)
     top_column.add_child(indicators)
-    time_label = _make_label("⧖ 0:38", 19)
-    crown_label = _make_label("♛ 0/3", 19)
-    energy_label = _make_label("⚡ 10/10", 19)
+    time_label = _make_label("TEMPO 0:38", 19)
+    crown_label = _make_label("FASE 0/3", 19)
+    energy_label = _make_label("ENERGIA 10/10", 19)
+    indicators.add_child(_make_hud_icon("res://assets/icons/time.svg", 22))
     indicators.add_child(time_label)
+    indicators.add_child(_make_hud_icon("res://assets/icons/crown.svg", 22))
     indicators.add_child(crown_label)
+    indicators.add_child(_make_hud_icon("res://assets/icons/energy.svg", 22))
     indicators.add_child(energy_label)
-    score_label = _make_label("PONTOS 0  |  ◈ 0  |  COMBO 0", 17)
+    score_label = _make_label("PONTOS 0  |  0 MOEDAS  |  COMBO 0", 17)
     top_column.add_child(score_label)
     var clue_panel := PanelContainer.new()
     clue_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.26, 0.31, 0.48, 0.38), Color(0.67, 0.72, 0.91, 0.45)))
@@ -576,7 +588,8 @@ func _make_ui() -> void:
     clue_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     clue_row.add_child(clue_label)
     next_clue_button = Button.new()
-    next_clue_button.text = "✧ DICA 3"
+    next_clue_button.text = "DICA 3"
+    next_clue_button.icon = load("res://assets/icons/hint.svg") as Texture2D
     next_clue_button.focus_mode = Control.FOCUS_NONE
     next_clue_button.custom_minimum_size.x = 80.0
     next_clue_button.tooltip_text = "Trocar pista (3 por fase)"
@@ -956,7 +969,7 @@ func _toggle_pause() -> void:
     if pause_overlay.visible:
         _close_pause()
         return
-    pause_stats.text = "Modo: %s\nFase: %d\nPontos: %d  |  ◈ %d\nPalavras: %d  |  Cruzamentos: %d\n♛ Coroas: %d/3  |  ⚡ Energia: %d/%d\n⧖ Tempo: %d:%02d  |  ✧ Dicas: %d\nFases concluidas: %d" % ["Campanha" if level_mode else "Infinito", level_number, points, coins, _solved_count(), combo, crowns, energy, _energy_capacity(), int(elapsed) / 60, int(elapsed) % 60, hints_remaining, completed_levels.size()]
+    pause_stats.text = "Modo: %s\nFase: %d\nPontos: %d  |  Moedas: %d\nPalavras: %d  |  Cruzamentos: %d\nCoroas: %d/3  |  Energia: %d/%d\nTempo: %d:%02d  |  Dicas: %d\nFases concluidas: %d" % ["Campanha" if level_mode else "Infinito", level_number, points, coins, _solved_count(), combo, crowns, energy, _energy_capacity(), int(elapsed) / 60, int(elapsed) % 60, hints_remaining, completed_levels.size()]
     pause_overlay.show()
     if is_instance_valid(entry):
         entry.release_focus()
@@ -1027,7 +1040,7 @@ func _show_result(victory: bool, reason: String) -> void:
     result_title.text = "FASE CONCLUÍDA!" if victory else "GAME OVER"
     result_title.add_theme_color_override("font_color", Color("#f4d787") if victory else Color("#e97d9c"))
     if level_mode:
-        result_stats.text = "%s\n\n♛ Coroas opcionais: %d/3 · Bônus: %d pontos\n⚡ Energia restante: %d/%d · Bônus: %d pontos\n⧖ Tempo: %d:%02d · Penalidade de tempo: %d pontos\n\n%s\n\nPalavras nesta fase: %d" % [reason, crowns, crowns * 500, energy, _energy_capacity(), _energy_finish_bonus(), int(elapsed) / 60, int(elapsed) % 60, int(elapsed) * (2 + level_number), _run_summary(), _solved_count()]
+        result_stats.text = "%s\n\nCoroas opcionais: %d/3 · Bônus: %d pontos\nEnergia restante: %d/%d · Bônus: %d pontos\nTempo: %d:%02d · Penalidade de tempo: %d pontos\n\n%s\n\nPalavras nesta fase: %d" % [reason, crowns, crowns * 500, energy, _energy_capacity(), _energy_finish_bonus(), int(elapsed) / 60, int(elapsed) % 60, int(elapsed) * (2 + level_number), _run_summary(), _solved_count()]
     else:
         result_stats.text = "%s\n\nPontuação: %d\nPalavras: %d  ·  Combo: %d" % [reason, points, _solved_count(), combo]
     result_action.text = ("RECOMEÇAR CAMPANHA" if level_number >= CAMPAIGN_LEVELS else "PRÓXIMO NÍVEL") if victory and level_mode else ("NOVA PARTIDA" if not victory else "CONTINUAR")
@@ -2067,6 +2080,31 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
         add_child(label)
     visual_nodes.append(label)
 
+func _draw_pickup_icon(p: Vector2i, kind: String) -> void:
+    var icon_paths := {
+        "coin": "res://assets/icons/coin.svg",
+        "energy": "res://assets/icons/energy.svg",
+        "time": "res://assets/icons/time.svg",
+        "crown": "res://assets/icons/crown.svg",
+        "vision": "res://assets/icons/vision.svg",
+        "hint": "res://assets/icons/hint.svg"
+    }
+    if not icon_paths.has(kind) or not board.has(p):
+        return
+    var sprite := Sprite3D.new()
+    sprite.texture = load(String(icon_paths[kind])) as Texture2D
+    if sprite.texture == null:
+        return
+    sprite.pixel_size = 0.004
+    sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+    sprite.no_depth_test = true
+    sprite.shaded = false
+    sprite.modulate = TILE_LETTER
+    var tile: MeshInstance3D = board[p]
+    tile.add_child(sprite)
+    sprite.position = Vector3(0.0, 0.16, 0.0)
+    visual_nodes.append(sprite)
+
 # O flash mistura a cor de acerto/erro com a cor original e desaparece suavemente.
 const WORD_FLASH_DURATION := 0.40
 
@@ -2455,14 +2493,7 @@ func _refresh_board() -> void:
         elif level_mode and p == exit_cell:
             pass  # O portal e identificado pelo verde, sem seta sobreposta.
         elif pickups.has(p):
-            var symbol: String = "◈"
-            match pickups[p]:
-                "energy": symbol = "⚡"
-                "time": symbol = "⧖"
-                "crown": symbol = "♛"
-                "vision": symbol = "◉"
-                "hint": symbol = "✧"
-            _draw_text(p, symbol, TILE_LETTER, 0.50, 64)
+            _draw_pickup_icon(p, String(pickups[p]))
     # A ordem serve apenas para esta atualizacao do tabuleiro.
     direction_transition_order.clear()
     _update_hud()
@@ -2486,12 +2517,12 @@ func _update_hud() -> void:
     direction_right.visible = false
     next_clue_button.visible = true
     next_clue_button.disabled = preview_choices.size() <= 1 or hints_remaining <= 0 or game_over
-    next_clue_button.text = "✧ DICA %d" % hints_remaining
+    next_clue_button.text = "DICA %d" % hints_remaining
     var shown_seconds: int = maxi(0, int(elapsed)) if level_mode else seconds
-    time_label.text = "⧖ %d:%02d" % [shown_seconds / 60, shown_seconds % 60]
-    crown_label.text = "FASE %d  ·  ♛ %d/3" % [level_number, crowns] if level_mode else "INFINITO"
-    energy_label.text = "⚡ %d/%d" % [energy, _energy_capacity()]
-    score_label.text = "PONTOS %d  |  ◈ %d  |  COMBO %d%s" % [points, coins, combo, "  |  ◉ %d" % map_vision_moves if map_vision_moves > 0 else ""]
+    time_label.text = "TEMPO %d:%02d" % [shown_seconds / 60, shown_seconds % 60]
+    crown_label.text = "FASE %d  ·  COROAS %d/3" % [level_number, crowns] if level_mode else "INFINITO"
+    energy_label.text = "ENERGIA %d/%d" % [energy, _energy_capacity()]
+    score_label.text = "PONTOS %d  |  %d MOEDAS  |  COMBO %d%s" % [points, coins, combo, "  |  VISAO %d" % map_vision_moves if map_vision_moves > 0 else ""]
 
 func _message(value: String) -> void:
     message_label.text = value
