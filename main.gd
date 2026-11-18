@@ -218,6 +218,9 @@ var level_intro_start_size: float = 18.0
 var stage_wave_active: bool = false
 var stage_wave_remaining: float = 0.0
 var stage_wave_previous_radius: int = 5
+var stage_closing_origin: Vector2i = Vector2i.ZERO
+var stage_closing_tiles: Array[Dictionary] = []
+var stage_open_tiles: Array[Dictionary] = []
 
 func _progression_level() -> int:
     # Mantem os marcos de progressao dos niveis originais 1, 2, 5, 7 e 10.
@@ -2305,9 +2308,29 @@ func _advance_diary_stage() -> void:
     completed_levels.append({"level": level_number, "crowns": crowns, "points": points})
     var previous_radius: int = _level_half_size()
     var previous_capacity: int = _energy_capacity()
-    for node in visual_nodes:
-        if is_instance_valid(node):
-            node.queue_free()
+    # O mapa antigo fecha em onda enquanto a malha nova nasce centralizada.
+    stage_closing_tiles.clear()
+    stage_open_tiles.clear()
+    stage_closing_origin = original_midpoint
+    for old_cell in board.keys():
+        var old_tile: MeshInstance3D = board[old_cell]
+        var old_top: Color = OUTER_TILE
+        var old_skirt: Color = Color("#242936")
+        var old_top_material: Material = old_tile.get_surface_override_material(0)
+        if old_top_material is StandardMaterial3D:
+            old_top = (old_top_material as StandardMaterial3D).albedo_color
+        var old_skirt_material: Material = (old_tile.get_node("Skirt") as MeshInstance3D).material_override
+        if old_skirt_material is StandardMaterial3D:
+            old_skirt = (old_skirt_material as StandardMaterial3D).albedo_color
+        stage_closing_tiles.append({
+            "node": old_tile, "cell": Vector2i(old_cell),
+            "start_top": old_top, "start_skirt": old_skirt,
+            "start_height": old_tile.position.y
+        })
+    board.clear()
+    tile_state.clear()
+    tile_target_heights.clear()
+    tile_pedestals.clear()
     visual_nodes.clear()
     if is_instance_valid(enemy_node):
         enemy_node.queue_free()
