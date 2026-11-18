@@ -219,7 +219,7 @@ var stage_wave_active: bool = false
 var stage_wave_remaining: float = 0.0
 var stage_open_tiles: Array[Dictionary] = []
 var stage_wave_start_colors: Dictionary = {} # Aparencia exibida antes da transicao entre etapas
-var stage_blue_tiles: Dictionary = {} # Vector2i -> letras anteriores sobre blocos azuis
+var stage_blue_tiles: Dictionary = {} # Vector2i -> presenca de blocos azuis sem letras antigas
 var level_origin: Vector2i = Vector2i.ZERO
 
 func _progression_level() -> int:
@@ -2338,7 +2338,7 @@ func _advance_diary_stage() -> void:
         var previous_cells: Array[Vector2i] = _cells(previous_word)
         var previous_answer: String = String(previous_word["answer"])
         for letter_index in range(previous_cells.size()):
-            stage_blue_tiles[previous_cells[letter_index]] = previous_answer[letter_index]
+            stage_blue_tiles[previous_cells[letter_index]] = true
 
     # A palavra-ancora permanece nas mesmas coordenadas; as palavras anteriores
     # ficam azuis e o novo limite cresce ao redor dela.
@@ -2519,8 +2519,8 @@ func _refresh_board() -> void:
             continue
         tile_state[kept_cell] = "stage_blue"
         solved_cells[kept_cell] = true
-        if not letters.has(kept_cell):
-            letters[kept_cell] = String(stage_blue_tiles[kept_cell])
+        # Somente a palavra-ancora atual conserva suas letras para o jogador
+        # continuar a partida. As palavras anteriores viram blocos azuis vazios.
     # Uma única orientação visual por âncora. Ao inverter, a prévia antiga desaparece.
     # Outros rascunhos (em outras letras) permanecem até uma confirmação.
     for key in drafts.keys():
