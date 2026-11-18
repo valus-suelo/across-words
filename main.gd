@@ -596,7 +596,6 @@ func _make_ui() -> void:
     next_clue_button = Button.new()
     next_clue_button.text = "3"
     next_clue_button.icon = load("res://assets/icons/hint.svg") as Texture2D
-    next_clue_button.icon_max_width = 14
     next_clue_button.custom_minimum_size = Vector2(48.0, 34.0)
     next_clue_button.add_theme_constant_override("h_separation", 3)
     next_clue_button.focus_mode = Control.FOCUS_NONE
