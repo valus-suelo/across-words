@@ -600,7 +600,6 @@ func _make_ui() -> void:
     next_clue_button.custom_minimum_size = Vector2(48.0, 34.0)
     next_clue_button.add_theme_constant_override("h_separation", 3)
     next_clue_button.focus_mode = Control.FOCUS_NONE
-    next_clue_button.custom_minimum_size.x = 80.0
     next_clue_button.tooltip_text = "Trocar pista (3 por fase)"
     next_clue_button.pressed.connect(_next_preview_clue)
     clue_row.add_child(next_clue_button)
