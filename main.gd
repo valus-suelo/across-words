@@ -218,6 +218,9 @@ var level_intro_start_size: float = 18.0
 var stage_wave_active: bool = false
 var stage_wave_remaining: float = 0.0
 var stage_wave_previous_radius: int = 5
+var stage_wave_active: bool = false
+var stage_wave_remaining: float = 0.0
+var stage_wave_previous_radius: int = 5
 
 func _progression_level() -> int:
     # Mantem os marcos de progressao dos niveis originais 1, 2, 5, 7 e 10.
@@ -2745,6 +2748,10 @@ func _process(delta: float) -> void:
         hud_top.modulate.a = move_toward(hud_top.modulate.a, hud_target_alpha, delta * 3.6)
     if is_instance_valid(hud_bottom):
         hud_bottom.modulate.a = move_toward(hud_bottom.modulate.a, hud_target_alpha, delta * 3.6)
+    if stage_wave_active:
+        stage_wave_remaining = maxf(0.0, stage_wave_remaining - delta)
+        if stage_wave_remaining <= 0.0:
+            stage_wave_active = false
     if level_intro_remaining > 0.0:
         level_intro_remaining = maxf(0.0, level_intro_remaining - delta)
         var progress: float = 1.0 - level_intro_remaining / LEVEL_INTRO_SECONDS
@@ -2775,6 +2782,12 @@ func _process(delta: float) -> void:
         var kind: String = tile_state.get(p, "base")
         var goal: float = float(tile_target_heights.get(p, 0.0))
         var cell_distance: int = absi(p.x - wave_origin.x) + absi(p.y - wave_origin.y)
+        if stage_wave_active and (absi(p.x) > stage_wave_previous_radius or absi(p.y) > stage_wave_previous_radius):
+            var stage_delay: float = minf(1.05, float(cell_distance) * 0.025)
+            var stage_progress: float = clampf((elapsed - wave_started_at - stage_delay) / 0.65, 0.0, 1.0)
+            var stage_eased: float = stage_progress * stage_progress * (3.0 - 2.0 * stage_progress)
+            tile.position.y = lerpf(-0.48, goal, stage_eased)
+            continue
         var wave_age: float = elapsed - wave_started_at - minf(0.55, float(cell_distance) * 0.055)
         # Efeito sequencial: a onda parte da letra escolhida e alcanca os demais blocos.
         if wave_age < 0.0:
