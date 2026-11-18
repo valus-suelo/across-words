@@ -2848,6 +2848,59 @@ func _process(delta: float) -> void:
         if start_cells.has(p) or (level_mode and p == exit_cell):
             goal += sin(elapsed * 2.0 + float(p.x) * 0.22 + float(p.y) * 0.19) * 0.008
         tile.position.y = move_toward(tile.position.y, goal, delta * 3.6)
+    # O mapa anterior se fecha em uma onda que parte da antiga posicao
+    # da palavra. Letras e icones acompanham o fechamento e perdem opacidade.
+    for i in range(stage_closing_tiles.size() - 1, -1, -1):
+        var closing_data: Dictionary = stage_closing_tiles[i]
+        var closing_tile: MeshInstance3D = closing_data["node"]
+        if not is_instance_valid(closing_tile):
+            stage_closing_tiles.remove_at(i)
+            continue
+        var closing_cell: Vector2i = closing_data["cell"]
+        var closing_distance: int = absi(closing_cell.x - stage_closing_origin.x) + absi(closing_cell.y - stage_closing_origin.y)
+        var closing_delay: float = minf(0.8, float(closing_distance) * 0.022)
+        var closing_progress: float = clampf((elapsed - wave_started_at - closing_delay) / 0.58, 0.0, 1.0)
+        var closing_eased: float = closing_progress * closing_progress * (3.0 - 2.0 * closing_progress)
+        var closing_start_top: Color = closing_data["start_top"]
+        var closing_start_skirt: Color = closing_data["start_skirt"]
+        var closing_top: Color = closing_start_top.lerp(OUTER_TILE, closing_eased)
+        var closing_skirt: Color = closing_start_skirt.lerp(Color("#242936"), closing_eased)
+        closing_tile.set_surface_override_material(0, _material_cached("tile_closing_" + closing_top.to_html(), closing_top))
+        closing_tile.set_surface_override_material(1, _material_cached("tile_closing_edge_" + closing_top.to_html(), closing_top.darkened(0.22)))
+        (closing_tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_closing_" + closing_skirt.to_html(), closing_skirt)
+        closing_tile.position.y = lerpf(float(closing_data["start_height"]), -0.55, closing_eased)
+        closing_tile.scale = Vector3.ONE.lerp(Vector3(0.78, 0.45, 0.78), closing_eased)
+        for old_child in closing_tile.get_children():
+            if old_child is Label3D:
+                (old_child as Label3D).modulate.a = 1.0 - closing_eased
+            elif old_child is Sprite3D:
+                (old_child as Sprite3D).modulate.a = 1.0 - closing_eased
+        if closing_progress >= 1.0:
+            closing_tile.queue_free()
+            stage_closing_tiles.remove_at(i)
+    # O novo tabuleiro emerge do escuro a partir da palavra central. Cor,
+    # altura e destaque das letras chegam juntos ao estado final.
+    for i in range(stage_open_tiles.size() - 1, -1, -1):
+        var opening_data: Dictionary = stage_open_tiles[i]
+        var opening_tile: MeshInstance3D = opening_data["node"]
+        if not is_instance_valid(opening_tile):
+            stage_open_tiles.remove_at(i)
+            continue
+        var opening_cell: Vector2i = opening_data["cell"]
+        var opening_distance: int = absi(opening_cell.x - wave_origin.x) + absi(opening_cell.y - wave_origin.y)
+        var opening_delay: float = minf(0.85, float(opening_distance) * 0.024)
+        var opening_progress: float = clampf((elapsed - wave_started_at - opening_delay) / 0.62, 0.0, 1.0)
+        var opening_eased: float = opening_progress * opening_progress * (3.0 - 2.0 * opening_progress)
+        var opening_target_top: Color = opening_data["target_top"]
+        var opening_target_skirt: Color = opening_data["target_skirt"]
+        var opening_top: Color = OUTER_TILE.lerp(opening_target_top, opening_eased)
+        var opening_skirt: Color = Color("#242936").lerp(opening_target_skirt, opening_eased)
+        opening_tile.set_surface_override_material(0, _material_cached("tile_open_" + opening_top.to_html(), opening_top))
+        opening_tile.set_surface_override_material(1, _material_cached("tile_open_edge_" + opening_top.to_html(), opening_top.darkened(0.22)))
+        (opening_tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_open_" + opening_skirt.to_html(), opening_skirt)
+        opening_tile.position.y = lerpf(-0.48, float(opening_data["target_height"]), opening_eased)
+        if opening_progress >= 1.0:
+            stage_open_tiles.remove_at(i)
     # Transicoes independentes dos blocos de direcao: a altura e as duas
     # camadas de cor avancam juntas, sem deixar um bloco antigo no tabuleiro.
     if not direction_transition_cells.is_empty():
