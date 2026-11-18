@@ -2374,7 +2374,7 @@ func _advance_diary_stage() -> void:
     # toda a area desbloqueada, mantendo a palavra no centro do enquadramento.
     var radius: float = float(_level_half_size())
     var board_width: float = (radius * 2.0 + 1.0) * GAP
-    var board_depth_projected: float = (radius * 2.0 + 1.0) * ROW_GAP * cos(deg_to_rad(69.0))
+    var board_depth_projected: float = (radius * 2.0 + 1.0) * ROW_GAP * sin(deg_to_rad(69.0))
     var aspect: float = screen.x / maxf(1.0, screen.y)
     var expanded_size: float = maxf(normal_size, maxf(board_depth_projected, board_width / maxf(0.5, aspect)) * 1.24)
     var camera_tween := create_tween()
