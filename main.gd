@@ -2175,13 +2175,34 @@ func _flash_display_skirt_color(data: Dictionary) -> Color:
     return base_color.lerp(flash_color, _flash_strength(data))
 
 func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool = false, spread_from: Vector2i = Vector2i(-999999, -999999), spread_delay: float = 0.0) -> void:
-    # Primeiro restaura o tabuleiro sem efeitos. Assim a cor-base e
-    # capturada no mesmo instante para todas as casas, nunca quando
-    # cada bloco entrar na area visivel da camera.
-    flash_cells.clear()
-    _refresh_board()
     var started_at: float = elapsed
     var spread_origin_index: int = cells.find(spread_from)
+    # Na onda final de vitoria, preserva exatamente a iluminacao que ja
+    # esta na tela. Nao limpa nem redesenha o tabuleiro antes do verde:
+    # a nova onda sera aplicada por cima da cor atual, sem passar pelo dourado.
+    var preserve_lit_base: bool = success_base and spread_origin_index >= 0
+    var preserved_colors: Dictionary = {}
+    if preserve_lit_base:
+        for p in cells:
+            if not board.has(p):
+                continue
+            var tile: MeshInstance3D = board[p]
+            var top_material: Material = tile.get_surface_override_material(0)
+            var skirt_node: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
+            var skirt_material: Material = skirt_node.material_override
+            var top_color: Color = BASE
+            var skirt_color: Color = SIDE_EMPTY
+            if top_material is StandardMaterial3D:
+                top_color = (top_material as StandardMaterial3D).albedo_color
+            if skirt_material is StandardMaterial3D:
+                skirt_color = (skirt_material as StandardMaterial3D).albedo_color
+            preserved_colors[p] = {"top": top_color, "skirt": skirt_color}
+    else:
+        # Nas confirmacoes comuns, restaura primeiro o tabuleiro sem efeitos
+        # para capturar uma cor-base uniforme em todas as casas.
+        flash_cells.clear()
+        _refresh_board()
+
     for cell_index in range(cells.size()):
         var p: Vector2i = cells[cell_index]
         var cell_started_at: float = started_at + spread_delay
@@ -2190,21 +2211,22 @@ func _flash_word(cells: Array[Vector2i], flash_color: Color, success_base: bool 
             # mantendo cada bloco verde depois que a onda passa.
             cell_started_at += float(absi(cell_index - spread_origin_index)) * 0.11
         var base_color: Color = BASE
-        if board.has(p):
+        var base_skirt: Color = SIDE_EMPTY
+        if preserve_lit_base and preserved_colors.has(p):
+            var saved: Dictionary = preserved_colors[p]
+            base_color = saved.get("top", BASE)
+            base_skirt = saved.get("skirt", SIDE_EMPTY)
+        elif board.has(p):
             var tile: MeshInstance3D = board[p]
             var material: Material = tile.get_surface_override_material(0)
             if material is StandardMaterial3D:
                 base_color = (material as StandardMaterial3D).albedo_color
-        var base_skirt: Color = SIDE_EMPTY
-        if board.has(p):
-            var skirt_node: MeshInstance3D = (board[p] as MeshInstance3D).get_node("Skirt") as MeshInstance3D
+            var skirt_node: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
             var skirt_material: Material = skirt_node.material_override
             if skirt_material is StandardMaterial3D:
                 base_skirt = (skirt_material as StandardMaterial3D).albedo_color
         if success_base and spread_origin_index < 0:
-            # Confirmacoes comuns terminam em dourado; na vitoria, a onda
-            # deve partir da cor iluminada que o bloco ja possui, sem voltar
-            # ao amarelo antes de receber o verde.
+            # Confirmacoes comuns mantem a cor dourada antes de retornar ao lilas.
             base_color = CURRENT_WORD if _inside_level(p) else OUTER_TILE
             base_skirt = CURRENT_WORD_SIDE if _inside_level(p) else Color("#242936")
         flash_cells[p] = {
