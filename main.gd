@@ -2454,7 +2454,6 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
     # Todos os blocos seguem a mesma onda, dentro e fora da nova area.
     # O destino e azul dentro e preto fora. Blocos azuis vazios mantem a cor
     # e recebem somente o movimento da onda, sem efeito de reset.
-    stage_open_tiles.clear()
     for cell in cells:
         if not board.has(cell):
             continue
@@ -2470,6 +2469,13 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
             from_top = start_data.get("top", target_top)
             from_skirt = start_data.get("skirt", target_skirt)
             from_height = float(start_data.get("height", tile.position.y))
+        var already_queued: bool = false
+        for queued in stage_open_tiles:
+            if queued["node"] == tile:
+                already_queued = true
+                break
+        if already_queued:
+            continue
         stage_open_tiles.append({
             "node": tile, "cell": cell,
             "from_top": from_top, "from_skirt": from_skirt, "from_height": from_height,
@@ -2502,8 +2508,8 @@ func _refresh_board() -> void:
                 letters[p] = answer[i]
             elif not tile_state.has(p):
                 tile_state[p] = "active"
-    # Pecas lilases de etapas anteriores permanecem no mundo como memoria visual.
-    # Elas nao entram em words e, portanto, nao podem gerar novos cruzamentos.
+    # Palavras de etapas anteriores permanecem apenas como desenho azul.
+    # Elas nao entram em words e, portanto, nao geram novos cruzamentos.
     for kept_cell in stage_blue_tiles.keys():
         # A palavra-ancora da etapa tambem vira azul, mas continua disponivel
         # como origem logica. Outras palavras atuais tem prioridade se cruzarem
@@ -3335,7 +3341,7 @@ func _sync_visible_board(force: bool = false) -> void:
         tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
         tile.set_surface_override_material(0, _material_cached("tile_base", BASE))
         tile.set_surface_override_material(1, _material_cached("tile_base_side", BASE.darkened(0.20)))
-        tile.position = Vector3(p.x * GAP, -0.48 if stage_wave_active and _inside_level(p) else 0.0, p.y * ROW_GAP)
+        tile.position = Vector3(p.x * GAP, 0.0, p.y * ROW_GAP)
         var skirt := MeshInstance3D.new()
         skirt.name = "Skirt"
         skirt.mesh = shared_skirt_mesh
