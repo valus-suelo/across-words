@@ -216,6 +216,7 @@ const LEVEL_INTRO_SECONDS := 3.4
 var level_intro_remaining: float = 0.0
 var level_intro_start_size: float = 18.0
 var stage_wave_active: bool = false
+var stage_anchor_idle: bool = false # A ancora herdada fica lilas ate o jogador seleciona-la
 var stage_wave_remaining: float = 0.0
 var stage_open_tiles: Array[Dictionary] = []
 var stage_origin_cells: Dictionary = {} # Letras da palavra que iniciou a etapa, destacadas em amarelo claro
@@ -1119,6 +1120,7 @@ func _new_game() -> void:
     stage_origin_cells.clear()
     stage_wave_start_colors.clear()
     stage_wave_active = false
+    stage_anchor_idle = false
     stage_blue_tiles.clear()
     for node in visual_nodes:
         if is_instance_valid(node): node.queue_free()
@@ -1697,6 +1699,7 @@ func _select_anchor(index: int, anchor: int) -> void:
         return
     if preview_parent == index and preview_anchor == anchor:
         return
+    stage_anchor_idle = false
     _save_preview_draft()
     wave_origin = _cells(words[index])[anchor]
     wave_sequence += 1
@@ -2340,7 +2343,13 @@ func _advance_diary_stage() -> void:
         var previous_cells: Array[Vector2i] = _cells(previous_word)
         var previous_answer: String = String(previous_word["answer"])
         for letter_index in range(previous_cells.size()):
-            stage_blue_tiles[previous_cells[letter_index]] = true
+            var previous_cell: Vector2i = previous_cells[letter_index]
+            if carried_cells.has(previous_cell):
+                continue
+            stage_blue_tiles[previous_cell] = true
+    # Uma casa que pertence a palavra-ancora nunca pode ser rebaixada a bloco azul.
+    for carried_cell in carried_cells:
+        stage_blue_tiles.erase(carried_cell)
 
     # A palavra-ancora permanece nas mesmas coordenadas; as palavras anteriores
     # ficam azuis e o novo limite cresce ao redor dela.
@@ -2348,6 +2357,7 @@ func _advance_diary_stage() -> void:
     stage_origin_cells.clear()
     for carried_cell in carried_cells:
         stage_origin_cells[carried_cell] = true
+    stage_anchor_idle = true
     stage_open_tiles.clear()
     if is_instance_valid(enemy_node):
         enemy_node.queue_free()
@@ -2464,8 +2474,16 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
             continue
         var tile: MeshInstance3D = board[cell]
         var is_carried_word_cell: bool = not words.is_empty() and words[0].get("state", "") == "solved" and _cells(words[0]).has(cell)
-        var target_top: Color = CURRENT_WORD if is_carried_word_cell else (BASE if _inside_level(cell) else OUTER_TILE)
-        var target_skirt: Color = CURRENT_WORD_SIDE if is_carried_word_cell else (SIDE_EMPTY if _inside_level(cell) else Color("#242936"))
+        var target_top: Color = SOLVED if is_carried_word_cell else (BASE if _inside_level(cell) else OUTER_TILE)
+        var target_skirt: Color = SIDE_SOLVED if is_carried_word_cell else (SIDE_EMPTY if _inside_level(cell) else Color("#242936"))
+        # Itens especiais mantem sua identidade cromatica durante a onda de abertura.
+        if pickups.has(cell) and not is_carried_word_cell:
+            if pickups[cell] in ["coin", "crown"]:
+                target_top = GOLD
+                target_skirt = Color("#a58b50")
+            else:
+                target_top = Color("#79bac8")
+                target_skirt = Color("#436d7c")
         var target_height: float = float(tile_target_heights.get(cell, 0.0))
         var from_top: Color = target_top
         var from_skirt: Color = target_skirt
@@ -2521,7 +2539,7 @@ func _refresh_board() -> void:
         # como origem logica. Outras palavras atuais tem prioridade se cruzarem
         # uma coordenada que ja pertencia ao desenho visual anterior.
         var is_carried_anchor: bool = not words.is_empty() and _cells(words[0]).has(kept_cell)
-        if letters.has(kept_cell) and not is_carried_anchor:
+        if is_carried_anchor or letters.has(kept_cell):
             continue
         tile_state[kept_cell] = "stage_blue"
         solved_cells[kept_cell] = true
@@ -2590,18 +2608,13 @@ func _refresh_board() -> void:
         focus_cell = _cells(words[preview_parent])[preview_anchor]
     # Marca TODAS as letras da palavra que pode gerar o proximo ramo.
     # Palavras anteriores permanecem no tabuleiro, mas sem este destaque.
-    var highlighted_parent: int = preview_parent if preview_parent >= 0 else last_solved_word
+    var highlighted_parent: int = preview_parent if preview_parent >= 0 else (-1 if stage_anchor_idle else last_solved_word)
     if highlighted_parent >= 0 and highlighted_parent < words.size():
         var source_word: Dictionary = words[highlighted_parent]
         if source_word["state"] == "solved":
             for source_cell in _cells(source_word):
                 if board.has(source_cell) and tile_state.get(source_cell, "") == "solved":
                     tile_state[source_cell] = "current_word"
-    # A palavra que trouxe o jogador para esta etapa continua no tabuleiro,
-    # mas sua cor verde de conclusao muda para um amarelo claro.
-    for origin_cell in stage_origin_cells.keys():
-        if board.has(origin_cell) and tile_state.get(origin_cell, "") == "current_word":
-            tile_state[origin_cell] = "stage_origin"
     # Durante a digitacao, ilumina somente as casas da palavra proposta
     # que tambem pertencem a palavras ja resolvidas. A primeira letra nao
     # recebe destaque especial so por ser a origem da palavra.
