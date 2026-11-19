@@ -242,7 +242,9 @@ func _inside_level(cell: Vector2i) -> bool:
 func _inside_level_halo(cell: Vector2i) -> bool:
     if not level_mode:
         return true
-    var radius: int = _level_half_size() + LEVEL_HALO
+    # A margem preta cresce 25 casas por etapa, independentemente da area jogavel.
+    # _level_half_size() continua sendo o unico controle do espaco jogavel.
+    var radius: int = _level_half_size() + LEVEL_HALO + (level_number - 1) * 25
     var relative: Vector2i = cell - level_origin
     return absi(relative.x) <= radius and absi(relative.y) <= radius
 
@@ -2601,7 +2603,9 @@ func _refresh_board() -> void:
         var typed: String = entry.text.strip_edges().to_upper()
         for i in range(cells.size()):
             var p: Vector2i = cells[i]
-            if tile_state.get(p, "") != "solved":
+            # A trilha em montagem tem prioridade visual sobre palavras antigas
+            # que cruzem suas casas. Sem isso, essas casas permanecem lilas.
+            if tile_state.get(p, "") not in ["stage_blue", "blocked_outer"]:
                 tile_state[p] = "selected" if i < typed.length() else "preview"
                 if i < typed.length():
                     letters[p] = typed[i]
@@ -2714,13 +2718,13 @@ func _refresh_board() -> void:
         # Uma casa que pertence a palavra concluida sempre termina na cor
         # resolvida, mesmo se tambem for foco ou ancora do proximo ramo.
         # O destaque temporario verde continua sendo aplicado pelo flash abaixo.
-        if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "blocked_outer", "stage_blue"]:
+        if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "selected", "preview", "blocked_outer", "stage_blue"]:
             top_color = SOLVED
             skirt_color = SIDE_SOLVED
             target_height = 0.015
         if level_mode and not _inside_level(p):
             # O dourado escuro fica reservado aos trechos ainda em digitacao.
-            if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "blocked_outer", "stage_blue"]:
+            if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "selected", "preview", "blocked_outer", "stage_blue"]:
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
                 target_height = 0.015
