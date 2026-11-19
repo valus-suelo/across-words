@@ -1697,6 +1697,13 @@ func _select_anchor(index: int, anchor: int) -> void:
         return
     if preview_parent == index and preview_anchor == anchor:
         return
+    # A palavra que veio da etapa anterior e apenas uma ancora visual:
+    # ao primeiro toque, seus blocos dourados viram blocos azuis sem letras.
+    if stage_origin_cells.size() > 0:
+        for origin_cell in _cells(words[index]):
+            if stage_origin_cells.has(origin_cell):
+                stage_origin_cells.erase(origin_cell)
+                stage_blue_tiles[origin_cell] = true
     _save_preview_draft()
     wave_origin = _cells(words[index])[anchor]
     wave_sequence += 1
@@ -2597,10 +2604,10 @@ func _refresh_board() -> void:
             for source_cell in _cells(source_word):
                 if board.has(source_cell) and tile_state.get(source_cell, "") == "solved":
                     tile_state[source_cell] = "current_word"
-    # A palavra que trouxe o jogador para esta etapa continua no tabuleiro,
-    # mas sua cor verde de conclusao muda para um amarelo claro.
+    # A palavra que inicia a etapa aparece como blocos dourados sem letras.
+    # Continua selecionavel pela mesma ancora logica da palavra inicial do nivel 1.
     for origin_cell in stage_origin_cells.keys():
-        if board.has(origin_cell) and tile_state.get(origin_cell, "") == "current_word":
+        if board.has(origin_cell):
             tile_state[origin_cell] = "stage_origin"
     # Durante a digitacao, ilumina somente as casas da palavra proposta
     # que tambem pertencem a palavras ja resolvidas. A primeira letra nao
@@ -2780,7 +2787,7 @@ func _refresh_board() -> void:
         var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
         skirt.material_override = _material_cached("skirt_" + skirt_color.to_html(), skirt_color)
         tile_target_heights[p] = target_height
-        if letters.has(p) and kind != "stage_blue":
+        if letters.has(p) and kind not in ["stage_blue", "stage_origin"]:
             var letter_color: Color = Color("#34313a") if kind == "draft" else TILE_LETTER
             _draw_text(p, String(letters[p]), letter_color, 0.64)
         elif level_mode and p == exit_cell:
