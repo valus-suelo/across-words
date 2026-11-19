@@ -2440,6 +2440,7 @@ func _advance_diary_stage() -> void:
     for cell in board.keys():
         cells_to_reveal.append(cell)
     _queue_stage_open_tiles(cells_to_reveal)
+    stage_wave_start_colors.clear()
     _message("Etapa %d: a jornada continua a partir de %s!" % [level_number, String(carried_word["answer"])])
 
 
@@ -2505,7 +2506,6 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
             "from_top": from_top, "from_skirt": from_skirt, "from_height": from_height,
             "target_top": target_top, "target_skirt": target_skirt, "target_height": target_height
         })
-    stage_wave_start_colors.clear()
 
 
 func _refresh_board() -> void:
