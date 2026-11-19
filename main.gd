@@ -218,6 +218,7 @@ var level_intro_start_size: float = 18.0
 var stage_wave_active: bool = false
 var stage_wave_remaining: float = 0.0
 var stage_open_tiles: Array[Dictionary] = []
+var stage_origin_cells: Dictionary = {} # Letras da palavra que iniciou a etapa, destacadas em amarelo claro
 var level_origin: Vector2i = Vector2i.ZERO
 
 func _progression_level() -> int:
@@ -1113,6 +1114,7 @@ func _result_continue() -> void:
 func _new_game() -> void:
     level_origin = Vector2i.ZERO
     stage_open_tiles.clear()
+    stage_origin_cells.clear()
     stage_wave_active = false
     for node in visual_nodes:
         if is_instance_valid(node): node.queue_free()
@@ -2317,6 +2319,9 @@ func _advance_diary_stage() -> void:
     # A palavra permanece nas mesmas coordenadas. O novo limite cresce ao
     # redor dela; os blocos existentes sao reaproveitados e reiniciados.
     level_origin = carried_anchor
+    stage_origin_cells.clear()
+    for carried_cell in carried_cells:
+        stage_origin_cells[carried_cell] = true
     stage_open_tiles.clear()
     if is_instance_valid(enemy_node):
         enemy_node.queue_free()
@@ -2392,7 +2397,7 @@ func _advance_diary_stage() -> void:
     camera.size = normal_size
     var camera_tween := create_tween()
     camera_tween.tween_property(camera, "size", expanded_size, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-    camera_tween.tween_interval(0.35)
+    camera_tween.tween_interval(1.15)
     camera_tween.tween_property(camera, "size", normal_size, 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
     _layout_hud()
     var cells_to_reveal: Array[Vector2i] = []
@@ -2546,6 +2551,11 @@ func _refresh_board() -> void:
             for source_cell in _cells(source_word):
                 if board.has(source_cell) and tile_state.get(source_cell, "") == "solved":
                     tile_state[source_cell] = "current_word"
+    # A palavra que trouxe o jogador para esta etapa continua no tabuleiro,
+    # mas sua cor verde de conclusao muda para um amarelo claro.
+    for origin_cell in stage_origin_cells.keys():
+        if board.has(origin_cell) and tile_state.get(origin_cell, "") == "current_word":
+            tile_state[origin_cell] = "stage_origin"
     # Durante a digitacao, ilumina somente as casas da palavra proposta
     # que tambem pertencem a palavras ja resolvidas. A primeira letra nao
     # recebe destaque especial so por ser a origem da palavra.
@@ -2594,6 +2604,10 @@ func _refresh_board() -> void:
             "current_word":
                 top_color = CURRENT_WORD
                 skirt_color = CURRENT_WORD_SIDE
+                target_height = 0.03
+            "stage_origin":
+                top_color = Color("#f2e7a6")
+                skirt_color = Color("#b7a96e")
                 target_height = 0.03
             "active":
                 top_color = ACTIVE
