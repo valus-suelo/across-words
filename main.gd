@@ -2357,7 +2357,8 @@ func _advance_diary_stage() -> void:
     stage_origin_cells.clear()
     for carried_cell in carried_cells:
         stage_origin_cells[carried_cell] = true
-    stage_anchor_idle = true
+    # A ancora continua sendo a palavra atual ate a primeira nova confirmacao.
+    stage_anchor_idle = false
     stage_open_tiles.clear()
     if is_instance_valid(enemy_node):
         enemy_node.queue_free()
@@ -2475,8 +2476,10 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
             continue
         var tile: MeshInstance3D = board[cell]
         var is_carried_word_cell: bool = not words.is_empty() and words[0].get("state", "") == "solved" and _cells(words[0]).has(cell)
-        var target_top: Color = SOLVED if is_carried_word_cell else (BASE if _inside_level(cell) else OUTER_TILE)
-        var target_skirt: Color = SIDE_SOLVED if is_carried_word_cell else (SIDE_EMPTY if _inside_level(cell) else Color("#242936"))
+        # A ancora permanece dourada durante todo o inicio da etapa; o fade
+        # para lilas so e iniciado por _submit ao confirmar uma nova palavra.
+        var target_top: Color = CURRENT_WORD if is_carried_word_cell else (BASE if _inside_level(cell) else OUTER_TILE)
+        var target_skirt: Color = CURRENT_WORD_SIDE if is_carried_word_cell else (SIDE_EMPTY if _inside_level(cell) else Color("#242936"))
         # Itens especiais mantem sua identidade cromatica durante a onda de abertura.
         if pickups.has(cell) and not is_carried_word_cell:
             if pickups[cell] in ["coin", "crown"]:
@@ -2608,7 +2611,7 @@ func _refresh_board() -> void:
         focus_cell = _cells(words[preview_parent])[preview_anchor]
     # Marca TODAS as letras da palavra que pode gerar o proximo ramo.
     # Palavras anteriores permanecem no tabuleiro, mas sem este destaque.
-    var highlighted_parent: int = preview_parent if preview_parent >= 0 else (-1 if stage_anchor_idle else last_solved_word)
+    var highlighted_parent: int = preview_parent if preview_parent >= 0 else last_solved_word
     if highlighted_parent >= 0 and highlighted_parent < words.size():
         var source_word: Dictionary = words[highlighted_parent]
         if source_word["state"] == "solved":
