@@ -211,7 +211,7 @@ var level_mode: bool = false
 var exit_cell := Vector2i(0, -24)
 const LEVEL_SAFE_RADIUS := 35
 const CAMPAIGN_LEVELS := 5
-const LEVEL_HALO := 40
+const LEVEL_HALO := 100
 const LEVEL_INTRO_SECONDS := 3.4
 var level_intro_remaining: float = 0.0
 var level_intro_start_size: float = 18.0
@@ -2497,6 +2497,14 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
             from_top = start_data.get("top", target_top)
             from_skirt = start_data.get("skirt", target_skirt)
             from_height = float(start_data.get("height", tile.position.y))
+        # A ancora nunca deve herdar lilas de uma animacao anterior:
+        # sua abertura comeca e termina dourada, mesmo se a captura ocorreu
+        # durante um fade visual de uma palavra que cruzava essas casas.
+        if is_carried_word_cell:
+            from_top = CURRENT_WORD
+            from_skirt = CURRENT_WORD_SIDE
+            target_top = CURRENT_WORD
+            target_skirt = CURRENT_WORD_SIDE
         var already_queued: bool = false
         for queued in stage_open_tiles:
             if queued["node"] == tile:
