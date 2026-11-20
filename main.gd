@@ -2618,7 +2618,6 @@ func _is_static_background_cell(cell: Vector2i, letters: Dictionary) -> bool:
         and not flash_cells.has(cell)
         and not word_fade_cells.has(cell)
         and not direction_transition_cells.has(cell)
-        and not stage_wave_active
         and cell != exit_cell
     )
 
@@ -3053,7 +3052,7 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
     else:
         static_candidates = cells_to_render.duplicate()
     for cell in static_candidates:
-        if board.has(cell) and _is_static_background_cell(cell, letters):
+        if not stage_wave_active and board.has(cell) and _is_static_background_cell(cell, letters):
             _remove_board_tile_for_static(cell)
             static_background_cells[cell] = true
             static_layout_changed = true
