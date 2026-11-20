@@ -3073,6 +3073,13 @@ func _process(delta: float) -> void:
         var wave_bump: float = sin(opening_eased * PI) * 0.12
         opening_tile.position.y = lerpf(float(opening_data["from_height"]), float(opening_data["target_height"]), opening_eased) + wave_bump
         if opening_progress >= 1.0:
+            # Ao terminar, volta aos materiais compartilhados do estado final
+            # e libera as copias temporarias usadas para a interpolacao.
+            var final_top: Color = opening_data["target_top"]
+            var final_skirt: Color = opening_data["target_skirt"]
+            opening_tile.set_surface_override_material(0, _material_cached("tile_top_" + final_top.to_html(), final_top))
+            opening_tile.set_surface_override_material(1, _material_cached("tile_edge_" + final_top.to_html(), final_top.darkened(0.22)))
+            (opening_tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_" + final_skirt.to_html(), final_skirt)
             stage_open_tiles.remove_at(i)
     # Transicoes independentes dos blocos de direcao: a altura e as duas
     # camadas de cor avancam juntas, sem deixar um bloco antigo no tabuleiro.
@@ -3096,6 +3103,13 @@ func _process(delta: float) -> void:
                 var to_height: float = float(transition["to_height"])
                 transition_tile.position.y = lerpf(from_height, to_height, eased)
             if progress >= 1.0:
+                if board.has(cell):
+                    var final_transition_tile: MeshInstance3D = board[cell]
+                    var final_transition_top: Color = transition["to_color"]
+                    var final_transition_skirt: Color = transition["to_skirt"]
+                    final_transition_tile.set_surface_override_material(0, _material_cached("tile_top_" + final_transition_top.to_html(), final_transition_top))
+                    final_transition_tile.set_surface_override_material(1, _material_cached("tile_edge_" + final_transition_top.to_html(), final_transition_top.darkened(0.22)))
+                    (final_transition_tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_" + final_transition_skirt.to_html(), final_transition_skirt)
                 finished_direction_transitions.append(cell)
         for cell in finished_direction_transitions:
             direction_transition_cells.erase(cell)
@@ -3149,6 +3163,11 @@ func _process(delta: float) -> void:
                 if pickups.has(cell):
                     _set_pickup_icon_color(cell, fade_skirt_color)
             if progress >= 1.0:
+                if board.has(cell):
+                    var final_fade_tile: MeshInstance3D = board[cell]
+                    final_fade_tile.set_surface_override_material(0, _material_cached("tile_top_" + SOLVED.to_html(), SOLVED))
+                    final_fade_tile.set_surface_override_material(1, _material_cached("tile_edge_" + SOLVED.to_html(), SOLVED.darkened(0.22)))
+                    (final_fade_tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_" + SIDE_SOLVED.to_html(), SIDE_SOLVED)
                 faded.append(cell)
         if not faded.is_empty():
             for cell in faded:
