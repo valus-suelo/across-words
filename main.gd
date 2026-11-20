@@ -232,6 +232,19 @@ func _progression_level() -> int:
 func _level_half_size() -> int:
     return 5 + _progression_level() - 1
 
+func _level_black_margin() -> int:
+    # A borda escura aumenta junto com a progressao, sem alterar limites jogaveis.
+    return 2 + (level_number - 1) * 2
+
+func _level_outer_half_size() -> int:
+    return _level_half_size() + _level_black_margin()
+
+func _campaign_camera_base_size(wide: bool) -> float:
+    var base_size: float = 17.0 if wide else 20.0
+    # A camera abre gradualmente para preservar uma faixa escura visivel
+    # ao redor do mapa conforme a area jogavel cresce.
+    return base_size + float(level_number - 1) * 1.5 if level_mode else base_size
+
 func _inside_level(cell: Vector2i) -> bool:
     if not level_mode:
         return true
@@ -242,9 +255,9 @@ func _inside_level(cell: Vector2i) -> bool:
 func _inside_level_halo(cell: Vector2i) -> bool:
     if not level_mode:
         return true
-    # A margem preta cresce 25 casas por etapa, independentemente da area jogavel.
-    # _level_half_size() continua sendo o unico controle do espaco jogavel.
-    var radius: int = _level_half_size() + LEVEL_HALO + (level_number - 1) * 25
+    # A area escura gerada tem margem maior e crescente; regras jogaveis
+    # continuam exclusivamente em _inside_level().
+    var radius: int = _level_outer_half_size() + LEVEL_HALO + (level_number - 1) * 25
     var relative: Vector2i = cell - level_origin
     return absi(relative.x) <= radius and absi(relative.y) <= radius
 
@@ -1214,7 +1227,7 @@ func _new_game() -> void:
     _focus_word(words[0])
     if level_mode:
         level_intro_remaining = LEVEL_INTRO_SECONDS
-        level_intro_start_size = maxf(18.0, float(_level_half_size() * 2 + 4) * ROW_GAP * 1.65)
+        level_intro_start_size = maxf(_campaign_camera_base_size(get_viewport().get_visible_rect().size.x > get_viewport().get_visible_rect().size.y), float(_level_outer_half_size() * 2 + 4) * ROW_GAP * 1.45)
         camera.size = level_intro_start_size
         camera.position = Vector3(0.0, 25.0, 0.0)
     _refresh_board()
@@ -2420,15 +2433,15 @@ func _advance_diary_stage() -> void:
     _focus_word(carried_word)
     camera_zoom_factor = 1.0
     var screen: Vector2 = get_viewport().get_visible_rect().size
-    var normal_size: float = 17.0 if screen.x > screen.y else 20.0
+    var normal_size: float = _campaign_camera_base_size(screen.x > screen.y)
     camera.size = normal_size
-    # A camera se afasta para mostrar o novo limite e retorna, sempre
-    # mantendo a palavra como ancora espacial.
-    var radius: float = float(_level_half_size())
+    # A camera se afasta para mostrar a area jogavel e a faixa escura
+    # adicional, que cresce em cada etapa, mantendo a ancora espacial.
+    var radius: float = float(_level_outer_half_size())
     var board_width: float = (radius * 2.0 + 1.0) * GAP
     var board_depth_projected: float = (radius * 2.0 + 1.0) * ROW_GAP * sin(deg_to_rad(69.0))
     var aspect: float = screen.x / maxf(1.0, screen.y)
-    var expanded_size: float = maxf(normal_size, maxf(board_depth_projected, board_width / maxf(0.5, aspect)) * 1.24)
+    var expanded_size: float = maxf(normal_size, maxf(board_depth_projected, board_width / maxf(0.5, aspect)) * 1.18)
     # Carrega a malha inteira enquanto a camera esta afastada; depois ela
     # volta ao zoom normal sem descartar os blocos que acabou de revelar.
     camera.size = expanded_size
@@ -2902,7 +2915,8 @@ func _process(delta: float) -> void:
         level_intro_remaining = maxf(0.0, level_intro_remaining - delta)
         var progress: float = 1.0 - level_intro_remaining / LEVEL_INTRO_SECONDS
         var eased: float = progress * progress * (3.0 - 2.0 * progress)
-        camera.size = lerpf(level_intro_start_size, 18.0 * camera_zoom_factor, eased)
+        var wide_intro: bool = get_viewport().get_visible_rect().size.x > get_viewport().get_visible_rect().size.y
+        camera.size = lerpf(level_intro_start_size, _campaign_camera_base_size(wide_intro) * camera_zoom_factor, eased)
         if level_intro_remaining <= 0.0:
             _sync_visible_board(true)
     if not game_over and level_intro_remaining <= 0.0:
@@ -3158,8 +3172,8 @@ func _pan_camera(screen_delta: Vector2) -> void:
 func _apply_camera_zoom() -> void:
     var screen: Vector2 = get_viewport().get_visible_rect().size
     var wide: bool = screen.x > screen.y
-    var normal_size: float = 17.0 if wide else 20.0
-    var vision_size: float = 23.0 if wide else 27.0
+    var normal_size: float = _campaign_camera_base_size(wide)
+    var vision_size: float = (23.0 if wide else 27.0) + (float(level_number - 1) * 1.5 if level_mode else 0.0)
     camera.size = (vision_size if map_vision_moves > 0 else normal_size) * camera_zoom_factor
 
 func _zoom_camera(zoom_in: bool) -> void:
