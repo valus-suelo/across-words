@@ -230,9 +230,7 @@ var stage_wave_active: bool = false
 var stage_anchor_idle: bool = false # A ancora herdada fica lilas ate o jogador seleciona-la
 var stage_wave_remaining: float = 0.0
 var stage_open_tiles: Array[Dictionary] = []
-var stage_origin_cells: Dictionary = {} # Letras da palavra que iniciou a etapa, destacadas em amarelo claro
 var stage_wave_start_colors: Dictionary = {} # Aparencia exibida antes da transicao entre etapas
-var stage_blue_tiles: Dictionary = {} # Vector2i -> presenca de blocos azuis sem letras antigas
 var level_origin: Vector2i = Vector2i.ZERO
 
 func _progression_level() -> int:
@@ -1179,12 +1177,10 @@ func _result_continue() -> void:
 func _new_game() -> void:
     level_origin = Vector2i.ZERO
     stage_open_tiles.clear()
-    stage_origin_cells.clear()
     stage_wave_start_colors.clear()
     stage_wave_active = false
     _clear_static_background()
     stage_anchor_idle = false
-    stage_blue_tiles.clear()
     for node in visual_nodes:
         if is_instance_valid(node):
             var visual_parent: Node = node.get_parent()
@@ -2412,8 +2408,8 @@ func _advance_diary_stage() -> void:
     completed_levels.append({"level": level_number, "crowns": crowns, "points": points})
     var previous_capacity: int = _energy_capacity()
 
-    # Guarda as letras anteriores, mas elas deixam de ser lilases e passam a
-    # ocupar blocos azuis. Captura a aparencia real para a transicao direta.
+    # Captura a aparencia atual apenas como ponto de partida da onda; os dados
+    # das palavras antigas nao sao carregados para o novo estagio.
     stage_wave_start_colors.clear()
     for existing_cell in board.keys():
         var existing_tile: MeshInstance3D = board[existing_cell]
@@ -2426,26 +2422,9 @@ func _advance_diary_stage() -> void:
         if existing_skirt_material is StandardMaterial3D:
             existing_skirt = (existing_skirt_material as StandardMaterial3D).albedo_color
         stage_wave_start_colors[existing_cell] = {"top": existing_top, "skirt": existing_skirt, "height": existing_tile.position.y}
-    for previous_word in words:
-        if previous_word.get("state", "") != "solved":
-            continue
-        var previous_cells: Array[Vector2i] = _cells(previous_word)
-        var previous_answer: String = String(previous_word["answer"])
-        for letter_index in range(previous_cells.size()):
-            var previous_cell: Vector2i = previous_cells[letter_index]
-            if carried_cells.has(previous_cell):
-                continue
-            stage_blue_tiles[previous_cell] = true
-    # Uma casa que pertence a palavra-ancora nunca pode ser rebaixada a bloco azul.
-    for carried_cell in carried_cells:
-        stage_blue_tiles.erase(carried_cell)
-
     # A palavra-ancora permanece nas mesmas coordenadas; as palavras anteriores
     # ficam azuis e o novo limite cresce ao redor dela.
     level_origin = carried_anchor
-    stage_origin_cells.clear()
-    for carried_cell in carried_cells:
-        stage_origin_cells[carried_cell] = true
     # A ancora continua sendo a palavra atual ate a primeira nova confirmacao.
     stage_anchor_idle = false
     stage_open_tiles.clear()
@@ -2531,8 +2510,8 @@ func _advance_diary_stage() -> void:
     camera_tween.tween_interval(1.15)
     camera_tween.tween_property(camera, "size", normal_size, 2.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
     _layout_hud()
-    # Recalcula e redesenha TODOS os tiles existentes com o estado do novo
-    # estagio (stage_blue/base/ancora), removendo letras e cores herdadas.
+    # Recalcula todos os tiles com o estado do novo estagio, removendo
+    # letras e cores herdadas; apenas a palavra carregada permanece logica.
     # O sync da camera atualiza apenas tiles novos, por isso nao basta sozinho.
     _refresh_board()
     var cells_to_reveal: Array[Vector2i] = []
@@ -2746,21 +2725,6 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
                 letters[p] = answer[i]
             elif not tile_state.has(p):
                 tile_state[p] = "active"
-    # Palavras de etapas anteriores permanecem apenas como desenho azul.
-    # Elas nao entram em words e, portanto, nao geram novos cruzamentos.
-    for kept_cell in stage_blue_tiles.keys():
-        # A palavra-ancora da etapa tambem vira azul, mas continua disponivel
-        # como origem logica. Outras palavras atuais tem prioridade se cruzarem
-        # uma coordenada que ja pertencia ao desenho visual anterior.
-        var is_carried_anchor: bool = not words.is_empty() and _cells(words[0]).has(kept_cell)
-        # O azul legado nao pode sobrescrever uma casa que ja recebeu
-        # estado no tabuleiro atual (ativa, selecionada, resolvida etc.).
-        if is_carried_anchor or letters.has(kept_cell) or tile_state.has(kept_cell):
-            continue
-        tile_state[kept_cell] = "stage_blue"
-        solved_cells[kept_cell] = true
-        # As letras podem continuar no estado logico para cruzamentos, mas
-        # nenhuma delas e desenhada enquanto a casa estiver azul.
     # Uma única orientação visual por âncora. Ao inverter, a prévia antiga desaparece.
     # Outros rascunhos (em outras letras) permanecem até uma confirmação.
     for key in drafts.keys():
@@ -2808,7 +2772,7 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
             var p: Vector2i = cells[i]
             # A trilha em montagem tem prioridade visual sobre palavras antigas
             # que cruzem suas casas. Sem isso, essas casas permanecem lilas.
-            if tile_state.get(p, "") not in ["stage_blue", "blocked_outer"]:
+            if tile_state.get(p, "") != "blocked_outer":
                 tile_state[p] = "selected" if i < typed.length() else "preview"
                 if i < typed.length():
                     letters[p] = typed[i]
@@ -2848,7 +2812,7 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
                     break
             if is_crossing and board.has(preview_cell):
                 tile_state[preview_cell] = "anchor_focus"
-    if board.has(focus_cell) and tile_state.get(focus_cell, "") != "stage_blue":
+    if board.has(focus_cell):
         tile_state[focus_cell] = "focus"
     # O lado nao escolhido mostra um UNICO bloco oliva. O lado selecionado
     # e representado pelos blocos da palavra proposta (sem setas flutuantes).
@@ -2900,10 +2864,6 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
                 target_height = 0.015
-            "stage_blue":
-                top_color = BASE
-                skirt_color = SIDE_EMPTY
-                target_height = 0.0
             "blocked_outer":
                 top_color = OUTER_TILE
                 skirt_color = Color("#242936")
@@ -2940,22 +2900,21 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
                 top_color = Color("#999988")
                 skirt_color = SIDE_PREVIEW
                 target_height = 0.055
-        if pickups.has(p) and kind in ["base", "stage_blue"]:
-            # Recursos colocados sobre antigos blocos azuis conservam sua
-            # identidade visual; o estado stage_blue nao pode esconder o item.
+        if pickups.has(p) and kind == "base":
+            # Recursos sobre blocos base conservam sua identidade visual.
             top_color = GOLD if pickups[p] in ["coin", "crown"] else Color("#79bac8")
             skirt_color = Color("#a58b50") if pickups[p] in ["coin", "crown"] else Color("#436d7c")
             target_height = 0.025
         # Uma casa que pertence a palavra concluida sempre termina na cor
         # resolvida, mesmo se tambem for foco ou ancora do proximo ramo.
         # O destaque temporario verde continua sendo aplicado pelo flash abaixo.
-        if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "selected", "preview", "blocked_outer", "stage_blue", "stage_origin"]:
+        if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "selected", "preview", "blocked_outer", "stage_origin"]:
             top_color = SOLVED
             skirt_color = SIDE_SOLVED
             target_height = 0.015
         if level_mode and not _inside_level(p):
             # O dourado escuro fica reservado aos trechos ainda em digitacao.
-            if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "selected", "preview", "blocked_outer", "stage_blue"]:
+            if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "selected", "preview", "blocked_outer"]:
                 top_color = SOLVED
                 skirt_color = SIDE_SOLVED
                 target_height = 0.015
@@ -3036,7 +2995,7 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
             top_color = transition["from_color"].lerp(transition["to_color"], transition_eased)
             skirt_color = transition["from_skirt"].lerp(transition["to_skirt"], transition_eased)
             target_height = float(transition["to_height"])
-        var letter_text: String = String(letters[p]) if letters.has(p) and kind != "stage_blue" else ""
+        var letter_text: String = String(letters[p]) if letters.has(p) else ""
         var pickup_text: String = String(pickups[p]) if pickups.has(p) and not (level_mode and p == exit_cell) else ""
         var signature: Dictionary = {
             "kind": kind, "top": top_color, "skirt": skirt_color,
