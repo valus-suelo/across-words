@@ -123,6 +123,9 @@ const DICTIONARY := [
 
 
 var board: Dictionary = {}               # Vector2i -> MeshInstance3D
+var static_background_cells: Dictionary = {} # Casas externas vazias desenhadas em lote
+var static_background_top: MultiMeshInstance3D
+var static_background_skirt: MultiMeshInstance3D
 var tile_state: Dictionary = {}          # Vector2i -> String
 var visual_nodes: Array[Node3D] = []
 var words: Array[Dictionary] = []
@@ -1177,6 +1180,7 @@ func _new_game() -> void:
     stage_origin_cells.clear()
     stage_wave_start_colors.clear()
     stage_wave_active = false
+    _clear_static_background()
     stage_anchor_idle = false
     stage_blue_tiles.clear()
     for node in visual_nodes:
@@ -2602,6 +2606,107 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
         queued_cells[cell] = true
 
 
+
+func _is_static_background_cell(cell: Vector2i, letters: Dictionary) -> bool:
+    # Somente o fundo externo realmente vazio pode sair do sistema de tiles individuais.
+    return level_mode \
+        and not _inside_level(cell) \
+        and tile_state.get(cell, "base") == "base" \
+        and not letters.has(cell) \
+        and not pickups.has(cell) \
+        and not flash_cells.has(cell) \
+        and not word_fade_cells.has(cell) \
+        and not direction_transition_cells.has(cell) \
+        and not stage_wave_active \
+        and cell != exit_cell
+
+func _create_board_tile(cell: Vector2i) -> MeshInstance3D:
+    var tile := MeshInstance3D.new()
+    tile.mesh = shared_tile_mesh
+    tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    tile.set_surface_override_material(0, _material_cached("tile_base", BASE))
+    tile.set_surface_override_material(1, _material_cached("tile_base_side", BASE.darkened(0.20)))
+    tile.position = Vector3(cell.x * GAP, 0.0, cell.y * ROW_GAP)
+    var skirt := MeshInstance3D.new()
+    skirt.name = "Skirt"
+    skirt.mesh = shared_skirt_mesh
+    skirt.position.y = -0.16
+    skirt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    skirt.material_override = _material_cached("side_empty", SIDE_EMPTY)
+    tile.add_child(skirt)
+    add_child(tile)
+    board[cell] = tile
+    return tile
+
+func _remove_board_tile_for_static(cell: Vector2i) -> void:
+    if not board.has(cell):
+        return
+    var tile: MeshInstance3D = board[cell]
+    for child in tile.get_children():
+        if visual_nodes.has(child):
+            visual_nodes.erase(child)
+    tile.queue_free()
+    board.erase(cell)
+    tile_target_heights.erase(cell)
+    tile_visual_signatures.erase(cell)
+
+func _update_static_background_multimesh() -> void:
+    var cells: Array[Vector2i] = []
+    for raw_cell in static_background_cells.keys():
+        cells.append(raw_cell)
+    if cells.is_empty():
+        if is_instance_valid(static_background_top):
+            static_background_top.queue_free()
+        if is_instance_valid(static_background_skirt):
+            static_background_skirt.queue_free()
+        static_background_top = null
+        static_background_skirt = null
+        return
+
+    if not is_instance_valid(static_background_top):
+        static_background_top = MultiMeshInstance3D.new()
+        static_background_top.name = "StaticBackgroundTop"
+        var top_mesh: ArrayMesh = shared_tile_mesh.duplicate() as ArrayMesh
+        top_mesh.surface_set_material(0, _material_cached("static_outer_top", OUTER_TILE))
+        top_mesh.surface_set_material(1, _material_cached("static_outer_edge", OUTER_TILE.darkened(0.22)))
+        var top_multimesh := MultiMesh.new()
+        top_multimesh.transform_format = MultiMesh.TRANSFORM_3D
+        top_multimesh.mesh = top_mesh
+        static_background_top.multimesh = top_multimesh
+        static_background_top.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        add_child(static_background_top)
+
+    if not is_instance_valid(static_background_skirt):
+        static_background_skirt = MultiMeshInstance3D.new()
+        static_background_skirt.name = "StaticBackgroundSkirt"
+        var skirt_multimesh := MultiMesh.new()
+        skirt_multimesh.transform_format = MultiMesh.TRANSFORM_3D
+        skirt_multimesh.mesh = shared_skirt_mesh
+        static_background_skirt.multimesh = skirt_multimesh
+        static_background_skirt.material_override = _material_cached("static_outer_skirt", Color("#242936"))
+        static_background_skirt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        add_child(static_background_skirt)
+
+    var top_mm: MultiMesh = static_background_top.multimesh
+    var skirt_mm: MultiMesh = static_background_skirt.multimesh
+    top_mm.instance_count = cells.size()
+    skirt_mm.instance_count = cells.size()
+    for i in range(cells.size()):
+        var cell: Vector2i = cells[i]
+        var tile_transform := Transform3D(Basis.IDENTITY, Vector3(cell.x * GAP, 0.0, cell.y * ROW_GAP))
+        top_mm.set_instance_transform(i, tile_transform)
+        var skirt_transform := Transform3D(Basis.IDENTITY, Vector3(cell.x * GAP, -0.16, cell.y * ROW_GAP))
+        skirt_mm.set_instance_transform(i, skirt_transform)
+
+func _clear_static_background() -> void:
+    static_background_cells.clear()
+    if is_instance_valid(static_background_top):
+        static_background_top.queue_free()
+    if is_instance_valid(static_background_skirt):
+        static_background_skirt.queue_free()
+    static_background_top = null
+    static_background_skirt = null
+
 func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
     # O estado logico e recalculado, mas a geometria/labels existentes sao
     # preservados. Em movimento de camera, somente os tiles recem-criados
@@ -2740,6 +2845,23 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
             if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
                 if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
                     tile_state[side_cell] = "side_option"
+    # Se uma casa antes estática ganhou conteúdo ou entrou em animação,
+    # ela volta a ser um tile individual antes de receber sua aparência nova.
+    var static_to_check: Array[Vector2i] = []
+    if cells_to_update.is_empty() or stage_wave_active:
+        for raw_cell in static_background_cells.keys():
+            static_to_check.append(raw_cell)
+    else:
+        for cell in cells_to_update:
+            if static_background_cells.has(cell):
+                static_to_check.append(cell)
+    var static_layout_changed: bool = false
+    for cell in static_to_check:
+        if stage_wave_active or not _is_static_background_cell(cell, letters):
+            _create_board_tile(cell)
+            static_background_cells.erase(cell)
+            static_layout_changed = true
+
     var cells_to_render: Array[Vector2i] = []
     if cells_to_update.is_empty():
         for raw_cell in board.keys():
@@ -2920,6 +3042,21 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
             _draw_pickup_icon(p, pickup_text, skirt_color)
         else:
             _remove_tile_visual(p, "PickupIcon")
+    # Converte somente os blocos externos vazios em instâncias agrupadas.
+    # Os tiles com letras, itens ou animações permanecem individuais.
+    var static_candidates: Array[Vector2i] = []
+    if cells_to_update.is_empty():
+        for raw_cell in board.keys():
+            static_candidates.append(raw_cell)
+    else:
+        static_candidates = cells_to_render.duplicate()
+    for cell in static_candidates:
+        if board.has(cell) and _is_static_background_cell(cell, letters):
+            _remove_board_tile_for_static(cell)
+            static_background_cells[cell] = true
+            static_layout_changed = true
+    if static_layout_changed:
+        _update_static_background_multimesh()
     # A ordem serve apenas para esta atualizacao do tabuleiro.
     direction_transition_order.clear()
     if cells_to_update.is_empty():
@@ -3004,6 +3141,8 @@ func _process(delta: float) -> void:
         stage_wave_remaining = maxf(0.0, stage_wave_remaining - delta)
         if stage_wave_remaining <= 0.0:
             stage_wave_active = false
+            # Ao terminar a onda, o fundo que não mudou volta ao lote estático.
+            _refresh_board()
     if level_intro_remaining > 0.0:
         level_intro_remaining = maxf(0.0, level_intro_remaining - delta)
         var zoom_duration: float = LEVEL_INTRO_SECONDS - LEVEL_INTRO_HOLD_SECONDS
@@ -3515,6 +3654,7 @@ func _sync_visible_board(force: bool = false) -> void:
     visible_viewport_size = view_size
     var needed: Dictionary = {}
     var created_cells: Array[Vector2i] = []
+    var static_layout_changed: bool = false
     # A malha cobre toda a area projetada da camera, incluindo o efeito
     # da inclinacao da camera no eixo de profundidade.
     var aspect: float = view_size.x / maxf(1.0, view_size.y)
@@ -3528,34 +3668,20 @@ func _sync_visible_board(force: bool = false) -> void:
                 needed[cell] = true
     for p in board.keys():
         if not needed.has(p):
-            var removed_tile: MeshInstance3D = board[p]
-            for child in removed_tile.get_children():
-                if visual_nodes.has(child):
-                    visual_nodes.erase(child)
-            removed_tile.queue_free()
-            board.erase(p)
-            tile_target_heights.erase(p)
-            tile_visual_signatures.erase(p)
+            _remove_board_tile_for_static(p)
+    for raw_cell in static_background_cells.keys():
+        var cell: Vector2i = raw_cell
+        if not needed.has(cell):
+            static_background_cells.erase(cell)
+            static_layout_changed = true
     for p in needed.keys():
-        if board.has(p):
+        if board.has(p) or static_background_cells.has(p):
             continue
-        var tile := MeshInstance3D.new()
-        tile.mesh = shared_tile_mesh
-        tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-        tile.set_surface_override_material(0, _material_cached("tile_base", BASE))
-        tile.set_surface_override_material(1, _material_cached("tile_base_side", BASE.darkened(0.20)))
-        tile.position = Vector3(p.x * GAP, 0.0, p.y * ROW_GAP)
-        var skirt := MeshInstance3D.new()
-        skirt.name = "Skirt"
-        skirt.mesh = shared_skirt_mesh
-        skirt.position.y = -0.16
-        skirt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-        skirt.material_override = _material_cached("side_empty", SIDE_EMPTY)
-        tile.add_child(skirt)
-        add_child(tile)
-        board[p] = tile
+        _create_board_tile(p)
         created_cells.append(p)
     if not created_cells.is_empty():
         _refresh_board(created_cells)
         if stage_wave_active:
             _queue_stage_open_tiles(created_cells)
+    elif static_layout_changed:
+        _update_static_background_multimesh()
