@@ -2497,26 +2497,21 @@ func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
     return false
 
 func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
-    # Todos os blocos seguem a mesma onda, dentro e fora da nova area.
-    # O destino e azul dentro e preto fora. Blocos azuis vazios mantem a cor
-    # e recebem somente o movimento da onda, sem efeito de reset.
+    # A onda usa o estado FINAL ja calculado pelo _refresh_board. Assim,
+    # cada casa vai diretamente da aparencia anterior para seu destino real:
+    # palavras, origem, portal, recursos e blocos azuis sao respeitados.
     for cell in cells:
         if not board.has(cell):
             continue
         var tile: MeshInstance3D = board[cell]
-        var is_carried_word_cell: bool = not words.is_empty() and words[0].get("state", "") == "solved" and _cells(words[0]).has(cell)
-        # A ancora permanece dourada durante todo o inicio da etapa; o fade
-        # para lilas so e iniciado por _submit ao confirmar uma nova palavra.
-        var target_top: Color = CURRENT_WORD if is_carried_word_cell else (BASE if _inside_level(cell) else OUTER_TILE)
-        var target_skirt: Color = CURRENT_WORD_SIDE if is_carried_word_cell else (SIDE_EMPTY if _inside_level(cell) else Color("#242936"))
-        # Itens especiais mantem sua identidade cromatica durante a onda de abertura.
-        if pickups.has(cell) and not is_carried_word_cell:
-            if pickups[cell] in ["coin", "crown"]:
-                target_top = GOLD
-                target_skirt = Color("#a58b50")
-            else:
-                target_top = Color("#79bac8")
-                target_skirt = Color("#436d7c")
+        var target_top: Color = BASE
+        var target_skirt: Color = SIDE_EMPTY
+        var top_material: Material = tile.get_surface_override_material(0)
+        var skirt_material: Material = (tile.get_node("Skirt") as MeshInstance3D).material_override
+        if top_material is StandardMaterial3D:
+            target_top = (top_material as StandardMaterial3D).albedo_color
+        if skirt_material is StandardMaterial3D:
+            target_skirt = (skirt_material as StandardMaterial3D).albedo_color
         var target_height: float = float(tile_target_heights.get(cell, 0.0))
         var from_top: Color = target_top
         var from_skirt: Color = target_skirt
@@ -2526,14 +2521,6 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
             from_top = start_data.get("top", target_top)
             from_skirt = start_data.get("skirt", target_skirt)
             from_height = float(start_data.get("height", tile.position.y))
-        # A ancora nunca deve herdar lilas de uma animacao anterior:
-        # sua abertura comeca e termina dourada, mesmo se a captura ocorreu
-        # durante um fade visual de uma palavra que cruzava essas casas.
-        if is_carried_word_cell:
-            from_top = CURRENT_WORD
-            from_skirt = CURRENT_WORD_SIDE
-            target_top = CURRENT_WORD
-            target_skirt = CURRENT_WORD_SIDE
         var already_queued: bool = false
         for queued in stage_open_tiles:
             if queued["node"] == tile:
@@ -2541,6 +2528,13 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
                 break
         if already_queued:
             continue
+        # Restaura a aparencia anterior antes do primeiro frame da onda:
+        # evita que o refresh revele o destino inteiro de uma vez.
+        tile.set_surface_override_material(0, _material_cached("tile_open_start_" + from_top.to_html(), from_top))
+        tile.set_surface_override_material(1, _material_cached("tile_open_start_edge_" + from_top.to_html(), from_top.darkened(0.22)))
+        (tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_open_start_" + from_skirt.to_html(), from_skirt)
+        _set_pickup_icon_color(cell, from_skirt)
+        tile.position.y = from_height
         stage_open_tiles.append({
             "node": tile, "cell": cell,
             "from_top": from_top, "from_skirt": from_skirt, "from_height": from_height,
