@@ -2512,6 +2512,15 @@ func _advance_diary_stage() -> void:
     # A camera se afasta para mostrar a area jogavel e a faixa escura
     # adicional, que cresce em cada etapa, mantendo a ancora espacial.
     var expanded_size: float = _campaign_intro_camera_size(screen.x > screen.y)
+    # Durante a transicao, nenhum fundo antigo em lote pode continuar visivel.
+    # Zera as instancias imediatamente (antes de queue_free) e reconstrui o
+    # novo tabuleiro em tiles individuais para que a onda os revele.
+    static_background_cells.clear()
+    if is_instance_valid(static_background_top) and static_background_top.multimesh != null:
+        static_background_top.multimesh.instance_count = 0
+    if is_instance_valid(static_background_skirt) and static_background_skirt.multimesh != null:
+        static_background_skirt.multimesh.instance_count = 0
+    _update_static_background_multimesh()
     # Carrega a malha inteira enquanto a camera esta afastada; depois ela
     # volta ao zoom normal sem descartar os blocos que acabou de revelar.
     camera.size = expanded_size
