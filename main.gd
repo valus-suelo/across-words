@@ -412,6 +412,31 @@ func _material_cached(name: String, color: Color, glow: bool = false) -> Standar
     material_cache[name] = mat
     return mat
 
+func _make_tile_animation_materials(tile: MeshInstance3D, top_color: Color, skirt_color: Color) -> Dictionary:
+    # Materiais independentes evitam alterar outros blocos que compartilham
+    # o cache; cada animacao cria estas tres copias apenas uma vez.
+    var top_source: StandardMaterial3D = tile.get_surface_override_material(0) as StandardMaterial3D
+    var edge_source: StandardMaterial3D = tile.get_surface_override_material(1) as StandardMaterial3D
+    var skirt_source: StandardMaterial3D = (tile.get_node("Skirt") as MeshInstance3D).material_override as StandardMaterial3D
+    if top_source == null:
+        top_source = _material_cached("tile_top_" + top_color.to_html(), top_color)
+    if edge_source == null:
+        edge_source = _material_cached("tile_edge_" + top_color.to_html(), top_color.darkened(0.22))
+    if skirt_source == null:
+        skirt_source = _material_cached("skirt_" + skirt_color.to_html(), skirt_color)
+    var top_material: StandardMaterial3D = top_source.duplicate() as StandardMaterial3D
+    var edge_material: StandardMaterial3D = edge_source.duplicate() as StandardMaterial3D
+    var skirt_material: StandardMaterial3D = skirt_source.duplicate() as StandardMaterial3D
+    tile.set_surface_override_material(0, top_material)
+    tile.set_surface_override_material(1, edge_material)
+    (tile.get_node("Skirt") as MeshInstance3D).material_override = skirt_material
+    return {"top": top_material, "edge": edge_material, "skirt": skirt_material}
+
+func _apply_tile_animation_materials(materials: Dictionary, top_color: Color, skirt_color: Color) -> void:
+    (materials["top"] as StandardMaterial3D).albedo_color = top_color
+    (materials["edge"] as StandardMaterial3D).albedo_color = top_color.darkened(0.22)
+    (materials["skirt"] as StandardMaterial3D).albedo_color = skirt_color
+
 func _make_world() -> void:
     var environment := WorldEnvironment.new()
     var env := Environment.new()
@@ -3035,10 +3060,10 @@ func _process(delta: float) -> void:
                 var shown_top: Color = transition["from_color"].lerp(transition["to_color"], eased)
                 var shown_skirt: Color = transition["from_skirt"].lerp(transition["to_skirt"], eased)
                 var transition_tile: MeshInstance3D = board[cell]
-                transition_tile.set_surface_override_material(0, _material_cached("tile_top_" + shown_top.to_html(), shown_top))
-                transition_tile.set_surface_override_material(1, _material_cached("tile_edge_" + shown_top.to_html(), shown_top.darkened(0.22)))
-                var transition_skirt: MeshInstance3D = transition_tile.get_node("Skirt") as MeshInstance3D
-                transition_skirt.material_override = _material_cached("skirt_" + shown_skirt.to_html(), shown_skirt)
+                if not transition.has("materials"):
+                    transition["materials"] = _make_tile_animation_materials(transition_tile, shown_top, shown_skirt)
+                    direction_transition_cells[cell] = transition
+                _apply_tile_animation_materials(transition["materials"], shown_top, shown_skirt)
                 _set_pickup_icon_color(cell, shown_skirt)
                 var from_height: float = float(transition["from_height"])
                 var to_height: float = float(transition["to_height"])
@@ -3066,10 +3091,10 @@ func _process(delta: float) -> void:
             var shown_color: Color = _flash_display_color(flash_data)
             var shown_skirt_color: Color = _flash_display_skirt_color(flash_data)
             var tile: MeshInstance3D = board[cell]
-            tile.set_surface_override_material(0, _material_cached("tile_top_" + shown_color.to_html(), shown_color))
-            tile.set_surface_override_material(1, _material_cached("tile_edge_" + shown_color.to_html(), shown_color.darkened(0.22)))
-            var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
-            skirt.material_override = _material_cached("skirt_" + shown_skirt_color.to_html(), shown_skirt_color)
+            if not flash_data.has("materials"):
+                flash_data["materials"] = _make_tile_animation_materials(tile, shown_color, shown_skirt_color)
+                flash_cells[cell] = flash_data
+            _apply_tile_animation_materials(flash_data["materials"], shown_color, shown_skirt_color)
             _set_pickup_icon_color(cell, shown_skirt_color)
         if not done.is_empty():
             for cell in done:
@@ -3089,10 +3114,10 @@ func _process(delta: float) -> void:
             var fade_skirt_color: Color = fade_start_skirt.lerp(SIDE_SOLVED, eased)
             if board.has(cell):
                 var fade_tile: MeshInstance3D = board[cell]
-                fade_tile.set_surface_override_material(0, _material_cached("tile_top_" + fade_color.to_html(), fade_color))
-                fade_tile.set_surface_override_material(1, _material_cached("tile_edge_" + fade_color.to_html(), fade_color.darkened(0.22)))
-                var fade_skirt: MeshInstance3D = fade_tile.get_node("Skirt") as MeshInstance3D
-                fade_skirt.material_override = _material_cached("skirt_" + fade_skirt_color.to_html(), fade_skirt_color)
+                if not fade_data.has("materials"):
+                    fade_data["materials"] = _make_tile_animation_materials(fade_tile, fade_color, fade_skirt_color)
+                    word_fade_cells[cell] = fade_data
+                _apply_tile_animation_materials(fade_data["materials"], fade_color, fade_skirt_color)
                 _set_pickup_icon_color(cell, fade_skirt_color)
             if progress >= 1.0:
                 faded.append(cell)
