@@ -177,6 +177,7 @@ var direction_transition_cells: Dictionary = {}
 var direction_transition_order: Dictionary = {}
 var round_epoch: int = 0
 var last_expire_update: int = -1
+var last_hud_second: int = -1
 var map_vision_moves: int = 0
 var path_time: float = STORY_MAP_TIME
 var menu_overlay: ColorRect
@@ -1206,6 +1207,7 @@ func _new_game() -> void:
     hints_remaining = HINTS_PER_LEVEL
     regen = 0.0
     elapsed = 0.0
+    last_hud_second = -1
     wave_started_at = 0.0
     wave_origin = Vector2i.ZERO
     tile_target_heights.clear()
@@ -2998,7 +3000,12 @@ func _process(delta: float) -> void:
             path_time = maxf(0.0, path_time - delta)
             if path_time <= 0.0:
                 _show_result(false, "O tempo acabou!")
-        _update_hud()
+        # O relogio da HUD so exibe segundos inteiros; evitar reatribuir
+        # todos os textos e disparar layout em todos os frames.
+        var hud_second: int = int(elapsed) if level_mode else maxi(0, int(ceil(path_time)))
+        if hud_second != last_hud_second:
+            last_hud_second = hud_second
+            _update_hud()
     # A câmera segue suavemente o centro da palavra selecionada.
     var desired_camera: Vector3 = camera_target + Vector3(camera_pan_offset.x, 0.0, camera_pan_offset.y)
     var camera_follow_speed: float = 2.0 if game_over else 4.0
