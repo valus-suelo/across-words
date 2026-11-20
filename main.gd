@@ -2609,16 +2609,18 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
 
 func _is_static_background_cell(cell: Vector2i, letters: Dictionary) -> bool:
     # Somente o fundo externo realmente vazio pode sair do sistema de tiles individuais.
-    return level_mode \
-        and not _inside_level(cell) \
-        and tile_state.get(cell, "base") == "base" \
-        and not letters.has(cell) \
-        and not pickups.has(cell) \
-        and not flash_cells.has(cell) \
-        and not word_fade_cells.has(cell) \
-        and not direction_transition_cells.has(cell) \
-        and not stage_wave_active \
+    return (
+        level_mode
+        and not _inside_level(cell)
+        and tile_state.get(cell, "base") == "base"
+        and not letters.has(cell)
+        and not pickups.has(cell)
+        and not flash_cells.has(cell)
+        and not word_fade_cells.has(cell)
+        and not direction_transition_cells.has(cell)
+        and not stage_wave_active
         and cell != exit_cell
+    )
 
 func _create_board_tile(cell: Vector2i) -> MeshInstance3D:
     var tile := MeshInstance3D.new()
@@ -2848,7 +2850,7 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
     # Se uma casa antes estática ganhou conteúdo ou entrou em animação,
     # ela volta a ser um tile individual antes de receber sua aparência nova.
     var static_to_check: Array[Vector2i] = []
-    if cells_to_update.is_empty() or stage_wave_active:
+    if cells_to_update.is_empty():
         for raw_cell in static_background_cells.keys():
             static_to_check.append(raw_cell)
     else:
@@ -3675,7 +3677,14 @@ func _sync_visible_board(force: bool = false) -> void:
             static_background_cells.erase(cell)
             static_layout_changed = true
     for p in needed.keys():
-        if board.has(p) or static_background_cells.has(p):
+        if board.has(p):
+            continue
+        if static_background_cells.has(p):
+            if stage_wave_active:
+                static_background_cells.erase(p)
+                _create_board_tile(p)
+                created_cells.append(p)
+                static_layout_changed = true
             continue
         _create_board_tile(p)
         created_cells.append(p)
