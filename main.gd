@@ -254,9 +254,9 @@ func _inside_level(cell: Vector2i) -> bool:
 func _inside_level_halo(cell: Vector2i) -> bool:
     if not level_mode:
         return true
-    # A area escura gerada tem margem maior e crescente; regras jogaveis
-    # continuam exclusivamente em _inside_level().
-    var radius: int = _level_half_size() + LEVEL_HALO + (level_number - 1) * 25
+    # A area preta acompanha exatamente a expansao da area jogavel,
+    # mantendo o raio adicional definido pela margem preta.
+    var radius: int = _level_outer_half_size() + LEVEL_HALO
     var relative: Vector2i = cell - level_origin
     return absi(relative.x) <= radius and absi(relative.y) <= radius
 
