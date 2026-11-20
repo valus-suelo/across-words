@@ -3033,7 +3033,7 @@ func _process(delta: float) -> void:
     if not words.is_empty() and words[0]["state"] == "solved":
         for start_cell in _cells(words[0]):
             start_cell_lookup[start_cell] = true
-    for p in board.keys():
+    for p in board:
         var tile: MeshInstance3D = board[p]
         var kind: String = tile_state.get(p, "base")
         var goal: float = float(tile_target_heights.get(p, 0.0))
