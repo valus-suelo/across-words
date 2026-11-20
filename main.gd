@@ -2740,7 +2740,13 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
             if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
                 if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
                     tile_state[side_cell] = "side_option"
-    var cells_to_render: Array[Vector2i] = board.keys() if cells_to_update.is_empty() else cells_to_update
+    var cells_to_render: Array[Vector2i] = []
+    if cells_to_update.is_empty():
+        for raw_cell in board.keys():
+            var board_cell: Vector2i = raw_cell
+            cells_to_render.append(board_cell)
+    else:
+        cells_to_render = cells_to_update
     for p in cells_to_render:
         if not board.has(p):
             continue
