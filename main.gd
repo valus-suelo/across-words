@@ -2753,7 +2753,9 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
         # como origem logica. Outras palavras atuais tem prioridade se cruzarem
         # uma coordenada que ja pertencia ao desenho visual anterior.
         var is_carried_anchor: bool = not words.is_empty() and _cells(words[0]).has(kept_cell)
-        if is_carried_anchor or letters.has(kept_cell):
+        # O azul legado nao pode sobrescrever uma casa que ja recebeu
+        # estado no tabuleiro atual (ativa, selecionada, resolvida etc.).
+        if is_carried_anchor or letters.has(kept_cell) or tile_state.has(kept_cell):
             continue
         tile_state[kept_cell] = "stage_blue"
         solved_cells[kept_cell] = true
