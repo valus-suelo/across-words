@@ -3692,5 +3692,5 @@ func _sync_visible_board(force: bool = false) -> void:
         _refresh_board(created_cells)
         if stage_wave_active:
             _queue_stage_open_tiles(created_cells)
-    elif static_layout_changed:
+    if static_layout_changed:
         _update_static_background_multimesh()
