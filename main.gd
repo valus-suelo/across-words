@@ -2579,7 +2579,8 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
         tile.set_surface_override_material(0, top_mat)
         tile.set_surface_override_material(1, edge_mat)
         (tile.get_node("Skirt") as MeshInstance3D).material_override = skirt_mat
-        _set_pickup_icon_color(cell, from_skirt)
+        if pickups.has(cell):
+            _set_pickup_icon_color(cell, from_skirt)
         tile.position.y = from_height
         var wave_delay: float = minf(1.8, float(absi(cell.x - wave_origin.x) + absi(cell.y - wave_origin.y)) * 0.045)
         stage_open_tiles.append({
@@ -3043,7 +3044,8 @@ func _process(delta: float) -> void:
         (opening_data["top_material"] as StandardMaterial3D).albedo_color = opening_top
         (opening_data["edge_material"] as StandardMaterial3D).albedo_color = opening_top.darkened(0.22)
         (opening_data["skirt_material"] as StandardMaterial3D).albedo_color = opening_skirt
-        _set_pickup_icon_color(opening_cell, opening_skirt)
+        if pickups.has(opening_cell):
+            _set_pickup_icon_color(opening_cell, opening_skirt)
         var wave_bump: float = sin(opening_eased * PI) * 0.12
         opening_tile.position.y = lerpf(float(opening_data["from_height"]), float(opening_data["target_height"]), opening_eased) + wave_bump
         if opening_progress >= 1.0:
@@ -3064,7 +3066,8 @@ func _process(delta: float) -> void:
                     transition["materials"] = _make_tile_animation_materials(transition_tile, shown_top, shown_skirt)
                     direction_transition_cells[cell] = transition
                 _apply_tile_animation_materials(transition["materials"], shown_top, shown_skirt)
-                _set_pickup_icon_color(cell, shown_skirt)
+                if pickups.has(cell):
+                    _set_pickup_icon_color(cell, shown_skirt)
                 var from_height: float = float(transition["from_height"])
                 var to_height: float = float(transition["to_height"])
                 transition_tile.position.y = lerpf(from_height, to_height, eased)
@@ -3095,7 +3098,8 @@ func _process(delta: float) -> void:
                 flash_data["materials"] = _make_tile_animation_materials(tile, shown_color, shown_skirt_color)
                 flash_cells[cell] = flash_data
             _apply_tile_animation_materials(flash_data["materials"], shown_color, shown_skirt_color)
-            _set_pickup_icon_color(cell, shown_skirt_color)
+            if pickups.has(cell):
+                _set_pickup_icon_color(cell, shown_skirt_color)
         if not done.is_empty():
             for cell in done:
                 flash_cells.erase(cell)
@@ -3118,7 +3122,8 @@ func _process(delta: float) -> void:
                     fade_data["materials"] = _make_tile_animation_materials(fade_tile, fade_color, fade_skirt_color)
                     word_fade_cells[cell] = fade_data
                 _apply_tile_animation_materials(fade_data["materials"], fade_color, fade_skirt_color)
-                _set_pickup_icon_color(cell, fade_skirt_color)
+                if pickups.has(cell):
+                    _set_pickup_icon_color(cell, fade_skirt_color)
             if progress >= 1.0:
                 faded.append(cell)
         if not faded.is_empty():
