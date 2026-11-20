@@ -207,6 +207,8 @@ var visible_origin: Vector2i = Vector2i(999999, 999999)
 var visible_camera_position: Vector3 = Vector3(INF, INF, INF)
 var visible_camera_size: float = -1.0
 var visible_viewport_size: Vector2 = Vector2.ZERO
+var visible_radius_x: int = -1
+var visible_radius_y: int = -1
 var shared_tile_mesh: ArrayMesh
 var shared_skirt_mesh: ArrayMesh
 var game_font: FontVariation
@@ -220,8 +222,8 @@ var exit_cell := Vector2i(0, -24)
 const LEVEL_SAFE_RADIUS := 35
 const CAMPAIGN_LEVELS := 5
 const LEVEL_HALO := 100
-const LEVEL_INTRO_SECONDS := 4.8
-const LEVEL_INTRO_HOLD_SECONDS := 1.4
+const LEVEL_INTRO_SECONDS := 3.6
+const LEVEL_INTRO_HOLD_SECONDS := 1.0
 var level_intro_remaining: float = 0.0
 var level_intro_start_size: float = 18.0
 var stage_wave_active: bool = false
@@ -3449,7 +3451,10 @@ func _zoom_camera(zoom_in: bool) -> void:
 func _set_camera_zoom(factor: float) -> void:
     camera_zoom_factor = clampf(factor, 0.85, 1.15)
     _apply_camera_zoom()
-    _sync_visible_board(true)
+    # O zoom por gesto pode emitir muitos eventos por segundo. A sincronização
+    # decide pelo centro e pelos raios efetivamente necessários, sem forçar
+    # uma reconstrução completa a cada amostra do pinch.
+    _sync_visible_board()
 
 func _pinch_distance() -> float:
     var ids: Array = active_touches.keys()
@@ -3634,34 +3639,37 @@ func _focus_word(word: Dictionary) -> void:
     _focus_cell(midpoint)
 
 func _sync_visible_board(force: bool = false) -> void:
-    # A area necessaria depende tanto do centro quanto do zoom e da tela.
-    # Antes, o cache considerava apenas o centro: durante o zoom panoramico,
-    # a camera ampliava a vista mas a malha nao era regenerada.
+    # A area necessaria depende do centro, do zoom e da proporcao da tela.
+    # Eventos de zoom podem ser muito frequentes; primeiro verificamos se
+    # mudaram os limites inteiros da regiao, evitando reconstrucoes redundantes.
     var view_size: Vector2 = get_viewport().get_visible_rect().size
-    var zoom_changed: bool = absf(camera.size - visible_camera_size) >= 0.35
+    var zoom_changed: bool = absf(camera.size - visible_camera_size) >= 0.15
     var viewport_changed: bool = view_size != visible_viewport_size
-    # Evita projetar um raio e reconstruir a regiao necessaria em cada frame
-    # enquanto a camera se desloca menos que uma fracao de bloco.
     var camera_moved: bool = camera.position.distance_squared_to(visible_camera_position) >= 0.1225
     if not force and not camera_moved and not zoom_changed and not viewport_changed:
         return
     var center: Vector2i = _screen_to_cell(view_size * 0.5)
-    if not force and center == visible_origin and not zoom_changed and not viewport_changed:
+    var aspect: float = view_size.x / maxf(1.0, view_size.y)
+    var pitch_factor: float = maxf(0.85, sin(deg_to_rad(absf(camera.rotation_degrees.x))))
+    var radius_x: int = maxi(VISIBLE_RADIUS_X, ceili(camera.size * aspect / (2.0 * GAP)) + 4)
+    var radius_y: int = maxi(VISIBLE_RADIUS_Y, ceili(camera.size / (2.0 * ROW_GAP * pitch_factor)) + 5)
+    var radius_changed: bool = radius_x != visible_radius_x or radius_y != visible_radius_y
+    # O zoom pode mudar sem alterar a quantidade de blocos necessária.
+    # Nesse caso basta atualizar o cache; não há motivo para tocar nos nós
+    # nem reconstruir as instâncias do fundo.
+    if not force and center == visible_origin and not radius_changed and not viewport_changed:
         visible_camera_position = camera.position
+        visible_camera_size = camera.size
         return
     visible_origin = center
     visible_camera_position = camera.position
     visible_camera_size = camera.size
     visible_viewport_size = view_size
+    visible_radius_x = radius_x
+    visible_radius_y = radius_y
     var needed: Dictionary = {}
     var created_cells: Array[Vector2i] = []
     var static_layout_changed: bool = false
-    # A malha cobre toda a area projetada da camera, incluindo o efeito
-    # da inclinacao da camera no eixo de profundidade.
-    var aspect: float = view_size.x / maxf(1.0, view_size.y)
-    var pitch_factor: float = maxf(0.85, sin(deg_to_rad(absf(camera.rotation_degrees.x))))
-    var radius_x: int = maxi(VISIBLE_RADIUS_X, ceili(camera.size * aspect / (2.0 * GAP)) + 4)
-    var radius_y: int = maxi(VISIBLE_RADIUS_Y, ceili(camera.size / (2.0 * ROW_GAP * pitch_factor)) + 5)
     for y in range(center.y - radius_y, center.y + radius_y + 1):
         for x in range(center.x - radius_x, center.x + radius_x + 1):
             var cell: Vector2i = Vector2i(x, y)
