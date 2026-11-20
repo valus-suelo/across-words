@@ -2915,7 +2915,8 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
             _remove_tile_visual(p, "PickupIcon")
     # A ordem serve apenas para esta atualizacao do tabuleiro.
     direction_transition_order.clear()
-    _update_hud()
+    if cells_to_update.is_empty():
+        _update_hud()
 
 func _update_hud() -> void:
     var seconds: int = maxi(0, int(ceil(path_time)))
