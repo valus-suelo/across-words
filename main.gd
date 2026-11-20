@@ -2513,8 +2513,10 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
         if skirt_material is StandardMaterial3D:
             target_skirt = (skirt_material as StandardMaterial3D).albedo_color
         var target_height: float = float(tile_target_heights.get(cell, 0.0))
-        var from_top: Color = target_top
-        var from_skirt: Color = target_skirt
+        # Casas que surgem apenas porque a camera abriu o mapa comecam
+        # na cor escura de fundo; a onda revela o estado final calculado.
+        var from_top: Color = OUTER_TILE
+        var from_skirt: Color = Color("#242936")
         var from_height: float = tile.position.y
         if stage_wave_start_colors.has(cell):
             var start_data: Dictionary = stage_wave_start_colors[cell]
