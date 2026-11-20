@@ -2531,6 +2531,10 @@ func _advance_diary_stage() -> void:
     camera_tween.tween_interval(1.15)
     camera_tween.tween_property(camera, "size", normal_size, 2.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
     _layout_hud()
+    # Recalcula e redesenha TODOS os tiles existentes com o estado do novo
+    # estagio (stage_blue/base/ancora), removendo letras e cores herdadas.
+    # O sync da camera atualiza apenas tiles novos, por isso nao basta sozinho.
+    _refresh_board()
     var cells_to_reveal: Array[Vector2i] = []
     for cell in board.keys():
         cells_to_reveal.append(cell)
