@@ -2422,8 +2422,8 @@ func _advance_diary_stage() -> void:
         if existing_skirt_material is StandardMaterial3D:
             existing_skirt = (existing_skirt_material as StandardMaterial3D).albedo_color
         stage_wave_start_colors[existing_cell] = {"top": existing_top, "skirt": existing_skirt, "height": existing_tile.position.y}
-    # A palavra-ancora permanece nas mesmas coordenadas; as palavras anteriores
-    # ficam azuis e o novo limite cresce ao redor dela.
+    # A palavra-ancora permanece nas mesmas coordenadas; o novo limite
+    # cresce ao redor dela, sem conservar as outras palavras antigas.
     level_origin = carried_anchor
     # A ancora continua sendo a palavra atual ate a primeira nova confirmacao.
     stage_anchor_idle = false
