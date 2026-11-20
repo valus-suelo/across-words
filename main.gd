@@ -244,6 +244,18 @@ func _campaign_camera_base_size(wide: bool) -> float:
     # sem reduzir visualmente a area jogavel a cada nivel.
     return 17.0 if wide else 20.0
 
+func _campaign_intro_camera_size(wide: bool) -> float:
+    # Ajusta o enquadramento para caber a area jogavel e sua borda escura
+    # completa (nao o halo tecnico usado para gerar tiles fora da tela).
+    var radius: float = float(_level_outer_half_size())
+    var diameter: float = radius * 2.0 + 1.0
+    var board_width: float = diameter * GAP
+    var board_depth_projected: float = diameter * ROW_GAP * sin(deg_to_rad(69.0))
+    var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+    var aspect: float = viewport_size.x / maxf(1.0, viewport_size.y)
+    var fit_size: float = maxf(board_depth_projected, board_width / maxf(0.5, aspect)) * 1.28
+    return maxf(_campaign_camera_base_size(wide), fit_size)
+
 func _inside_level(cell: Vector2i) -> bool:
     if not level_mode:
         return true
@@ -1226,9 +1238,13 @@ func _new_game() -> void:
     _focus_word(words[0])
     if level_mode:
         level_intro_remaining = LEVEL_INTRO_SECONDS
-        level_intro_start_size = maxf(_campaign_camera_base_size(get_viewport().get_visible_rect().size.x > get_viewport().get_visible_rect().size.y), float(_level_outer_half_size() * 2 + 4) * ROW_GAP * 1.65)
+        var wide_intro: bool = get_viewport().get_visible_rect().size.x > get_viewport().get_visible_rect().size.y
+        level_intro_start_size = _campaign_intro_camera_size(wide_intro)
         camera.size = level_intro_start_size
         camera.position = Vector3(0.0, 25.0, 0.0)
+        # Forca a criacao de tiles apos o zoom inicial: o cache anterior
+        # podia manter apenas a area do zoom normal e deixar o mapa incompleto.
+        _sync_visible_board(true)
     _refresh_board()
     _message("A palavra %s ja esta pronta. Toque em uma letra e escolha o lado pelos blocos vizinhos!" % first_answer)
 
@@ -2436,11 +2452,7 @@ func _advance_diary_stage() -> void:
     camera.size = normal_size
     # A camera se afasta para mostrar a area jogavel e a faixa escura
     # adicional, que cresce em cada etapa, mantendo a ancora espacial.
-    var radius: float = float(_level_outer_half_size())
-    var board_width: float = (radius * 2.0 + 1.0) * GAP
-    var board_depth_projected: float = (radius * 2.0 + 1.0) * ROW_GAP * sin(deg_to_rad(69.0))
-    var aspect: float = screen.x / maxf(1.0, screen.y)
-    var expanded_size: float = maxf(normal_size, maxf(board_depth_projected, board_width / maxf(0.5, aspect)) * 1.24)
+    var expanded_size: float = _campaign_intro_camera_size(screen.x > screen.y)
     # Carrega a malha inteira enquanto a camera esta afastada; depois ela
     # volta ao zoom normal sem descartar os blocos que acabou de revelar.
     camera.size = expanded_size
@@ -2723,7 +2735,9 @@ func _refresh_board() -> void:
                 top_color = Color("#999988")
                 skirt_color = SIDE_PREVIEW
                 target_height = 0.055
-        if pickups.has(p) and kind == "base":
+        if pickups.has(p) and kind in ["base", "stage_blue"]:
+            # Recursos colocados sobre antigos blocos azuis conservam sua
+            # identidade visual; o estado stage_blue nao pode esconder o item.
             top_color = GOLD if pickups[p] in ["coin", "crown"] else Color("#79bac8")
             skirt_color = Color("#a58b50") if pickups[p] in ["coin", "crown"] else Color("#436d7c")
             target_height = 0.025
