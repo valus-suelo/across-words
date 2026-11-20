@@ -2545,17 +2545,24 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
                 break
         if already_queued:
             continue
-        # Restaura a aparencia anterior antes do primeiro frame da onda:
-        # evita que o refresh revele o destino inteiro de uma vez.
-        tile.set_surface_override_material(0, _material_cached("tile_open_start_" + from_top.to_html(), from_top))
-        tile.set_surface_override_material(1, _material_cached("tile_open_start_edge_" + from_top.to_html(), from_top.darkened(0.22)))
-        (tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_open_start_" + from_skirt.to_html(), from_skirt)
+        # Cada bloco recebe materiais proprios UMA vez. Durante a onda,
+        # somente albedo_color e alterado; nao criamos milhares de materiais
+        # novos por segundo para cada cor intermediaria.
+        var top_mat: StandardMaterial3D = (_material_cached("tile_open_start_" + from_top.to_html(), from_top).duplicate() as StandardMaterial3D)
+        var edge_mat: StandardMaterial3D = (_material_cached("tile_open_start_edge_" + from_top.to_html(), from_top.darkened(0.22)).duplicate() as StandardMaterial3D)
+        var skirt_mat: StandardMaterial3D = (_material_cached("skirt_open_start_" + from_skirt.to_html(), from_skirt).duplicate() as StandardMaterial3D)
+        tile.set_surface_override_material(0, top_mat)
+        tile.set_surface_override_material(1, edge_mat)
+        (tile.get_node("Skirt") as MeshInstance3D).material_override = skirt_mat
         _set_pickup_icon_color(cell, from_skirt)
         tile.position.y = from_height
+        var wave_delay: float = minf(1.8, float(absi(cell.x - wave_origin.x) + absi(cell.y - wave_origin.y)) * 0.045)
         stage_open_tiles.append({
             "node": tile, "cell": cell,
             "from_top": from_top, "from_skirt": from_skirt, "from_height": from_height,
-            "target_top": target_top, "target_skirt": target_skirt, "target_height": target_height
+            "target_top": target_top, "target_skirt": target_skirt, "target_height": target_height,
+            "start_at": wave_started_at + wave_delay,
+            "top_material": top_mat, "edge_material": edge_mat, "skirt_material": skirt_mat
         })
 
 
@@ -2999,15 +3006,13 @@ func _process(delta: float) -> void:
             stage_open_tiles.remove_at(i)
             continue
         var opening_cell: Vector2i = opening_data["cell"]
-        var opening_distance: int = absi(opening_cell.x - wave_origin.x) + absi(opening_cell.y - wave_origin.y)
-        var opening_delay: float = minf(1.8, float(opening_distance) * 0.045)
-        var opening_progress: float = clampf((elapsed - wave_started_at - opening_delay) / 1.05, 0.0, 1.0)
+        var opening_progress: float = clampf((elapsed - float(opening_data["start_at"])) / 1.05, 0.0, 1.0)
         var opening_eased: float = opening_progress * opening_progress * (3.0 - 2.0 * opening_progress)
         var opening_top: Color = opening_data["from_top"].lerp(opening_data["target_top"], opening_eased)
         var opening_skirt: Color = opening_data["from_skirt"].lerp(opening_data["target_skirt"], opening_eased)
-        opening_tile.set_surface_override_material(0, _material_cached("tile_open_" + opening_top.to_html(), opening_top))
-        opening_tile.set_surface_override_material(1, _material_cached("tile_open_edge_" + opening_top.to_html(), opening_top.darkened(0.22)))
-        (opening_tile.get_node("Skirt") as MeshInstance3D).material_override = _material_cached("skirt_open_" + opening_skirt.to_html(), opening_skirt)
+        (opening_data["top_material"] as StandardMaterial3D).albedo_color = opening_top
+        (opening_data["edge_material"] as StandardMaterial3D).albedo_color = opening_top.darkened(0.22)
+        (opening_data["skirt_material"] as StandardMaterial3D).albedo_color = opening_skirt
         _set_pickup_icon_color(opening_cell, opening_skirt)
         var wave_bump: float = sin(opening_eased * PI) * 0.12
         opening_tile.position.y = lerpf(float(opening_data["from_height"]), float(opening_data["target_height"]), opening_eased) + wave_bump
