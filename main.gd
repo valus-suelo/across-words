@@ -2550,6 +2550,10 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
     # A onda usa o estado FINAL ja calculado pelo _refresh_board. Assim,
     # cada casa vai diretamente da aparencia anterior para seu destino real:
     # palavras, origem, portal, recursos e blocos azuis sao respeitados.
+    # O indice evita procurar cada casa em toda a lista (custo quadratico).
+    var queued_cells: Dictionary = {}
+    for queued in stage_open_tiles:
+        queued_cells[queued["cell"]] = true
     for cell in cells:
         if not board.has(cell):
             continue
@@ -2573,12 +2577,7 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
             from_top = start_data.get("top", target_top)
             from_skirt = start_data.get("skirt", target_skirt)
             from_height = float(start_data.get("height", tile.position.y))
-        var already_queued: bool = false
-        for queued in stage_open_tiles:
-            if queued["node"] == tile:
-                already_queued = true
-                break
-        if already_queued:
+        if queued_cells.has(cell):
             continue
         # Cada bloco recebe materiais proprios UMA vez. Durante a onda,
         # somente albedo_color e alterado; nao criamos milhares de materiais
@@ -2600,6 +2599,7 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
             "start_at": wave_started_at + wave_delay,
             "top_material": top_mat, "edge_material": edge_mat, "skirt_material": skirt_mat
         })
+        queued_cells[cell] = true
 
 
 func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
