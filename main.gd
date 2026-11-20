@@ -2979,23 +2979,28 @@ func _process(delta: float) -> void:
     camera.position = camera.position.lerp(desired_camera, minf(1.0, delta * camera_follow_speed))
     _sync_visible_board()
     # Altura de cada bloco e persistente: nenhuma animacao e sobrescrita por outra.
-    var start_cells: Array[Vector2i] = []
+    var start_cell_lookup: Dictionary = {}
     if not words.is_empty() and words[0]["state"] == "solved":
-        start_cells = _cells(words[0])
+        for start_cell in _cells(words[0]):
+            start_cell_lookup[start_cell] = true
     for p in board.keys():
         var tile: MeshInstance3D = board[p]
         var kind: String = tile_state.get(p, "base")
         var goal: float = float(tile_target_heights.get(p, 0.0))
-        var cell_distance: int = absi(p.x - wave_origin.x) + absi(p.y - wave_origin.y)
-        var wave_age: float = elapsed - wave_started_at - minf(0.55, float(cell_distance) * 0.055)
-        # Efeito sequencial: a onda parte da letra escolhida e alcanca os demais blocos.
-        if wave_age < 0.0:
-            continue
-        if wave_age < 0.36 and kind in ["selected", "draft", "preview", "side_option", "branch_source", "anchor_focus", "focus"]:
-            goal += sin(wave_age / 0.36 * PI) * 0.035
-        if start_cells.has(p) or (level_mode and p == exit_cell):
+        var is_highlighted: bool = kind in ["selected", "draft", "preview", "side_option", "branch_source", "anchor_focus", "focus"]
+        if is_highlighted:
+            var cell_distance: int = absi(p.x - wave_origin.x) + absi(p.y - wave_origin.y)
+            var wave_age: float = elapsed - wave_started_at - minf(0.55, float(cell_distance) * 0.055)
+            # Efeito sequencial: a onda parte da letra escolhida e alcanca os demais blocos.
+            if wave_age >= 0.0 and wave_age < 0.36:
+                goal += sin(wave_age / 0.36 * PI) * 0.035
+        var is_pulsing: bool = start_cell_lookup.has(p) or (level_mode and p == exit_cell)
+        if is_pulsing:
             goal += sin(elapsed * 2.0 + float(p.x) * 0.22 + float(p.y) * 0.19) * 0.008
-        tile.position.y = move_toward(tile.position.y, goal, delta * 3.6)
+        # Blocos estaticos nao precisam receber uma escrita de transformacao
+        # em todos os frames.
+        if is_pulsing or absf(tile.position.y - goal) > 0.0005:
+            tile.position.y = move_toward(tile.position.y, goal, delta * 3.6)
     # A onda transita diretamente da cor exibida para o destino final.
     # Nao ha fechamento previo, sumico de letras ou fade de icones.
     # Blocos que ja estao azuis apenas acompanham o movimento da onda.
