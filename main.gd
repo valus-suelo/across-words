@@ -199,6 +199,8 @@ var mode_button: Button
 var typed_buffer: String = ""
 var camera_target: Vector3 = Vector3(0, 25, CAMERA_BACK_OFFSET)
 var visible_origin: Vector2i = Vector2i(999999, 999999)
+var visible_camera_size: float = -1.0
+var visible_viewport_size: Vector2 = Vector2.ZERO
 var shared_tile_mesh: ArrayMesh
 var shared_skirt_mesh: ArrayMesh
 var game_font: FontVariation
@@ -3388,19 +3390,26 @@ func _focus_word(word: Dictionary) -> void:
     _focus_cell(midpoint)
 
 func _sync_visible_board(force: bool = false) -> void:
-    # O centro visivel e a intersecao do raio da camera com o tabuleiro.
-    # camera.position.z nao e mais o centro com a camera inclinada.
-    var center: Vector2i = _screen_to_cell(get_viewport().get_visible_rect().size * 0.5)
-    if not force and center == visible_origin:
+    # A area necessaria depende tanto do centro quanto do zoom e da tela.
+    # Antes, o cache considerava apenas o centro: durante o zoom panoramico,
+    # a camera ampliava a vista mas a malha nao era regenerada.
+    var view_size: Vector2 = get_viewport().get_visible_rect().size
+    var center: Vector2i = _screen_to_cell(view_size * 0.5)
+    var zoom_changed: bool = absf(camera.size - visible_camera_size) >= 0.35
+    var viewport_changed: bool = view_size != visible_viewport_size
+    if not force and center == visible_origin and not zoom_changed and not viewport_changed:
         return
     visible_origin = center
+    visible_camera_size = camera.size
+    visible_viewport_size = view_size
     var needed: Dictionary = {}
     var created_cells: Array[Vector2i] = []
-    # A malha cobre toda a largura projetada da camera, mesmo em ultrawide.
-    var view_size: Vector2 = get_viewport().get_visible_rect().size
+    # A malha cobre toda a area projetada da camera, incluindo o efeito
+    # da inclinacao da camera no eixo de profundidade.
     var aspect: float = view_size.x / maxf(1.0, view_size.y)
+    var pitch_factor: float = maxf(0.85, sin(deg_to_rad(absf(camera.rotation_degrees.x))))
     var radius_x: int = maxi(VISIBLE_RADIUS_X, ceili(camera.size * aspect / (2.0 * GAP)) + 4)
-    var radius_y: int = maxi(VISIBLE_RADIUS_Y, ceili(camera.size / (2.0 * ROW_GAP)) + 4)
+    var radius_y: int = maxi(VISIBLE_RADIUS_Y, ceili(camera.size / (2.0 * ROW_GAP * pitch_factor)) + 5)
     for y in range(center.y - radius_y, center.y + radius_y + 1):
         for x in range(center.x - radius_x, center.x + radius_x + 1):
             var cell: Vector2i = Vector2i(x, y)
