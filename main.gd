@@ -168,6 +168,7 @@ var wave_origin: Vector2i = Vector2i.ZERO
 var wave_sequence: int = 0
 var wave_started_at: float = 0.0
 var tile_target_heights: Dictionary = {}
+var tile_visual_signatures: Dictionary = {}
 var tile_pedestals: Dictionary = {}
 var flash_cells: Dictionary = {}
 var flash_started_at: float = 0.0
@@ -1211,6 +1212,7 @@ func _new_game() -> void:
     wave_started_at = 0.0
     wave_origin = Vector2i.ZERO
     tile_target_heights.clear()
+    tile_visual_signatures.clear()
     flash_cells.clear()
     word_fade_cells.clear()
     direction_fade_cells.clear()
@@ -2836,44 +2838,43 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
             top_color = pending_fade.get("start_color", CURRENT_WORD)
             skirt_color = pending_fade.get("start_skirt_color", CURRENT_WORD_SIDE)
             target_height = 0.015
-        # Captura a cor que esta realmente na tela antes de redesenhar.
-        # Assim o bloco aceso vai direto ao oliva, sem piscar azul no meio.
-        var previous_top: Color = BASE
-        var previous_skirt: Color = SIDE_EMPTY
-        var previous_material: Material = tile.get_surface_override_material(0)
-        if previous_material is StandardMaterial3D:
-            previous_top = (previous_material as StandardMaterial3D).albedo_color
-        var previous_skirt_material: Material = (tile.get_node("Skirt") as MeshInstance3D).material_override
-        if previous_skirt_material is StandardMaterial3D:
-            previous_skirt = (previous_skirt_material as StandardMaterial3D).albedo_color
         var previous_kind: String = String(previous_tile_state.get(p, ""))
-        var transition_delay: float = 0.0
-        # A trilha antiga apaga rapidamente, do ultimo bloco para tras.
-        if direction_transition_order.has(p) and kind == "base":
-            transition_delay = float(direction_transition_order[p]) * 0.035
-        if direction_transition_order.has(p) and kind == "base":
-            direction_transition_cells[p] = {
-                "start_at": elapsed + transition_delay, "duration": 0.20,
-                "from_color": previous_top, "to_color": top_color,
-                "from_skirt": previous_skirt, "to_skirt": skirt_color,
-                "from_height": tile.position.y, "to_height": 0.0
-            }
-        elif kind == "side_option" and previous_kind != "side_option":
-            # A nova opcao lateral acende simultaneamente, partindo da cor
-            # anterior real da casa e subindo em um unico movimento.
-            direction_transition_cells[p] = {
-                "start_at": elapsed, "duration": 0.20,
-                "from_color": previous_top, "to_color": Color("#999988"),
-                "from_skirt": previous_skirt, "to_skirt": SIDE_PREVIEW,
-                "from_height": tile.position.y, "to_height": 0.055
-            }
-        elif previous_kind == "side_option" and kind == "base":
-            direction_transition_cells[p] = {
-                "start_at": elapsed, "duration": 0.20,
-                "from_color": previous_top, "to_color": top_color,
-                "from_skirt": previous_skirt, "to_skirt": skirt_color,
-                "from_height": tile.position.y, "to_height": 0.0
-            }
+        var needs_transition: bool = (direction_transition_order.has(p) and kind == "base") or (kind == "side_option" and previous_kind != "side_option") or (previous_kind == "side_option" and kind == "base")
+        if needs_transition:
+            # Le apenas a aparencia anterior dos poucos blocos que realmente
+            # precisam de transicao; o restante nao consulta materiais/filhos.
+            var previous_top: Color = BASE
+            var previous_skirt: Color = SIDE_EMPTY
+            var previous_material: Material = tile.get_surface_override_material(0)
+            if previous_material is StandardMaterial3D:
+                previous_top = (previous_material as StandardMaterial3D).albedo_color
+            var previous_skirt_material: Material = (tile.get_node("Skirt") as MeshInstance3D).material_override
+            if previous_skirt_material is StandardMaterial3D:
+                previous_skirt = (previous_skirt_material as StandardMaterial3D).albedo_color
+            if direction_transition_order.has(p) and kind == "base":
+                var transition_delay: float = float(direction_transition_order[p]) * 0.035
+                direction_transition_cells[p] = {
+                    "start_at": elapsed + transition_delay, "duration": 0.20,
+                    "from_color": previous_top, "to_color": top_color,
+                    "from_skirt": previous_skirt, "to_skirt": skirt_color,
+                    "from_height": tile.position.y, "to_height": 0.0
+                }
+            elif kind == "side_option" and previous_kind != "side_option":
+                # A nova opcao lateral acende simultaneamente, partindo da cor
+                # anterior real da casa e subindo em um unico movimento.
+                direction_transition_cells[p] = {
+                    "start_at": elapsed, "duration": 0.20,
+                    "from_color": previous_top, "to_color": Color("#999988"),
+                    "from_skirt": previous_skirt, "to_skirt": SIDE_PREVIEW,
+                    "from_height": tile.position.y, "to_height": 0.055
+                }
+            elif previous_kind == "side_option" and kind == "base":
+                direction_transition_cells[p] = {
+                    "start_at": elapsed, "duration": 0.20,
+                    "from_color": previous_top, "to_color": top_color,
+                    "from_skirt": previous_skirt, "to_skirt": skirt_color,
+                    "from_height": tile.position.y, "to_height": 0.0
+                }
         if direction_transition_cells.has(p):
             var transition: Dictionary = direction_transition_cells[p]
             var transition_progress: float = clampf((elapsed - float(transition["start_at"])) / float(transition["duration"]), 0.0, 1.0)
@@ -2883,19 +2884,28 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
             top_color = transition["from_color"].lerp(transition["to_color"], transition_eased)
             skirt_color = transition["from_skirt"].lerp(transition["to_skirt"], transition_eased)
             target_height = float(transition["to_height"])
+        var letter_text: String = String(letters[p]) if letters.has(p) and kind != "stage_blue" else ""
+        var pickup_text: String = String(pickups[p]) if pickups.has(p) and not (level_mode and p == exit_cell) else ""
+        var signature: Dictionary = {
+            "kind": kind, "top": top_color, "skirt": skirt_color,
+            "height": target_height, "letter": letter_text, "pickup": pickup_text
+        }
+        tile_target_heights[p] = target_height
+        if tile_visual_signatures.get(p, {}) == signature:
+            continue
+        tile_visual_signatures[p] = signature
         var mat_name: String = top_color.to_html()
         tile.set_surface_override_material(0, _material_cached("tile_top_" + mat_name, top_color))
         tile.set_surface_override_material(1, _material_cached("tile_edge_" + mat_name, top_color.darkened(0.22)))
         var skirt: MeshInstance3D = tile.get_node("Skirt") as MeshInstance3D
         skirt.material_override = _material_cached("skirt_" + skirt_color.to_html(), skirt_color)
-        tile_target_heights[p] = target_height
-        if letters.has(p) and kind != "stage_blue":
+        if not letter_text.is_empty():
             var letter_color: Color = Color("#34313a") if kind == "draft" else TILE_LETTER
-            _draw_text(p, String(letters[p]), letter_color, 0.64)
+            _draw_text(p, letter_text, letter_color, 0.64)
         else:
             _remove_tile_visual(p, "TileLabel")
-        if pickups.has(p) and not (level_mode and p == exit_cell):
-            _draw_pickup_icon(p, String(pickups[p]), skirt_color)
+        if not pickup_text.is_empty():
+            _draw_pickup_icon(p, pickup_text, skirt_color)
         else:
             _remove_tile_visual(p, "PickupIcon")
     # A ordem serve apenas para esta atualizacao do tabuleiro.
@@ -3486,6 +3496,7 @@ func _sync_visible_board(force: bool = false) -> void:
             removed_tile.queue_free()
             board.erase(p)
             tile_target_heights.erase(p)
+            tile_visual_signatures.erase(p)
     for p in needed.keys():
         if board.has(p):
             continue
