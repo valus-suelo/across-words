@@ -201,6 +201,7 @@ var mode_button: Button
 var typed_buffer: String = ""
 var camera_target: Vector3 = Vector3(0, 25, CAMERA_BACK_OFFSET)
 var visible_origin: Vector2i = Vector2i(999999, 999999)
+var visible_camera_position: Vector3 = Vector3(INF, INF, INF)
 var visible_camera_size: float = -1.0
 var visible_viewport_size: Vector2 = Vector2.ZERO
 var shared_tile_mesh: ArrayMesh
@@ -3472,12 +3473,19 @@ func _sync_visible_board(force: bool = false) -> void:
     # Antes, o cache considerava apenas o centro: durante o zoom panoramico,
     # a camera ampliava a vista mas a malha nao era regenerada.
     var view_size: Vector2 = get_viewport().get_visible_rect().size
-    var center: Vector2i = _screen_to_cell(view_size * 0.5)
     var zoom_changed: bool = absf(camera.size - visible_camera_size) >= 0.35
     var viewport_changed: bool = view_size != visible_viewport_size
+    # Evita projetar um raio e reconstruir a regiao necessaria em cada frame
+    # enquanto a camera se desloca menos que uma fracao de bloco.
+    var camera_moved: bool = camera.position.distance_squared_to(visible_camera_position) >= 0.1225
+    if not force and not camera_moved and not zoom_changed and not viewport_changed:
+        return
+    var center: Vector2i = _screen_to_cell(view_size * 0.5)
     if not force and center == visible_origin and not zoom_changed and not viewport_changed:
+        visible_camera_position = camera.position
         return
     visible_origin = center
+    visible_camera_position = camera.position
     visible_camera_size = camera.size
     visible_viewport_size = view_size
     var needed: Dictionary = {}
