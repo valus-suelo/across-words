@@ -212,7 +212,8 @@ var exit_cell := Vector2i(0, -24)
 const LEVEL_SAFE_RADIUS := 35
 const CAMPAIGN_LEVELS := 5
 const LEVEL_HALO := 100
-const LEVEL_INTRO_SECONDS := 3.4
+const LEVEL_INTRO_SECONDS := 4.8
+const LEVEL_INTRO_HOLD_SECONDS := 1.4
 var level_intro_remaining: float = 0.0
 var level_intro_start_size: float = 18.0
 var stage_wave_active: bool = false
@@ -2930,7 +2931,10 @@ func _process(delta: float) -> void:
             stage_wave_active = false
     if level_intro_remaining > 0.0:
         level_intro_remaining = maxf(0.0, level_intro_remaining - delta)
-        var progress: float = 1.0 - level_intro_remaining / LEVEL_INTRO_SECONDS
+        var zoom_duration: float = LEVEL_INTRO_SECONDS - LEVEL_INTRO_HOLD_SECONDS
+        var progress: float = 0.0
+        if level_intro_remaining <= zoom_duration:
+            progress = 1.0 - level_intro_remaining / zoom_duration
         var eased: float = progress * progress * (3.0 - 2.0 * progress)
         var wide_intro: bool = get_viewport().get_visible_rect().size.x > get_viewport().get_visible_rect().size.y
         camera.size = lerpf(level_intro_start_size, _campaign_camera_base_size(wide_intro) * camera_zoom_factor, eased)
