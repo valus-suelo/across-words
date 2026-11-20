@@ -2166,7 +2166,16 @@ func _update_enemy_visual() -> void:
         enemy_node.position = Vector3(enemy_cell.x * GAP, 0.72, enemy_cell.y * ROW_GAP)
 
 func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_size: int = 78) -> void:
-    var label := Label3D.new()
+    if not board.has(p):
+        return
+    var tile: MeshInstance3D = board[p]
+    var label: Label3D = tile.get_node_or_null("TileLabel") as Label3D
+    if label == null:
+        label = Label3D.new()
+        label.name = "TileLabel"
+        tile.add_child(label)
+        visual_nodes.append(label)
+    # Reutiliza o mesmo Label3D; atualizar a letra nao cria/destrói nos.
     label.text = caption
     label.font = game_font
     label.font_size = font_size
@@ -2175,15 +2184,17 @@ func _draw_text(p: Vector2i, caption: String, color: Color, height: float, font_
     label.outline_size = 0
     label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     label.no_depth_test = true
-    # Letra e um filho do proprio bloco: acompanha a elevacao 3D.
-    if board.has(p):
-        var tile: MeshInstance3D = board[p]
-        tile.add_child(label)
-        label.position = Vector3(0.0, 0.16, 0.0)
-    else:
-        label.position = Vector3(p.x * GAP, height, p.y * ROW_GAP)
-        add_child(label)
-    visual_nodes.append(label)
+    label.position = Vector3(0.0, 0.16, 0.0)
+
+func _remove_tile_visual(p: Vector2i, node_name: String) -> void:
+    if not board.has(p):
+        return
+    var tile: MeshInstance3D = board[p]
+    var node: Node = tile.get_node_or_null(node_name)
+    if node == null:
+        return
+    visual_nodes.erase(node)
+    node.queue_free()
 
 func _set_pickup_icon_color(cell: Vector2i, icon_color: Color) -> void:
     if not board.has(cell):
@@ -2205,20 +2216,24 @@ func _draw_pickup_icon(p: Vector2i, kind: String, icon_color: Color) -> void:
     }
     if not icon_paths.has(kind) or not board.has(p):
         return
-    var sprite := Sprite3D.new()
-    sprite.texture = load(String(icon_paths[kind])) as Texture2D
-    if sprite.texture == null:
+    var sprite: Sprite3D = board[p].get_node_or_null("PickupIcon") as Sprite3D
+    if sprite == null:
+        sprite = Sprite3D.new()
+        sprite.name = "PickupIcon"
+        sprite.pixel_size = 0.0035
+        sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+        sprite.no_depth_test = true
+        sprite.shaded = false
+        board[p].add_child(sprite)
+        sprite.position = Vector3(0.0, 0.16, 0.0)
+        visual_nodes.append(sprite)
+    var texture_path: String = String(icon_paths[kind])
+    var texture: Texture2D = load(texture_path) as Texture2D
+    if texture == null:
+        _remove_tile_visual(p, "PickupIcon")
         return
-    sprite.name = "PickupIcon"
-    sprite.pixel_size = 0.0035
-    sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-    sprite.no_depth_test = true
-    sprite.shaded = false
+    sprite.texture = texture
     sprite.modulate = icon_color
-    var tile: MeshInstance3D = board[p]
-    tile.add_child(sprite)
-    sprite.position = Vector3(0.0, 0.16, 0.0)
-    visual_nodes.append(sprite)
 
 # O flash mistura a cor de acerto/erro com a cor original e desaparece suavemente.
 const WORD_FLASH_DURATION := 0.40
@@ -2544,11 +2559,10 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
         })
 
 
-func _refresh_board() -> void:
-    for node in visual_nodes:
-        if is_instance_valid(node):
-            node.queue_free()
-    visual_nodes.clear()
+func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
+    # O estado logico e recalculado, mas a geometria/labels existentes sao
+    # preservados. Em movimento de camera, somente os tiles recem-criados
+    # precisam receber sua representacao visual.
     var previous_tile_state: Dictionary = tile_state.duplicate()
     tile_state.clear()
     var letters: Dictionary = {}
@@ -2683,7 +2697,10 @@ func _refresh_board() -> void:
             if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
                 if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
                     tile_state[side_cell] = "side_option"
-    for p in board.keys():
+    var cells_to_render: Array[Vector2i] = board.keys() if cells_to_update.is_empty() else cells_to_update
+    for p in cells_to_render:
+        if not board.has(p):
+            continue
         var tile: MeshInstance3D = board[p]
         var kind: String = tile_state.get(p, "base")
         var top_color: Color = BASE
@@ -2840,10 +2857,12 @@ func _refresh_board() -> void:
         if letters.has(p) and kind != "stage_blue":
             var letter_color: Color = Color("#34313a") if kind == "draft" else TILE_LETTER
             _draw_text(p, String(letters[p]), letter_color, 0.64)
-        elif level_mode and p == exit_cell:
-            pass  # O portal e identificado pelo verde, sem seta sobreposta.
-        elif pickups.has(p):
+        else:
+            _remove_tile_visual(p, "TileLabel")
+        if pickups.has(p) and not (level_mode and p == exit_cell):
             _draw_pickup_icon(p, String(pickups[p]), skirt_color)
+        else:
+            _remove_tile_visual(p, "PickupIcon")
     # A ordem serve apenas para esta atualizacao do tabuleiro.
     direction_transition_order.clear()
     _update_hud()
@@ -3413,7 +3432,11 @@ func _sync_visible_board(force: bool = false) -> void:
                 needed[cell] = true
     for p in board.keys():
         if not needed.has(p):
-            board[p].queue_free()
+            var removed_tile: MeshInstance3D = board[p]
+            for child in removed_tile.get_children():
+                if visual_nodes.has(child):
+                    visual_nodes.erase(child)
+            removed_tile.queue_free()
             board.erase(p)
             tile_target_heights.erase(p)
     for p in needed.keys():
@@ -3435,6 +3458,7 @@ func _sync_visible_board(force: bool = false) -> void:
         add_child(tile)
         board[p] = tile
         created_cells.append(p)
-    _refresh_board()
-    if stage_wave_active:
-        _queue_stage_open_tiles(created_cells)
+    if not created_cells.is_empty():
+        _refresh_board(created_cells)
+        if stage_wave_active:
+            _queue_stage_open_tiles(created_cells)
