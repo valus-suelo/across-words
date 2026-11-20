@@ -1179,7 +1179,11 @@ func _new_game() -> void:
     stage_anchor_idle = false
     stage_blue_tiles.clear()
     for node in visual_nodes:
-        if is_instance_valid(node): node.queue_free()
+        if is_instance_valid(node):
+            var visual_parent: Node = node.get_parent()
+            if visual_parent != null:
+                visual_parent.remove_child(node)
+            node.queue_free()
     visual_nodes.clear()
     if is_instance_valid(enemy_node): enemy_node.queue_free()
     enemy_node = null
@@ -2223,6 +2227,7 @@ func _remove_tile_visual(p: Vector2i, node_name: String) -> void:
     if node == null:
         return
     visual_nodes.erase(node)
+    tile.remove_child(node)
     node.queue_free()
 
 func _set_pickup_icon_color(cell: Vector2i, icon_color: Color) -> void:
