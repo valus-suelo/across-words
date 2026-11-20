@@ -240,10 +240,9 @@ func _level_outer_half_size() -> int:
     return _level_half_size() + _level_black_margin()
 
 func _campaign_camera_base_size(wide: bool) -> float:
-    var base_size: float = 17.0 if wide else 20.0
-    # A camera abre gradualmente para preservar uma faixa escura visivel
-    # ao redor do mapa conforme a area jogavel cresce.
-    return base_size + float(level_number - 1) * 1.5 if level_mode else base_size
+    # Mantem o zoom normal fixo; a expansao ocorre na malha escura,
+    # sem reduzir visualmente a area jogavel a cada nivel.
+    return 17.0 if wide else 20.0
 
 func _inside_level(cell: Vector2i) -> bool:
     if not level_mode:
@@ -257,7 +256,7 @@ func _inside_level_halo(cell: Vector2i) -> bool:
         return true
     # A area escura gerada tem margem maior e crescente; regras jogaveis
     # continuam exclusivamente em _inside_level().
-    var radius: int = _level_outer_half_size() + LEVEL_HALO + (level_number - 1) * 25
+    var radius: int = _level_half_size() + LEVEL_HALO + (level_number - 1) * 25
     var relative: Vector2i = cell - level_origin
     return absi(relative.x) <= radius and absi(relative.y) <= radius
 
@@ -1227,7 +1226,7 @@ func _new_game() -> void:
     _focus_word(words[0])
     if level_mode:
         level_intro_remaining = LEVEL_INTRO_SECONDS
-        level_intro_start_size = maxf(_campaign_camera_base_size(get_viewport().get_visible_rect().size.x > get_viewport().get_visible_rect().size.y), float(_level_outer_half_size() * 2 + 4) * ROW_GAP * 1.45)
+        level_intro_start_size = maxf(_campaign_camera_base_size(get_viewport().get_visible_rect().size.x > get_viewport().get_visible_rect().size.y), float(_level_outer_half_size() * 2 + 4) * ROW_GAP * 1.65)
         camera.size = level_intro_start_size
         camera.position = Vector3(0.0, 25.0, 0.0)
     _refresh_board()
@@ -2441,7 +2440,7 @@ func _advance_diary_stage() -> void:
     var board_width: float = (radius * 2.0 + 1.0) * GAP
     var board_depth_projected: float = (radius * 2.0 + 1.0) * ROW_GAP * sin(deg_to_rad(69.0))
     var aspect: float = screen.x / maxf(1.0, screen.y)
-    var expanded_size: float = maxf(normal_size, maxf(board_depth_projected, board_width / maxf(0.5, aspect)) * 1.18)
+    var expanded_size: float = maxf(normal_size, maxf(board_depth_projected, board_width / maxf(0.5, aspect)) * 1.24)
     # Carrega a malha inteira enquanto a camera esta afastada; depois ela
     # volta ao zoom normal sem descartar os blocos que acabou de revelar.
     camera.size = expanded_size
@@ -2731,7 +2730,7 @@ func _refresh_board() -> void:
         # Uma casa que pertence a palavra concluida sempre termina na cor
         # resolvida, mesmo se tambem for foco ou ancora do proximo ramo.
         # O destaque temporario verde continua sendo aplicado pelo flash abaixo.
-        if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "selected", "preview", "blocked_outer", "stage_blue"]:
+        if solved_cells.has(p) and kind not in ["current_word", "focus", "anchor_focus", "selected", "preview", "blocked_outer", "stage_blue", "stage_origin"]:
             top_color = SOLVED
             skirt_color = SIDE_SOLVED
             target_height = 0.015
@@ -2744,9 +2743,13 @@ func _refresh_board() -> void:
             else:
                 # A palavra recém-confirmada continua sendo a palavra atual.
                 # Seus trechos externos devem ficar em dourado escuro, não em OUTER_TILE.
-                var outer_highlight: bool = kind in ["selected", "preview", "focus", "anchor_focus", "draft", "current_word"]
-                top_color = Color("#b59b45") if kind == "current_word" else (Color("#aaa58f") if outer_highlight else OUTER_TILE)
-                skirt_color = Color("#76632d") if kind == "current_word" else (Color("#686451") if outer_highlight else Color("#242936"))
+                var outer_highlight: bool = kind in ["selected", "preview", "focus", "anchor_focus", "draft", "current_word", "stage_origin"]
+                if kind == "stage_origin":
+                    top_color = Color("#f2e7a6")
+                    skirt_color = Color("#b7a96e")
+                else:
+                    top_color = Color("#b59b45") if kind == "current_word" else (Color("#aaa58f") if outer_highlight else OUTER_TILE)
+                    skirt_color = Color("#76632d") if kind == "current_word" else (Color("#686451") if outer_highlight else Color("#242936"))
                 target_height = 0.0 if outer_highlight else -0.01
         # O portal conserva o verde tanto vazio quanto cruzado por uma palavra.
         if level_mode and p == exit_cell:
@@ -3173,7 +3176,7 @@ func _apply_camera_zoom() -> void:
     var screen: Vector2 = get_viewport().get_visible_rect().size
     var wide: bool = screen.x > screen.y
     var normal_size: float = _campaign_camera_base_size(wide)
-    var vision_size: float = (23.0 if wide else 27.0) + (float(level_number - 1) * 1.5 if level_mode else 0.0)
+    var vision_size: float = 23.0 if wide else 27.0
     camera.size = (vision_size if map_vision_moves > 0 else normal_size) * camera_zoom_factor
 
 func _zoom_camera(zoom_in: bool) -> void:
