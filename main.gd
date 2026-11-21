@@ -1860,6 +1860,17 @@ func _show_preview_choice() -> void:
         if not _inside_level(cell) and not board.has(cell):
             _create_board_tile(cell)
             created_outer_cells.append(cell)
+    # A peça de direção (lado não escolhido) também pode ficar fora da
+    # borda jogável; cria-a como tile externo para que emerja do abismo.
+    var anchor_cell: Vector2i = _cells(words[preview_parent])[preview_anchor]
+    var parent_axis: Vector2i = Vector2i(words[preview_parent]["dir"])
+    var opposite: Vector2i = -preview_dir
+    if opposite == Vector2i.ZERO:
+        opposite = Vector2i(0, 1) if parent_axis.x != 0 else Vector2i(1, 0)
+    var direction_cell: Vector2i = anchor_cell + opposite
+    if not _inside_level(direction_cell) and not board.has(direction_cell):
+        _create_board_tile(direction_cell)
+        created_outer_cells.append(direction_cell)
     if not created_outer_cells.is_empty():
         _refresh_board(created_outer_cells)
         _queue_stage_open_tiles(created_outer_cells, true)
@@ -2770,7 +2781,7 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
             if opposite == Vector2i.ZERO:
                 opposite = Vector2i(0, 1) if axis.x != 0 else Vector2i(1, 0)
             var side_cell: Vector2i = anchor_cells[preview_anchor] + opposite
-            if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
+            if board.has(side_cell) and not (level_mode and side_cell == exit_cell):
                 if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
                     tile_state[side_cell] = "side_option"
 
@@ -3096,7 +3107,7 @@ func _process(delta: float) -> void:
         if not is_instance_valid(falling_node):
             stage_fall_tiles.remove_at(i)
             continue
-        var fall_progress: float = clampf((elapsed - float(falling_data["start_at"])) / 1.05, 0.0, 1.0)
+        var fall_progress: float = clampf((elapsed - float(falling_data["start_at"])) / float(falling_data.get("duration", 1.05)), 0.0, 1.0)
         var fall_eased: float = fall_progress * fall_progress * (3.0 - 2.0 * fall_progress)
         falling_node.position.y = lerpf(float(falling_data["from_height"]), -3.2, fall_eased)
         if fall_progress >= 1.0:
@@ -3592,13 +3603,20 @@ func _sync_visible_board(force: bool = false) -> void:
                 needed[cell] = true
     for p in board.keys():
         if not needed.has(p):
-            if stage_wave_active:
-                var falling_tile: MeshInstance3D = board[p]
-                var fall_distance: int = absi(p.x - wave_origin.x) + absi(p.y - wave_origin.y)
+            var falling_tile: MeshInstance3D = board[p]
+            var is_outer_tile: bool = level_mode and not _inside_level(p)
+            var fall_distance: int = absi(p.x - wave_origin.x) + absi(p.y - wave_origin.y)
+            # Tiles externos que deixam a previa caem imediatamente, mantendo
+            # a aparencia atual. A onda de etapa conserva seu escalonamento.
+            if is_outer_tile or stage_wave_active:
+                for opening_index in range(stage_open_tiles.size() - 1, -1, -1):
+                    if stage_open_tiles[opening_index].get("cell", Vector2i(-999, -999)) == p:
+                        stage_open_tiles.remove_at(opening_index)
                 stage_fall_tiles.append({
                     "node": falling_tile,
                     "from_height": falling_tile.position.y,
-                    "start_at": elapsed + minf(1.8, float(fall_distance) * 0.045),
+                    "start_at": elapsed + (minf(1.8, float(fall_distance) * 0.045) if stage_wave_active and not is_outer_tile else 0.0),
+                    "duration": 0.72 if is_outer_tile else 1.05,
                     "cell": p
                 })
                 board.erase(p)
