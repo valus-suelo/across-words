@@ -124,6 +124,8 @@ const DICTIONARY := [
 
 var board: Dictionary = {}               # Vector2i -> MeshInstance3D
 var static_background_cells: Dictionary = {} # Casas externas vazias desenhadas em lote
+var static_background_instance_cells: Array[Vector2i] = []
+var static_background_instance_indices: Dictionary = {} # Vector2i -> índice no MultiMesh
 var static_background_top: MultiMeshInstance3D
 var static_background_skirt: MultiMeshInstance3D
 var tile_state: Dictionary = {}          # Vector2i -> String
@@ -1520,12 +1522,20 @@ func _plan_advanced_level() -> void:
         _spawn_pickup(candidates[i], "crown")
 
 func _cells(word: Dictionary) -> Array[Vector2i]:
-    var result: Array[Vector2i] = []
-    var answer: String = word["answer"]
+    var answer: String = String(word["answer"])
     var start: Vector2i = word["start"]
     var direction: Vector2i = word["dir"]
+    var signature: String = "%s|%d|%d|%d|%d" % [answer, start.x, start.y, direction.x, direction.y]
+    if word.get("_cells_cache_signature", "") == signature:
+        var cached: Variant = word.get("_cells_cache", null)
+        if cached is Array:
+            return cached
+
+    var result: Array[Vector2i] = []
     for i in range(answer.length()):
         result.append(start + direction * i)
+    word["_cells_cache_signature"] = signature
+    word["_cells_cache"] = result
     return result
 
 func _inside(_p: Vector2i) -> bool:
@@ -2646,16 +2656,15 @@ func _remove_board_tile_for_static(cell: Vector2i) -> void:
     tile_visual_signatures.erase(cell)
 
 func _update_static_background_multimesh() -> void:
-    var cells: Array[Vector2i] = []
-    for raw_cell in static_background_cells.keys():
-        cells.append(raw_cell)
-    if cells.is_empty():
+    if static_background_cells.is_empty():
         if is_instance_valid(static_background_top):
             static_background_top.queue_free()
         if is_instance_valid(static_background_skirt):
             static_background_skirt.queue_free()
         static_background_top = null
         static_background_skirt = null
+        static_background_instance_cells.clear()
+        static_background_instance_indices.clear()
         return
 
     if not is_instance_valid(static_background_top):
@@ -2667,6 +2676,7 @@ func _update_static_background_multimesh() -> void:
         var top_multimesh := MultiMesh.new()
         top_multimesh.transform_format = MultiMesh.TRANSFORM_3D
         top_multimesh.mesh = top_mesh
+        top_multimesh.instance_count = 0
         static_background_top.multimesh = top_multimesh
         static_background_top.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
         add_child(static_background_top)
@@ -2677,6 +2687,7 @@ func _update_static_background_multimesh() -> void:
         var skirt_multimesh := MultiMesh.new()
         skirt_multimesh.transform_format = MultiMesh.TRANSFORM_3D
         skirt_multimesh.mesh = shared_skirt_mesh
+        skirt_multimesh.instance_count = 0
         static_background_skirt.multimesh = skirt_multimesh
         static_background_skirt.material_override = _material_cached("static_outer_skirt", Color("#242936"))
         static_background_skirt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -2684,17 +2695,47 @@ func _update_static_background_multimesh() -> void:
 
     var top_mm: MultiMesh = static_background_top.multimesh
     var skirt_mm: MultiMesh = static_background_skirt.multimesh
-    top_mm.instance_count = cells.size()
-    skirt_mm.instance_count = cells.size()
-    for i in range(cells.size()):
-        var cell: Vector2i = cells[i]
+
+    # Remove apenas casas que saíram da região. Swap-remove mantém os índices
+    # compactos sem percorrer/recriar todas as transformações restantes.
+    var index: int = static_background_instance_cells.size() - 1
+    while index >= 0:
+        var cell: Vector2i = static_background_instance_cells[index]
+        if not static_background_cells.has(cell):
+            var last_index: int = static_background_instance_cells.size() - 1
+            var last_cell: Vector2i = static_background_instance_cells[last_index]
+            if index != last_index:
+                var moved_top: Transform3D = top_mm.get_instance_transform(last_index)
+                var moved_skirt: Transform3D = skirt_mm.get_instance_transform(last_index)
+                top_mm.set_instance_transform(index, moved_top)
+                skirt_mm.set_instance_transform(index, moved_skirt)
+                static_background_instance_cells[index] = last_cell
+                static_background_instance_indices[last_cell] = index
+            static_background_instance_cells.pop_back()
+            static_background_instance_indices.erase(cell)
+            top_mm.instance_count = last_index
+            skirt_mm.instance_count = last_index
+        index -= 1
+
+    # Adiciona somente as novas casas externas.
+    for raw_cell in static_background_cells.keys():
+        var cell: Vector2i = raw_cell
+        if static_background_instance_indices.has(cell):
+            continue
+        var new_index: int = static_background_instance_cells.size()
+        top_mm.instance_count = new_index + 1
+        skirt_mm.instance_count = new_index + 1
         var tile_transform := Transform3D(Basis.IDENTITY, Vector3(cell.x * GAP, 0.0, cell.y * ROW_GAP))
-        top_mm.set_instance_transform(i, tile_transform)
+        top_mm.set_instance_transform(new_index, tile_transform)
         var skirt_transform := Transform3D(Basis.IDENTITY, Vector3(cell.x * GAP, -0.16, cell.y * ROW_GAP))
-        skirt_mm.set_instance_transform(i, skirt_transform)
+        skirt_mm.set_instance_transform(new_index, skirt_transform)
+        static_background_instance_cells.append(cell)
+        static_background_instance_indices[cell] = new_index
 
 func _clear_static_background() -> void:
     static_background_cells.clear()
+    static_background_instance_cells.clear()
+    static_background_instance_indices.clear()
     if is_instance_valid(static_background_top):
         static_background_top.queue_free()
     if is_instance_valid(static_background_skirt):
