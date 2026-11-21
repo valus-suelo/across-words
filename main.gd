@@ -123,11 +123,6 @@ const DICTIONARY := [
 
 
 var board: Dictionary = {}               # Vector2i -> MeshInstance3D
-var static_background_cells: Dictionary = {} # Casas externas vazias desenhadas em lote
-var static_background_instance_cells: Array[Vector2i] = []
-var static_background_instance_indices: Dictionary = {} # Vector2i -> índice no MultiMesh
-var static_background_top: MultiMeshInstance3D
-var static_background_skirt: MultiMeshInstance3D
 var tile_state: Dictionary = {}          # Vector2i -> String
 var visual_nodes: Array[Node3D] = []
 var words: Array[Dictionary] = []
@@ -257,8 +252,7 @@ func _campaign_camera_base_size(wide: bool) -> float:
     return 17.0 if wide else 20.0
 
 func _campaign_intro_camera_size(wide: bool) -> float:
-    # Ajusta o enquadramento para caber a area jogavel e sua borda escura
-    # completa (nao o halo tecnico usado para gerar tiles fora da tela).
+    # Ajusta o enquadramento para caber somente a area jogavel.
     var radius: float = float(_level_half_size())
     var diameter: float = radius * 2.0 + 1.0
     var board_width: float = diameter * GAP
@@ -1182,7 +1176,6 @@ func _new_game() -> void:
     stage_open_tiles.clear()
     stage_wave_start_colors.clear()
     stage_wave_active = false
-    _clear_static_background()
     stage_anchor_idle = false
     for node in visual_nodes:
         if is_instance_valid(node):
@@ -2503,7 +2496,6 @@ func _advance_diary_stage() -> void:
     # A camera se afasta para mostrar somente a nova area jogavel.
     # O espaco externo permanece vazio, sem geometria de cenario.
     var expanded_size: float = _campaign_intro_camera_size(screen.x > screen.y)
-    _clear_static_background()
     # Carrega a malha inteira enquanto a camera esta afastada; depois ela
     # volta ao zoom normal sem descartar os blocos que acabou de revelar.
     camera.size = expanded_size
@@ -2569,8 +2561,6 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
         if skirt_material is StandardMaterial3D:
             target_skirt = (skirt_material as StandardMaterial3D).albedo_color
         var target_height: float = float(tile_target_heights.get(cell, 0.0))
-        # Casas que surgem apenas porque a camera abriu o mapa comecam
-        # na cor escura de fundo; a onda revela o estado final calculado.
         # Blocos novos nascem abaixo do plano; o abismo nao possui geometria
         # nem cor de cenario visivel.
         var from_top: Color = target_top
@@ -2607,20 +2597,6 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
 
 
 
-func _is_static_background_cell(cell: Vector2i, letters: Dictionary) -> bool:
-    # Somente o fundo externo realmente vazio pode sair do sistema de tiles individuais.
-    return (
-        level_mode
-        and not _inside_level(cell)
-        and tile_state.get(cell, "base") == "base"
-        and not letters.has(cell)
-        and not pickups.has(cell)
-        and not flash_cells.has(cell)
-        and not word_fade_cells.has(cell)
-        and not direction_transition_cells.has(cell)
-        and cell != exit_cell
-    )
-
 func _create_board_tile(cell: Vector2i) -> MeshInstance3D:
     var tile := MeshInstance3D.new()
     tile.mesh = shared_tile_mesh
@@ -2650,94 +2626,6 @@ func _remove_board_tile_for_static(cell: Vector2i) -> void:
     board.erase(cell)
     tile_target_heights.erase(cell)
     tile_visual_signatures.erase(cell)
-
-func _update_static_background_multimesh() -> void:
-    if static_background_cells.is_empty():
-        if is_instance_valid(static_background_top):
-            static_background_top.queue_free()
-        if is_instance_valid(static_background_skirt):
-            static_background_skirt.queue_free()
-        static_background_top = null
-        static_background_skirt = null
-        static_background_instance_cells.clear()
-        static_background_instance_indices.clear()
-        return
-
-    if not is_instance_valid(static_background_top):
-        static_background_top = MultiMeshInstance3D.new()
-        static_background_top.name = "StaticBackgroundTop"
-        var top_mesh: ArrayMesh = shared_tile_mesh.duplicate() as ArrayMesh
-        top_mesh.surface_set_material(0, _material_cached("static_outer_top", OUTER_TILE))
-        top_mesh.surface_set_material(1, _material_cached("static_outer_edge", OUTER_TILE.darkened(0.22)))
-        var top_multimesh := MultiMesh.new()
-        top_multimesh.transform_format = MultiMesh.TRANSFORM_3D
-        top_multimesh.mesh = top_mesh
-        top_multimesh.instance_count = 0
-        static_background_top.multimesh = top_multimesh
-        static_background_top.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-        add_child(static_background_top)
-
-    if not is_instance_valid(static_background_skirt):
-        static_background_skirt = MultiMeshInstance3D.new()
-        static_background_skirt.name = "StaticBackgroundSkirt"
-        var skirt_multimesh := MultiMesh.new()
-        skirt_multimesh.transform_format = MultiMesh.TRANSFORM_3D
-        skirt_multimesh.mesh = shared_skirt_mesh
-        skirt_multimesh.instance_count = 0
-        static_background_skirt.multimesh = skirt_multimesh
-        static_background_skirt.material_override = _material_cached("static_outer_skirt", Color("#242936"))
-        static_background_skirt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-        add_child(static_background_skirt)
-
-    var top_mm: MultiMesh = static_background_top.multimesh
-    var skirt_mm: MultiMesh = static_background_skirt.multimesh
-
-    # Remove apenas casas que saíram da região. Swap-remove mantém os índices
-    # compactos sem percorrer/recriar todas as transformações restantes.
-    var index: int = static_background_instance_cells.size() - 1
-    while index >= 0:
-        var cell: Vector2i = static_background_instance_cells[index]
-        if not static_background_cells.has(cell):
-            var last_index: int = static_background_instance_cells.size() - 1
-            var last_cell: Vector2i = static_background_instance_cells[last_index]
-            if index != last_index:
-                var moved_top: Transform3D = top_mm.get_instance_transform(last_index)
-                var moved_skirt: Transform3D = skirt_mm.get_instance_transform(last_index)
-                top_mm.set_instance_transform(index, moved_top)
-                skirt_mm.set_instance_transform(index, moved_skirt)
-                static_background_instance_cells[index] = last_cell
-                static_background_instance_indices[last_cell] = index
-            static_background_instance_cells.pop_back()
-            static_background_instance_indices.erase(cell)
-            top_mm.instance_count = last_index
-            skirt_mm.instance_count = last_index
-        index -= 1
-
-    # Adiciona somente as novas casas externas.
-    for raw_cell in static_background_cells.keys():
-        var cell: Vector2i = raw_cell
-        if static_background_instance_indices.has(cell):
-            continue
-        var new_index: int = static_background_instance_cells.size()
-        top_mm.instance_count = new_index + 1
-        skirt_mm.instance_count = new_index + 1
-        var tile_transform := Transform3D(Basis.IDENTITY, Vector3(cell.x * GAP, 0.0, cell.y * ROW_GAP))
-        top_mm.set_instance_transform(new_index, tile_transform)
-        var skirt_transform := Transform3D(Basis.IDENTITY, Vector3(cell.x * GAP, -0.16, cell.y * ROW_GAP))
-        skirt_mm.set_instance_transform(new_index, skirt_transform)
-        static_background_instance_cells.append(cell)
-        static_background_instance_indices[cell] = new_index
-
-func _clear_static_background() -> void:
-    static_background_cells.clear()
-    static_background_instance_cells.clear()
-    static_background_instance_indices.clear()
-    if is_instance_valid(static_background_top):
-        static_background_top.queue_free()
-    if is_instance_valid(static_background_skirt):
-        static_background_skirt.queue_free()
-    static_background_top = null
-    static_background_skirt = null
 
 func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
     # O estado logico e recalculado, mas a geometria/labels existentes sao
