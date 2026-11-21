@@ -232,6 +232,7 @@ var stage_wave_active: bool = false
 var stage_anchor_idle: bool = false # A ancora herdada fica lilas ate o jogador seleciona-la
 var stage_wave_remaining: float = 0.0
 var stage_open_tiles: Array[Dictionary] = []
+var stage_fall_tiles: Array[Dictionary] = [] # Blocos antigos que descem para o abismo
 var stage_wave_start_colors: Dictionary = {} # Aparencia exibida antes da transicao entre etapas
 var level_origin: Vector2i = Vector2i.ZERO
 
@@ -258,7 +259,7 @@ func _campaign_camera_base_size(wide: bool) -> float:
 func _campaign_intro_camera_size(wide: bool) -> float:
     # Ajusta o enquadramento para caber a area jogavel e sua borda escura
     # completa (nao o halo tecnico usado para gerar tiles fora da tela).
-    var radius: float = float(_level_outer_half_size())
+    var radius: float = float(_level_half_size())
     var diameter: float = radius * 2.0 + 1.0
     var board_width: float = diameter * GAP
     var board_depth_projected: float = diameter * ROW_GAP * sin(deg_to_rad(69.0))
@@ -2438,6 +2439,7 @@ func _advance_diary_stage() -> void:
     # A ancora continua sendo a palavra atual ate a primeira nova confirmacao.
     stage_anchor_idle = false
     stage_open_tiles.clear()
+    stage_fall_tiles.clear()
     if is_instance_valid(enemy_node):
         enemy_node.queue_free()
     enemy_node = null
@@ -2498,18 +2500,10 @@ func _advance_diary_stage() -> void:
     var screen: Vector2 = get_viewport().get_visible_rect().size
     var normal_size: float = _campaign_camera_base_size(screen.x > screen.y)
     camera.size = normal_size
-    # A camera se afasta para mostrar a area jogavel e a faixa escura
-    # adicional, que cresce em cada etapa, mantendo a ancora espacial.
+    # A camera se afasta para mostrar somente a nova area jogavel.
+    # O espaco externo permanece vazio, sem geometria de cenario.
     var expanded_size: float = _campaign_intro_camera_size(screen.x > screen.y)
-    # Durante a transicao, nenhum fundo antigo em lote pode continuar visivel.
-    # Zera as instancias imediatamente (antes de queue_free) e reconstrui o
-    # novo tabuleiro em tiles individuais para que a onda os revele.
-    static_background_cells.clear()
-    if is_instance_valid(static_background_top) and static_background_top.multimesh != null:
-        static_background_top.multimesh.instance_count = 0
-    if is_instance_valid(static_background_skirt) and static_background_skirt.multimesh != null:
-        static_background_skirt.multimesh.instance_count = 0
-    _update_static_background_multimesh()
+    _clear_static_background()
     # Carrega a malha inteira enquanto a camera esta afastada; depois ela
     # volta ao zoom normal sem descartar os blocos que acabou de revelar.
     camera.size = expanded_size
@@ -2577,9 +2571,11 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
         var target_height: float = float(tile_target_heights.get(cell, 0.0))
         # Casas que surgem apenas porque a camera abriu o mapa comecam
         # na cor escura de fundo; a onda revela o estado final calculado.
-        var from_top: Color = OUTER_TILE
-        var from_skirt: Color = Color("#242936")
-        var from_height: float = tile.position.y
+        # Blocos novos nascem abaixo do plano; o abismo nao possui geometria
+        # nem cor de cenario visivel.
+        var from_top: Color = target_top
+        var from_skirt: Color = target_skirt
+        var from_height: float = -2.6
         if stage_wave_start_colors.has(cell):
             var start_data: Dictionary = stage_wave_start_colors[cell]
             from_top = start_data.get("top", target_top)
@@ -2868,22 +2864,6 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
             if board.has(side_cell) and (not level_mode or _inside_level(side_cell)) and not (level_mode and side_cell == exit_cell):
                 if tile_state.get(side_cell, "base") in ["base", "active", "preview"]:
                     tile_state[side_cell] = "side_option"
-    # Se uma casa antes estática ganhou conteúdo ou entrou em animação,
-    # ela volta a ser um tile individual antes de receber sua aparência nova.
-    var static_to_check: Array[Vector2i] = []
-    if cells_to_update.is_empty():
-        for raw_cell in static_background_cells.keys():
-            static_to_check.append(raw_cell)
-    else:
-        for cell in cells_to_update:
-            if static_background_cells.has(cell):
-                static_to_check.append(cell)
-    var static_layout_changed: bool = false
-    for cell in static_to_check:
-        if stage_wave_active or not _is_static_background_cell(cell, letters):
-            _create_board_tile(cell)
-            static_background_cells.erase(cell)
-            static_layout_changed = true
 
     var cells_to_render: Array[Vector2i] = []
     if cells_to_update.is_empty():
@@ -3060,21 +3040,6 @@ func _refresh_board(cells_to_update: Array[Vector2i] = []) -> void:
             _draw_pickup_icon(p, pickup_text, skirt_color)
         else:
             _remove_tile_visual(p, "PickupIcon")
-    # Converte somente os blocos externos vazios em instâncias agrupadas.
-    # Os tiles com letras, itens ou animações permanecem individuais.
-    var static_candidates: Array[Vector2i] = []
-    if cells_to_update.is_empty():
-        for raw_cell in board.keys():
-            static_candidates.append(raw_cell)
-    else:
-        static_candidates = cells_to_render.duplicate()
-    for cell in static_candidates:
-        if not stage_wave_active and board.has(cell) and _is_static_background_cell(cell, letters):
-            _remove_board_tile_for_static(cell)
-            static_background_cells[cell] = true
-            static_layout_changed = true
-    if static_layout_changed:
-        _update_static_background_multimesh()
     # A ordem serve apenas para esta atualizacao do tabuleiro.
     direction_transition_order.clear()
     if cells_to_update.is_empty():
@@ -3214,9 +3179,24 @@ func _process(delta: float) -> void:
         # em todos os frames.
         if is_pulsing or absf(tile.position.y - goal) > 0.0005:
             tile.position.y = move_toward(tile.position.y, goal, delta * 3.6)
+    # Blocos antigos que nao pertencem ao novo tabuleiro descem para o abismo.
+    # Letras e elementos acompanham os blocos, sem deixar rastros visuais.
+    for i in range(stage_fall_tiles.size() - 1, -1, -1):
+        var falling_data: Dictionary = stage_fall_tiles[i]
+        var falling_node: MeshInstance3D = falling_data["node"]
+        if not is_instance_valid(falling_node):
+            stage_fall_tiles.remove_at(i)
+            continue
+        var fall_progress: float = clampf((elapsed - float(falling_data["start_at"])) / 1.05, 0.0, 1.0)
+        var fall_eased: float = fall_progress * fall_progress * (3.0 - 2.0 * fall_progress)
+        falling_node.position.y = lerpf(float(falling_data["from_height"]), -3.2, fall_eased)
+        if fall_progress >= 1.0:
+            for child in falling_node.get_children():
+                if visual_nodes.has(child):
+                    visual_nodes.erase(child)
+            falling_node.queue_free()
+            stage_fall_tiles.remove_at(i)
     # A onda transita diretamente da cor exibida para o destino final.
-    # Nao ha fechamento previo, sumico de letras ou fade de icones.
-    # Blocos que ja estao azuis apenas acompanham o movimento da onda.
     for i in range(stage_open_tiles.size() - 1, -1, -1):
         var opening_data: Dictionary = stage_open_tiles[i]
         var opening_tile: MeshInstance3D = opening_data["node"]
@@ -3684,29 +3664,38 @@ func _sync_visible_board(force: bool = false) -> void:
     visible_radius_y = radius_y
     var needed: Dictionary = {}
     var created_cells: Array[Vector2i] = []
-    var static_layout_changed: bool = false
+    # Tiles existem dentro da area jogavel e nas casas ocupadas por palavras.
+    # Fora dela nao ha preenchimento visual: o abismo e completamente vazio.
+    var word_cells: Dictionary = {}
+    for word in words:
+        if word.get("state", "") in ["destroyed", "expired"]:
+            continue
+        for word_cell in _cells(word):
+            word_cells[word_cell] = true
     for y in range(center.y - radius_y, center.y + radius_y + 1):
         for x in range(center.x - radius_x, center.x + radius_x + 1):
             var cell: Vector2i = Vector2i(x, y)
-            if _inside_level_halo(cell):
+            if _inside_level(cell) or word_cells.has(cell):
                 needed[cell] = true
     for p in board.keys():
         if not needed.has(p):
-            _remove_board_tile_for_static(p)
-    for raw_cell in static_background_cells.keys():
-        var cell: Vector2i = raw_cell
-        if not needed.has(cell):
-            static_background_cells.erase(cell)
-            static_layout_changed = true
+            if stage_wave_active:
+                var falling_tile: MeshInstance3D = board[p]
+                var fall_distance: int = absi(p.x - wave_origin.x) + absi(p.y - wave_origin.y)
+                stage_fall_tiles.append({
+                    "node": falling_tile,
+                    "from_height": falling_tile.position.y,
+                    "start_at": elapsed + minf(1.8, float(fall_distance) * 0.045),
+                    "cell": p
+                })
+                board.erase(p)
+                tile_target_heights.erase(p)
+                tile_visual_signatures.erase(p)
+                tile_state.erase(p)
+            else:
+                _remove_board_tile_for_static(p)
     for p in needed.keys():
         if board.has(p):
-            continue
-        if static_background_cells.has(p):
-            if stage_wave_active:
-                static_background_cells.erase(p)
-                _create_board_tile(p)
-                created_cells.append(p)
-                static_layout_changed = true
             continue
         _create_board_tile(p)
         created_cells.append(p)
@@ -3714,5 +3703,3 @@ func _sync_visible_board(force: bool = false) -> void:
         _refresh_board(created_cells)
         if stage_wave_active:
             _queue_stage_open_tiles(created_cells)
-    if static_layout_changed:
-        _update_static_background_multimesh()
