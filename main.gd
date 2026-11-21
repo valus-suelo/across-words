@@ -2630,6 +2630,17 @@ func _queue_stage_open_tiles(cells: Array[Vector2i], from_abyss: bool = false) -
 
 
 func _create_board_tile(cell: Vector2i) -> MeshInstance3D:
+    # Se a casa esta em processo de queda e volta a ser necessaria, recupera
+    # o mesmo node em vez de criar uma duplicata ou deixa-lo cair em paralelo.
+    for fall_index in range(stage_fall_tiles.size() - 1, -1, -1):
+        var fall_data: Dictionary = stage_fall_tiles[fall_index]
+        if fall_data.get("cell", Vector2i(-999, -999)) == cell:
+            var falling_node: MeshInstance3D = fall_data["node"]
+            stage_fall_tiles.remove_at(fall_index)
+            board[cell] = falling_node
+            tile_visual_signatures.erase(cell)
+            tile_target_heights.erase(cell)
+            return falling_node
     var tile := MeshInstance3D.new()
     tile.mesh = shared_tile_mesh
     tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
