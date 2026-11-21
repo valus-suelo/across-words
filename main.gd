@@ -3607,6 +3607,16 @@ func _sync_visible_board(force: bool = false) -> void:
     if not preview.is_empty():
         for preview_cell in _cells(preview):
             word_cells[preview_cell] = true
+    # Reserva tambem o tile lateral de direcao, mesmo se estiver fora da
+    # area jogavel e do retangulo visivel calculado para a camera.
+    if preview_parent >= 0 and preview_parent < words.size() and preview_anchor >= 0:
+        var parent_cells: Array[Vector2i] = _cells(words[preview_parent])
+        if preview_anchor < parent_cells.size():
+            var parent_axis: Vector2i = Vector2i(words[preview_parent]["dir"])
+            var opposite: Vector2i = -preview_dir
+            if opposite == Vector2i.ZERO:
+                opposite = Vector2i(0, 1) if parent_axis.x != 0 else Vector2i(1, 0)
+            word_cells[parent_cells[preview_anchor] + opposite] = true
     for y in range(center.y - radius_y, center.y + radius_y + 1):
         for x in range(center.x - radius_x, center.x + radius_x + 1):
             var cell: Vector2i = Vector2i(x, y)
