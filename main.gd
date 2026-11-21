@@ -2579,7 +2579,10 @@ func _queue_stage_open_tiles(cells: Array[Vector2i], from_abyss: bool = false) -
         # nem cor de cenario visivel.
         var from_top: Color = target_top
         var from_skirt: Color = target_skirt
-        var from_height: float = -2.6
+        # Para a revelacao externa, inicia perto do plano visivel: a camera
+        # inclinada escondia o bloco por tempo demais quando nascia a -2.6.
+        var from_height: float = -0.65 if from_abyss else -2.6
+        var opening_duration: float = 0.62 if from_abyss else 1.05
         if not from_abyss and stage_wave_start_colors.has(cell):
             var start_data: Dictionary = stage_wave_start_colors[cell]
             from_top = start_data.get("top", target_top)
@@ -2607,6 +2610,7 @@ func _queue_stage_open_tiles(cells: Array[Vector2i], from_abyss: bool = false) -
             "node": tile, "cell": cell,
             "from_top": from_top, "from_skirt": from_skirt, "from_height": from_height,
             "target_top": target_top, "target_skirt": target_skirt, "target_height": target_height,
+            "duration": opening_duration,
             "start_at": (wave_started_at if not from_abyss else elapsed) + wave_delay,
             "top_material": top_mat, "edge_material": edge_mat, "skirt_material": skirt_mat
         })
@@ -3109,7 +3113,7 @@ func _process(delta: float) -> void:
             stage_open_tiles.remove_at(i)
             continue
         var opening_cell: Vector2i = opening_data["cell"]
-        var opening_progress: float = clampf((elapsed - float(opening_data["start_at"])) / 1.05, 0.0, 1.0)
+        var opening_progress: float = clampf((elapsed - float(opening_data["start_at"])) / float(opening_data.get("duration", 1.05)), 0.0, 1.0)
         var opening_eased: float = opening_progress * opening_progress * (3.0 - 2.0 * opening_progress)
         var opening_top: Color = opening_data["from_top"].lerp(opening_data["target_top"], opening_eased)
         var opening_skirt: Color = opening_data["from_skirt"].lerp(opening_data["target_skirt"], opening_eased)
