@@ -1852,6 +1852,17 @@ func _show_preview_choice() -> void:
     typed_buffer = entry.text
     drafts[key] = {"text": entry.text, "dir": preview_dir}
     _focus_current_typing_cell()
+    # A selecao da ancora ja conhece todo o caminho da previa. Cria as casas
+    # externas aqui, sem depender do movimento posterior da camera para
+    # descobrir que elas precisam existir.
+    var created_outer_cells: Array[Vector2i] = []
+    for cell in _cells(preview):
+        if not _inside_level(cell) and not board.has(cell):
+            _create_board_tile(cell)
+            created_outer_cells.append(cell)
+    if not created_outer_cells.is_empty():
+        _refresh_board(created_outer_cells)
+        _queue_stage_open_tiles(created_outer_cells, true)
     _refresh_board()
     _message("Use as setas para percorrer letras resolvidas ou arraste sobre o tabuleiro. As setas junto a letra mudam o lado.")
 
