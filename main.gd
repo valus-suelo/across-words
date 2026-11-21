@@ -173,6 +173,7 @@ var tile_pedestals: Dictionary = {}
 var flash_cells: Dictionary = {}
 var flash_started_at: float = 0.0
 var word_fade_cells: Dictionary = {}
+var word_selection_wave: Dictionary = {} # Transicao lilas/dourado independente
 var direction_fade_cells: Dictionary = {}
 var direction_transition_cells: Dictionary = {}
 var direction_transition_order: Dictionary = {}
@@ -1762,11 +1763,40 @@ func _preview_default_direction(index: int) -> Vector2i:
     var d: Vector2i = words[index]["dir"]
     return Vector2i(0, 1) if d.x != 0 else Vector2i(1, 0)
 
+func _begin_word_selection_wave(previous_index: int, selected_index: int) -> void:
+    # Captura as cores atuais e propaga a troca de destaque letra a letra.
+    word_selection_wave.clear()
+    var transition_words: Array[int] = []
+    if previous_index >= 0 and previous_index < words.size() and previous_index != selected_index:
+        transition_words.append(previous_index)
+    if selected_index >= 0 and selected_index < words.size():
+        transition_words.append(selected_index)
+    for word_index in transition_words:
+        var cells: Array[Vector2i] = _cells(words[word_index])
+        var is_selected: bool = word_index == selected_index
+        for letter_index in range(cells.size()):
+            var cell: Vector2i = cells[letter_index]
+            if not board.has(cell):
+                continue
+            var tile: MeshInstance3D = board[cell]
+            var current_top: Color = SOLVED
+            var current_skirt: Color = SIDE_SOLVED
+            var top_material: Material = tile.get_surface_override_material(0)
+            var skirt_material: Material = (tile.get_node("Skirt") as MeshInstance3D).material_override
+            if top_material is StandardMaterial3D:
+                current_top = (top_material as StandardMaterial3D).albedo_color
+            if skirt_material is StandardMaterial3D:
+                current_skirt = (skirt_material as StandardMaterial3D).albedo_color
+            word_selection_wave[cell] = {
+                "from_top": current_top, "from_skirt": current_skirt,
+                "to_top": CURRENT_WORD if is_selected else SOLVED,
+                "to_skirt": CURRENT_WORD_SIDE if is_selected else SIDE_SOLVED,
+                "start_at": elapsed + float(letter_index) * 0.045,
+                "duration": 0.28
+            }
+
 func _select_anchor(index: int, anchor: int) -> void:
     if index < 0 or index >= words.size():
-        return
-    if last_solved_word >= 0 and index != last_solved_word:
-        _message("Somente a palavra atual pode gerar novas palavras.")
         return
     if anchor < 0 or anchor >= _cells(words[index]).size():
         return
@@ -1775,6 +1805,9 @@ func _select_anchor(index: int, anchor: int) -> void:
         return
     if preview_parent == index and preview_anchor == anchor:
         return
+    var previous_active_word: int = last_solved_word
+    if previous_active_word != index:
+        _begin_word_selection_wave(previous_active_word, index)
     stage_anchor_idle = false
     _save_preview_draft()
     wave_origin = _cells(words[index])[anchor]
@@ -1931,17 +1964,15 @@ func _choose(index: int) -> void:
 func _click_tile(p: Vector2i) -> void:
     if game_over:
         return
-    # Depois da primeira confirmacao, somente a palavra mais recente pode
-    # servir de origem para novos caminhos.
-    if last_solved_word >= 0 and last_solved_word < words.size():
-        var current_word: Dictionary = words[last_solved_word]
-        if current_word["state"] == "solved":
-            var current_anchor: int = _cells(current_word).find(p)
-            if current_anchor >= 0:
-                last_navigation_arrow = Vector2i.ZERO
-                _select_anchor(last_solved_word, current_anchor)
-            else:
-                _message("Somente letras da palavra atual podem gerar novas palavras.")
+    # Qualquer letra de qualquer palavra resolvida pode se tornar uma ancora.
+    for i in range(words.size() - 1, -1, -1):
+        if words[i].get("state", "") != "solved":
+            continue
+        var cells: Array[Vector2i] = _cells(words[i])
+        var anchor: int = cells.find(p)
+        if anchor >= 0:
+            last_navigation_arrow = Vector2i.ZERO
+            _select_anchor(i, anchor)
             return
     # Antes da primeira palavra resolvida, permite selecionar a palavra inicial.
     for i in range(words.size() - 1, -1, -1):
@@ -1949,7 +1980,7 @@ func _click_tile(p: Vector2i) -> void:
             _choose(i)
             _message("Palavra selecionada. Digite a resposta e confirme.")
             return
-    _message("Toque numa letra da palavra atual para criar um novo caminho.")
+    _message("Toque em qualquer letra resolvida para abrir um novo caminho.")
 
 func _submit() -> void:
     if game_over:
@@ -3215,6 +3246,27 @@ func _process(delta: float) -> void:
         if not done.is_empty():
             for cell in done:
                 flash_cells.erase(cell)
+            _refresh_board()
+    # Onda de destaque da palavra ativa: dourado e lilas em propagacao.
+    if not word_selection_wave.is_empty():
+        var finished_selection_wave: Array[Vector2i] = []
+        for cell in word_selection_wave.keys():
+            var wave_data: Dictionary = word_selection_wave[cell]
+            var progress: float = clampf((elapsed - float(wave_data["start_at"])) / float(wave_data["duration"]), 0.0, 1.0)
+            var eased: float = progress * progress * (3.0 - 2.0 * progress)
+            if board.has(cell):
+                var tile: MeshInstance3D = board[cell]
+                var shown_top: Color = wave_data["from_top"].lerp(wave_data["to_top"], eased)
+                var shown_skirt: Color = wave_data["from_skirt"].lerp(wave_data["to_skirt"], eased)
+                if not wave_data.has("materials"):
+                    wave_data["materials"] = _make_tile_animation_materials(tile, shown_top, shown_skirt)
+                    word_selection_wave[cell] = wave_data
+                _apply_tile_animation_materials(wave_data["materials"], shown_top, shown_skirt)
+            if progress >= 1.0:
+                finished_selection_wave.append(cell)
+        for cell in finished_selection_wave:
+            word_selection_wave.erase(cell)
+        if not finished_selection_wave.is_empty():
             _refresh_board()
     if not word_fade_cells.is_empty():
         var faded: Array[Vector2i] = []
