@@ -1701,6 +1701,9 @@ func _on_entry_changed(value: String) -> void:
         _assign_entry(clean)
     typed_buffer = clean
     _focus_current_typing_cell()
+    # Cria imediatamente as casas externas da previa, sem esperar a camera
+    # terminar de acompanhar a digitacao para iniciar a animacao do abismo.
+    _sync_visible_board(true)
     _refresh_board()
 
 func _focus_current_typing_cell() -> void:
@@ -2586,7 +2589,9 @@ func _queue_stage_open_tiles(cells: Array[Vector2i], from_abyss: bool = false) -
             _set_pickup_icon_color(cell, from_skirt)
         tile.position.y = from_height
         var cell_distance: int = absi(cell.x - wave_origin.x) + absi(cell.y - wave_origin.y)
-        var wave_delay: float = minf(1.8, float(cell_distance) * 0.045) if not from_abyss else minf(0.48, float(cell_distance) * 0.035)
+        # Blocos externos acompanham a selecao/digitacao imediatamente;
+        # somente a onda entre etapas conserva o atraso espacial.
+        var wave_delay: float = 0.0 if from_abyss else minf(1.8, float(cell_distance) * 0.045)
         stage_open_tiles.append({
             "node": tile, "cell": cell,
             "from_top": from_top, "from_skirt": from_skirt, "from_height": from_height,
