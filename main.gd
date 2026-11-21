@@ -1564,8 +1564,6 @@ func _possible_children(index: int, anchor: int, direction: Vector2i) -> Array[D
     if direction == Vector2i.ZERO or parent_dir.x * direction.x + parent_dir.y * direction.y != 0:
         return choices
     var crossing: Vector2i = parent_cells[anchor]
-    if not _inside_level(crossing):
-        return choices
     var parent_answer: String = parent["answer"]
     var occupied: Dictionary = _occupied_letters()
     # Impedimento por inimigo: não é permitido traçar uma palavra sobre ele.
@@ -1799,9 +1797,6 @@ func _select_anchor(index: int, anchor: int) -> void:
     if index < 0 or index >= words.size():
         return
     if anchor < 0 or anchor >= _cells(words[index]).size():
-        return
-    if not _inside_level(_cells(words[index])[anchor]):
-        _message("Esta letra está fora da área principal e não pode gerar outra palavra.")
         return
     if preview_parent == index and preview_anchor == anchor:
         return
