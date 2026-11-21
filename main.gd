@@ -1761,7 +1761,7 @@ func _preview_default_direction(index: int) -> Vector2i:
     var d: Vector2i = words[index]["dir"]
     return Vector2i(0, 1) if d.x != 0 else Vector2i(1, 0)
 
-func _begin_word_selection_wave(previous_index: int, selected_index: int) -> void:
+func _begin_word_selection_wave(previous_index: int, selected_index: int, selected_anchor: int) -> void:
     # Captura as cores atuais e propaga a troca de destaque letra a letra.
     word_selection_wave.clear()
     var transition_words: Array[int] = []
@@ -1789,7 +1789,7 @@ func _begin_word_selection_wave(previous_index: int, selected_index: int) -> voi
                 "from_top": current_top, "from_skirt": current_skirt,
                 "to_top": CURRENT_WORD if is_selected else SOLVED,
                 "to_skirt": CURRENT_WORD_SIDE if is_selected else SIDE_SOLVED,
-                "start_at": elapsed + float(letter_index) * 0.045,
+                "start_at": elapsed + float(absi(letter_index - (selected_anchor if is_selected else 0))) * 0.045,
                 "duration": 0.28
             }
 
@@ -1802,7 +1802,7 @@ func _select_anchor(index: int, anchor: int) -> void:
         return
     var previous_active_word: int = last_solved_word
     if previous_active_word != index:
-        _begin_word_selection_wave(previous_active_word, index)
+        _begin_word_selection_wave(previous_active_word, index, anchor)
     stage_anchor_idle = false
     _save_preview_draft()
     wave_origin = _cells(words[index])[anchor]
