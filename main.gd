@@ -2540,7 +2540,7 @@ func _try_tap_branch_arrow(screen_pos: Vector2) -> bool:
             return true
     return false
 
-func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
+func _queue_stage_open_tiles(cells: Array[Vector2i], from_abyss: bool = false) -> void:
     # A onda usa o estado FINAL ja calculado pelo _refresh_board. Assim,
     # cada casa vai diretamente da aparencia anterior para seu destino real:
     # palavras, origem, portal, recursos e blocos azuis sao respeitados.
@@ -2566,7 +2566,7 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
         var from_top: Color = target_top
         var from_skirt: Color = target_skirt
         var from_height: float = -2.6
-        if stage_wave_start_colors.has(cell):
+        if not from_abyss and stage_wave_start_colors.has(cell):
             var start_data: Dictionary = stage_wave_start_colors[cell]
             from_top = start_data.get("top", target_top)
             from_skirt = start_data.get("skirt", target_skirt)
@@ -2585,12 +2585,13 @@ func _queue_stage_open_tiles(cells: Array[Vector2i]) -> void:
         if pickups.has(cell):
             _set_pickup_icon_color(cell, from_skirt)
         tile.position.y = from_height
-        var wave_delay: float = minf(1.8, float(absi(cell.x - wave_origin.x) + absi(cell.y - wave_origin.y)) * 0.045)
+        var cell_distance: int = absi(cell.x - wave_origin.x) + absi(cell.y - wave_origin.y)
+        var wave_delay: float = minf(1.8, float(cell_distance) * 0.045) if not from_abyss else minf(0.48, float(cell_distance) * 0.035)
         stage_open_tiles.append({
             "node": tile, "cell": cell,
             "from_top": from_top, "from_skirt": from_skirt, "from_height": from_height,
             "target_top": target_top, "target_skirt": target_skirt, "target_height": target_height,
-            "start_at": wave_started_at + wave_delay,
+            "start_at": (wave_started_at if not from_abyss else elapsed) + wave_delay,
             "top_material": top_mat, "edge_material": edge_mat, "skirt_material": skirt_mat
         })
         queued_cells[cell] = true
@@ -3552,14 +3553,18 @@ func _sync_visible_board(force: bool = false) -> void:
     visible_radius_y = radius_y
     var needed: Dictionary = {}
     var created_cells: Array[Vector2i] = []
+    var created_outer_word_cells: Array[Vector2i] = []
     # Tiles existem dentro da area jogavel e nas casas ocupadas por palavras.
-    # Fora dela nao ha preenchimento visual: o abismo e completamente vazio.
+    # A previa ativa tambem reserva suas casas externas para a revelacao dourada.
     var word_cells: Dictionary = {}
     for word in words:
         if word.get("state", "") in ["destroyed", "expired"]:
             continue
         for word_cell in _cells(word):
             word_cells[word_cell] = true
+    if not preview.is_empty():
+        for preview_cell in _cells(preview):
+            word_cells[preview_cell] = true
     for y in range(center.y - radius_y, center.y + radius_y + 1):
         for x in range(center.x - radius_x, center.x + radius_x + 1):
             var cell: Vector2i = Vector2i(x, y)
@@ -3587,7 +3592,11 @@ func _sync_visible_board(force: bool = false) -> void:
             continue
         _create_board_tile(p)
         created_cells.append(p)
+        if not _inside_level(p):
+            created_outer_word_cells.append(p)
     if not created_cells.is_empty():
         _refresh_board(created_cells)
         if stage_wave_active:
             _queue_stage_open_tiles(created_cells)
+        elif not created_outer_word_cells.is_empty():
+            _queue_stage_open_tiles(created_outer_word_cells, true)
